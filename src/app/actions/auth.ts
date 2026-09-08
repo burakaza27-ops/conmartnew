@@ -167,24 +167,31 @@ export async function signUp(
   const authId = authData.user.id;
 
   try {
-    await db.$transaction(async (tx) => {
-      const createdUser = await tx.user.create({
-        data: { authId, role, name, phone, companyName },
-      });
-
-      if (role === "SELLER") {
-        await tx.sellerProfile.create({
-          data: {
-            userId: createdUser.id,
-            verificationStatus: "UNVERIFIED",
-            sellerType: "RETAILER",
-          },
-        });
-
-        await tx.wallet.create({
-          data: { sellerId: createdUser.id, cashBalance: 0, creditBalance: 0 },
-        });
-      }
+    // Nested writes, not `db.$transaction(async (tx) => ...)`.
+    // Interactive transactions pin a session, which PgBouncer in transaction
+    // mode (Supabase port 6543) does not keep. A single nested create is one
+    // round-trip the pooler can run atomically.
+    await db.user.create({
+      data: {
+        authId,
+        role,
+        name,
+        phone,
+        companyName,
+        ...(role === "SELLER"
+          ? {
+              sellerProfile: {
+                create: {
+                  verificationStatus: "UNVERIFIED" as const,
+                  sellerType: "RETAILER" as const,
+                },
+              },
+              wallet: {
+                create: { cashBalance: 0, creditBalance: 0 },
+              },
+            }
+          : {}),
+      },
     });
   } catch (dbError) {
     await rollbackAuthUser(authId);

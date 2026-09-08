@@ -61,15 +61,21 @@ function buildSslConfig(): ConnectionOptions {
   }
 
   return env.DATABASE_CA_CERT
-    ? { rejectUnauthorized: true, ca: env.DATABASE_CA_CERT }
+    ? {
+        rejectUnauthorized: true,
+        // Vercel often stores pasted PEMs with literal `\n` instead of newlines.
+        ca: env.DATABASE_CA_CERT.replace(/\\n/g, "\n"),
+      }
     : { rejectUnauthorized: true };
 }
 
 /** Creates the Prisma client with a singleton pg.Pool underneath. */
 function createPrismaClient(): PrismaClient {
-  // The transaction pooler is preferred at runtime; DATABASE_URL is the direct
-  // connection used by migrations and seeding.
-  const connectionString = env.DATABASE_POOLER_URL ?? env.DATABASE_URL;
+  // Prisma needs session-mode Postgres. Supabase transaction pooling (port
+  // 6543) drops the connection between statements, which breaks interactive
+  // transactions used by wallets, listings, and orders. DATABASE_URL should
+  // be the session pooler on port 5432.
+  const connectionString = env.DATABASE_URL;
 
   const pool =
     globalForPrisma.pgPool ??
