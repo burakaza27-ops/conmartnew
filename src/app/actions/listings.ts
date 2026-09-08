@@ -92,10 +92,8 @@ export async function createSellerListing(input: CreateListingInput) {
         await tx.sellerProfile.create({
           data: {
             userId: dbUser.id,
-            verificationStatus: "VERIFIED",
-            sellerType: "WHOLESALER",
-            tinNumber: "00" + Math.floor(10000000 + Math.random() * 90000000),
-            licenseNumber: "AA/B/" + Math.floor(1000 + Math.random() * 9000) + "/2016",
+            verificationStatus: "UNVERIFIED",
+            sellerType: "RETAILER",
           },
         });
       }
@@ -107,8 +105,8 @@ export async function createSellerListing(input: CreateListingInput) {
         await tx.wallet.create({
           data: {
             sellerId: dbUser.id,
-            cashBalance: 5000.0,
-            creditBalance: 500.0,
+            cashBalance: 0,
+            creditBalance: 0,
           },
         });
       }

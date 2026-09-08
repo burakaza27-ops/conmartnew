@@ -9,6 +9,7 @@ import { db } from "@/lib/db";
 import type { ProductUnit } from "@/lib/types";
 import { coarsenLocation, getMaskedSellerLabel } from "@/lib/security/masking";
 import { unstable_cache } from "next/cache";
+import { ensureDefaultCategories } from "@/lib/data/default-categories";
 
 /**
  * Buyer-facing pseudonym for a supplier. Every catalog surface uses this so a
@@ -305,7 +306,7 @@ export async function fetchListingDetail(
  * Fetches all categories with their active listing counts, images, and descriptions.
  * Cached with Next.js unstable_cache (60s TTL / 'categories' tag) for instant sub-millisecond responses.
  */
-export const fetchCategoriesWithCounts = unstable_cache(
+const fetchCachedCategoriesWithCounts = unstable_cache(
   async (): Promise<CategoryWithCount[]> => {
     const categories = await db.category.findMany({
       include: {
@@ -334,9 +335,44 @@ export const fetchCategoriesWithCounts = unstable_cache(
       ),
     }));
   },
-  ["categories-with-counts-v1"],
+  ["categories-with-counts-v2"],
   { revalidate: 60, tags: ["categories"] }
 );
+
+export async function fetchCategoriesWithCounts(): Promise<CategoryWithCount[]> {
+  await ensureDefaultCategories();
+  const cached = await fetchCachedCategoriesWithCounts();
+  if (cached.length > 0) {
+    return cached;
+  }
+
+  const categories = await db.category.findMany({
+    include: {
+      products: {
+        include: {
+          listings: {
+            where: { active: true },
+            select: { id: true },
+          },
+        },
+      },
+    },
+    orderBy: { name: "asc" },
+  });
+
+  return categories.map((cat) => ({
+    id: cat.id,
+    name: cat.name,
+    slug: cat.slug,
+    iconName: cat.iconName,
+    imageUrl: cat.imageUrl || null,
+    description: cat.description || null,
+    listingCount: cat.products.reduce(
+      (total, product) => total + product.listings.length,
+      0
+    ),
+  }));
+}
 
 /**
  * Fetches a single category with its brand options and listings count.
@@ -344,6 +380,8 @@ export const fetchCategoriesWithCounts = unstable_cache(
 export async function fetchCategoryBySlug(
   slug: string
 ): Promise<CategoryDetailWithBrands | null> {
+  await ensureDefaultCategories();
+
   const category = await db.category.findUnique({
     where: { slug },
     include: {

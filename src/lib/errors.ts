@@ -17,6 +17,51 @@ export class DomainError extends Error {
 }
 
 /**
+ * Maps Supabase Auth sign-up failures to messages that are safe to show users.
+ * The raw provider message is still logged server-side for debugging.
+ */
+export function mapSignUpAuthError(message: string): string {
+  const lower = message.toLowerCase();
+
+  if (lower.includes("already registered") || lower.includes("already exists")) {
+    return "An account with this email already exists. Please sign in instead.";
+  }
+
+  if (
+    lower.includes("confirmation") ||
+    lower.includes("sending email") ||
+    lower.includes("smtp") ||
+    lower.includes("email address is invalid")
+  ) {
+    return (
+      "We could not complete email verification. Check your inbox for a confirmation link, " +
+      "or ask an administrator to disable “Confirm email” in Supabase for testing."
+    );
+  }
+
+  if (lower.includes("invalid api key") || lower.includes("invalid jwt")) {
+    return (
+      "Sign-up is temporarily unavailable because the server auth keys are misconfigured. " +
+      "Please contact support."
+    );
+  }
+
+  if (lower.includes("signups not allowed") || lower.includes("signup is disabled")) {
+    return "New registrations are currently disabled. Please contact support.";
+  }
+
+  if (lower.includes("rate limit") || lower.includes("too many")) {
+    return "Too many sign-up attempts. Please wait about an hour and try again, or ask an administrator to create your account.";
+  }
+
+  if (lower.includes("password")) {
+    return "Password does not meet security requirements. Use at least 8 characters with upper, lower, and a number.";
+  }
+
+  return "Something went wrong. Please try again.";
+}
+
+/**
  * Converts a caught value into a message safe to return over the wire.
  * Unexpected errors are logged with `context` and replaced with `fallback`.
  */
