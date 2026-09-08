@@ -97,8 +97,8 @@ export default async function BuyerCategoryHubPage() {
           </form>
           <div className="flex flex-wrap gap-2 text-xs">
             <QuickChip href="/buyer/category/cement?brand=Dangote">Dangote</QuickChip>
-            <QuickChip href="/buyer/category/rebar-structural-steel">Rebar Ø16</QuickChip>
-            <QuickChip href="/buyer/category/sand-gravel-aggregates">River sand</QuickChip>
+            <QuickChip href="/buyer/category/steel">Rebar Ø16</QuickChip>
+            <QuickChip href="/buyer/category/aggregates">River sand</QuickChip>
           </div>
         </div>
       </div>
@@ -120,7 +120,12 @@ export default async function BuyerCategoryHubPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {categories.map((cat) => {
+          {categories.length === 0 ? (
+            <p className="col-span-full rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">
+              Categories are being prepared. Refresh this page in a moment.
+            </p>
+          ) : (
+            categories.map((cat) => {
             const IconComponent = ICON_MAP[cat.iconName] || Package;
             return (
               <Link
@@ -141,7 +146,8 @@ export default async function BuyerCategoryHubPage() {
                 </div>
               </Link>
             );
-          })}
+          })
+          )}
         </div>
       </section>
 

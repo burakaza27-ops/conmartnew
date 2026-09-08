@@ -16,7 +16,7 @@ import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { authorize } from "@/lib/auth/session";
 import { env } from "@/lib/config/env";
 import {
@@ -157,24 +157,42 @@ export async function POST(request: NextRequest) {
 
     let publicUrl: string | null = null;
 
-    // 6. Supabase Storage is the system of record for uploads
+    // 6. Upload with the service-role client after authorize() has already
+    //    confirmed this caller is a seller or admin. The user session cannot
+    //    write to Storage unless extra bucket policies exist; the admin key
+    //    bypasses those and is the production path.
     try {
-      const supabase = await createSupabaseServerClient();
+      const supabase = createSupabaseAdminClient();
       const bucket = env.SUPABASE_STORAGE_BUCKET;
 
-      const { error: uploadError } = await supabase.storage
-        .from(bucket)
-        .upload(filename, buffer, {
-          contentType,
-          // The name is random and unique, so an upsert would only ever mask a
-          // bug — a collision means something is reusing a key.
-          upsert: false,
+      if (!supabase) {
+        console.error("Supabase storage upload failed: SUPABASE_SERVICE_ROLE_KEY is not set");
+      } else {
+        const { error: bucketError } = await supabase.storage.createBucket(bucket, {
+          public: true,
+          fileSizeLimit: MAX_FILE_SIZE,
         });
 
-      if (uploadError) {
-        console.error("Supabase storage upload failed:", uploadError.message);
-      } else {
-        publicUrl = supabase.storage.from(bucket).getPublicUrl(filename).data?.publicUrl ?? null;
+        if (
+          bucketError &&
+          !/already exists|duplicate/i.test(bucketError.message)
+        ) {
+          console.error("Supabase storage bucket ensure failed:", bucketError.message);
+        }
+
+        const { error: uploadError } = await supabase.storage
+          .from(bucket)
+          .upload(filename, buffer, {
+            contentType,
+            upsert: false,
+          });
+
+        if (uploadError) {
+          console.error("Supabase storage upload failed:", uploadError.message);
+        } else {
+          publicUrl =
+            supabase.storage.from(bucket).getPublicUrl(filename).data?.publicUrl ?? null;
+        }
       }
     } catch (storageError) {
       console.error("Supabase storage threw:", storageError);

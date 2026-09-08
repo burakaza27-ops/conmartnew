@@ -209,6 +209,13 @@ export function NewListingForm({
       )}
 
       <form onSubmit={handleSubmit} className="grid gap-8 lg:grid-cols-5">
+        {categories.length === 0 && (
+          <div className="lg:col-span-5 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-200">
+            Material categories have not loaded yet. Refresh this page once. If
+            they still do not appear, ask an administrator to open the command
+            center so the catalog can be created.
+          </div>
+        )}
         <div className="lg:col-span-3 space-y-6">
           <Card className="border-border/60">
             <CardHeader className="pb-3 border-b border-border/40">

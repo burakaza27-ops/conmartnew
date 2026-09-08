@@ -23,7 +23,7 @@ import {
   rateLimit,
   rateLimitMessage,
 } from "@/lib/security/rate-limit";
-import { toSafeErrorMessage } from "@/lib/errors";
+import { toSafeErrorMessage, mapSignUpAuthError } from "@/lib/errors";
 import type { ActionResult } from "@/lib/types";
 
 /**
@@ -148,13 +148,14 @@ export async function signUp(
   });
 
   if (authError) {
+    console.error("[signUp:auth]", authError.message, authError);
     if (authError.message.includes("already registered")) {
       return {
         success: false,
         error: "An account with this email already exists. Please sign in instead.",
       };
     }
-    return { success: false, error: toSafeErrorMessage(authError, "signUp:auth") };
+    return { success: false, error: mapSignUpAuthError(authError.message) };
   }
 
   if (!authData.user) {

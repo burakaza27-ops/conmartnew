@@ -8,12 +8,15 @@ import { revalidatePath } from "next/cache";
 import { authorize } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import { Prisma } from "@prisma/client";
+import { ensureDefaultCategories } from "@/lib/data/default-categories";
 
 export async function getAdminCategoriesAction() {
   const auth = await authorize(["ADMIN"]);
   if (!auth.ok) {
     return { success: false, error: auth.error };
   }
+
+  await ensureDefaultCategories();
 
   const categories = await db.category.findMany({
     include: {

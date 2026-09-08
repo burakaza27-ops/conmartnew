@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
 import { NewListingForm } from "./new-listing-form";
+import { ensureDefaultCategories } from "@/lib/data/default-categories";
 
 export default async function NewListingPage() {
   const user = await getAuthenticatedUser();
@@ -21,6 +22,8 @@ export default async function NewListingPage() {
   if (!dbUser || (dbUser.role !== "SELLER" && dbUser.role !== "ADMIN")) {
     redirect("/unauthorized");
   }
+
+  await ensureDefaultCategories();
 
   // Fetch all active categories and curated products for selection
   const [categories, curatedProducts] = await Promise.all([
