@@ -21,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { updateSellerVerificationAction } from "@/app/actions/sellers";
+import { setSellerSubscriptionAction } from "@/app/actions/marketplace";
 import { SellerVerificationStatus } from "@prisma/client";
 
 export interface AdminSellerItem {
@@ -45,6 +46,8 @@ export interface AdminSellerItem {
   enquiryCount: number;
   cashBalance: number;
   creditBalance: number;
+  subscriptionStatus: string;
+  subscriptionExpiresAt: string | null;
 }
 
 interface SellerVerificationTableProps {
@@ -84,6 +87,36 @@ export function SellerVerificationTable({ initialSellers }: SellerVerificationTa
         setStatusMsg({
           type: "error",
           text: res.error || "Failed to update verification status.",
+        });
+      }
+    });
+  };
+
+  const handleToggleSubscription = (profileId: string, current: string) => {
+    const next = current === "ACTIVE" ? "FREE" : "ACTIVE";
+    setStatusMsg(null);
+    startTransition(async () => {
+      const res = await setSellerSubscriptionAction({
+        sellerProfileId: profileId,
+        status: next,
+      });
+      if (res.success) {
+        setSellers((prev) =>
+          prev.map((s) =>
+            s.profileId === profileId ? { ...s, subscriptionStatus: next } : s
+          )
+        );
+        setStatusMsg({
+          type: "success",
+          text:
+            next === "ACTIVE"
+              ? "Direct chat unlocked for this supplier."
+              : "Direct chat locked. Deals will route through local agents.",
+        });
+      } else {
+        setStatusMsg({
+          type: "error",
+          text: res.error || "Failed to update subscription.",
         });
       }
     });
@@ -294,6 +327,17 @@ export function SellerVerificationTable({ initialSellers }: SellerVerificationTa
                                 Reinstate
                               </Button>
                             )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={isPending}
+                              onClick={() =>
+                                handleToggleSubscription(s.profileId!, s.subscriptionStatus)
+                              }
+                              className="h-7 text-xs font-semibold"
+                            >
+                              {s.subscriptionStatus === "ACTIVE" ? "Lock chat" : "Unlock chat"}
+                            </Button>
                           </div>
                         )}
                       </td>

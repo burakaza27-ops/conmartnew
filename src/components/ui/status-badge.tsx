@@ -16,6 +16,9 @@ import {
   UnlockIcon,
   WalletIcon,
   XCircleIcon,
+  LockIcon,
+  HandshakeIcon,
+  SearchIcon,
   type LucideIcon,
 } from "lucide-react"
 
@@ -96,6 +99,28 @@ const TX_STATUS: Record<string, StatusMeta> = {
   FAILED: { tone: "danger", icon: XCircleIcon, en: "Failed", am: "አልተሳካም" },
 }
 
+/** Supplier chat subscription. */
+const SUBSCRIPTION_STATUS: Record<string, StatusMeta> = {
+  FREE: { tone: "warning", icon: LockIcon, en: "Free — agent routed", am: "ነጻ — በወኪል" },
+  ACTIVE: { tone: "success", icon: UnlockIcon, en: "Subscribed — direct chat", am: "ደንበኛ — ቀጥተኛ ውይይት" },
+}
+
+/** Agent deal-ticket lifecycle. */
+const DEAL_TICKET_STATUS: Record<string, StatusMeta> = {
+  PENDING_AGENT: { tone: "warning", icon: ClockIcon, en: "Waiting for agent", am: "ወኪል በመጠባበቅ ላይ" },
+  AGENT_ASSIGNED: { tone: "info", icon: HandshakeIcon, en: "Agent assigned", am: "ወኪል ተመድቧል" },
+  IN_INSPECTION: { tone: "brand", icon: SearchIcon, en: "In inspection", am: "በምርመራ ላይ" },
+  COMPLETED: { tone: "success", icon: CheckCircle2Icon, en: "Completed", am: "ተጠናቋል" },
+  CANCELLED: { tone: "danger", icon: BanIcon, en: "Cancelled", am: "ተሰርዟል" },
+}
+
+const PAYOUT_STATUS: Record<string, StatusMeta> = {
+  PENDING: { tone: "neutral", icon: ClockIcon, en: "Payout pending", am: "ክፍያ በመጠባበቅ ላይ" },
+  DUE: { tone: "warning", icon: HandCoinsIcon, en: "Payout due", am: "የሚከፈል" },
+  PAID: { tone: "success", icon: CheckCircle2Icon, en: "Paid", am: "ተከፍሏል" },
+  VOID: { tone: "neutral", icon: BanIcon, en: "Void", am: "ተሰርዟል" },
+}
+
 /** Dispute mediation state. */
 const DISPUTE_STATUS: Record<string, StatusMeta> = {
   OPEN: { tone: "danger", icon: ShieldAlertIcon, en: "Open", am: "ክፍት" },
@@ -122,6 +147,9 @@ const REGISTRY = {
   walletTx: WALLET_TX_TYPE,
   txStatus: TX_STATUS,
   dispute: DISPUTE_STATUS,
+  subscription: SUBSCRIPTION_STATUS,
+  dealTicket: DEAL_TICKET_STATUS,
+  payout: PAYOUT_STATUS,
 } as const
 
 export type StatusDomain = keyof typeof REGISTRY

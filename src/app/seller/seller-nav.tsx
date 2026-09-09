@@ -1,6 +1,6 @@
 "use client";
 
-import { Package, PlusCircle, LogOut, Wallet, Inbox } from "lucide-react";
+import { Package, PlusCircle, LogOut, Wallet, Inbox, MessageCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { MobileTabLink, SidebarNavLink } from "@/components/layout/nav-link";
@@ -13,6 +13,7 @@ export function SellerSidebarNav() {
   const links = [
     { href: "/seller/dashboard", label: t("seller_my_listings"), icon: Package, exact: true },
     { href: "/seller/enquiries", label: t("enquiries_title"), icon: Inbox },
+    { href: "/seller/messages", label: t("chat_inbox_title", "Messages"), icon: MessageCircle },
     { href: "/seller/wallet", label: t("wallet_title"), icon: Wallet, exact: true },
     { href: "/seller/listings/new", label: t("seller_add_material"), icon: PlusCircle, exact: true },
   ];
@@ -33,6 +34,7 @@ export function SellerBottomNav() {
     <>
       <MobileTabLink href="/seller/dashboard" label={t("seller_my_listings")} icon={Package} exact />
       <MobileTabLink href="/seller/enquiries" label={t("enquiries_tab_all")} icon={Inbox} />
+      <MobileTabLink href="/seller/messages" label={t("chat_inbox_title", "Chat")} icon={MessageCircle} />
       <MobileTabLink href="/seller/wallet" label={t("wallet_title")} icon={Wallet} exact />
       <MobileTabLink href="/seller/listings/new" label={t("seller_add_material")} icon={PlusCircle} exact />
       <form action={signOut} className="flex flex-1">

@@ -14,11 +14,11 @@ import { z } from "zod";
 /**
  * Roles a visitor may choose for themselves at sign-up.
  *
- * ADMIN and FIELD_AGENT are deliberately excluded: they are granted out of
- * band by an existing administrator. Allowing them here would let anyone mint
- * themselves a privileged account.
+ * ADMIN is deliberately excluded — a public form that mints admin accounts is
+ * the same as no access control. FIELD_AGENT is allowed because local agents
+ * self-register against a specific zone; operations can deactivate them later.
  */
-export const SELF_REGISTERABLE_ROLES = ["BUYER", "SELLER"] as const;
+export const SELF_REGISTERABLE_ROLES = ["BUYER", "SELLER", "FIELD_AGENT"] as const;
 export type SelfRegisterableRole = (typeof SELF_REGISTERABLE_ROLES)[number];
 
 /** Ethiopian mobile number in international format, e.g. +251 91 234 5678. */
@@ -89,12 +89,21 @@ export const registerSchema = z.object({
     .min(2, "Company name must be at least 2 characters")
     .max(200, "Company name must be less than 200 characters"),
   role: z.enum(SELF_REGISTERABLE_ROLES, {
-    error: "Please select whether you are buying or supplying",
+    error: "Please select your account type",
   }),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
-});
+  zoneId: z.string().optional(),
+})
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  })
+  .refine(
+    (data) => data.role !== "FIELD_AGENT" || Boolean(data.zoneId?.trim()),
+    {
+      message: "Select the location zone you will cover as a local agent",
+      path: ["zoneId"],
+    }
+  );
 export type RegisterFormData = z.infer<typeof registerSchema>;
 
 // =============================================================================
@@ -261,3 +270,57 @@ export const dealOutcomeSchema = z.object({
 });
 export type DealOutcomeData = z.infer<typeof dealOutcomeSchema>;
 export type DealOutcomeInput = z.input<typeof dealOutcomeSchema>;
+
+// =============================================================================
+// MARKETPLACE / AGENT ROUTING SCHEMAS
+// =============================================================================
+
+export const initiateConversationSchema = z.object({
+  listingId: z.string().min(1, "Listing is required").optional(),
+  enquiryId: z.string().min(1, "Enquiry is required").optional(),
+  briefing: z
+    .string()
+    .trim()
+    .max(2000, "Briefing must be less than 2000 characters")
+    .optional(),
+}).refine((data) => Boolean(data.listingId || data.enquiryId), {
+  message: "A listing or an enquiry is required to start a conversation.",
+});
+export type InitiateConversationInput = z.infer<typeof initiateConversationSchema>;
+
+export const sendChatMessageSchema = z.object({
+  roomId: z.string().min(1, "Room is required"),
+  body: z
+    .string()
+    .trim()
+    .min(1, "Message cannot be empty")
+    .max(2000, "Message must be less than 2000 characters"),
+});
+export type SendChatMessageInput = z.infer<typeof sendChatMessageSchema>;
+
+export const claimDealTicketSchema = z.object({
+  ticketId: z.string().min(1, "Ticket is required"),
+});
+export type ClaimDealTicketInput = z.infer<typeof claimDealTicketSchema>;
+
+export const transitionDealTicketSchema = z.object({
+  ticketId: z.string().min(1, "Ticket is required"),
+  to: z.enum(["IN_INSPECTION", "CANCELLED"]),
+});
+export type TransitionDealTicketInput = z.infer<typeof transitionDealTicketSchema>;
+
+export const completeDealTicketSchema = z.object({
+  ticketId: z.string().min(1, "Ticket is required"),
+  orderTotal: etbAmountSchema,
+});
+export type CompleteDealTicketInput = z.infer<typeof completeDealTicketSchema>;
+
+export const setSellerSubscriptionSchema = z.object({
+  sellerProfileId: z.string().min(1, "Seller profile is required"),
+  status: z.enum(["FREE", "ACTIVE"]),
+  expiresAt: z
+    .string()
+    .refine((value) => !Number.isNaN(Date.parse(value)), "Enter a valid expiry date")
+    .optional(),
+});
+export type SetSellerSubscriptionInput = z.infer<typeof setSellerSubscriptionSchema>;

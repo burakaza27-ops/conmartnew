@@ -40,6 +40,7 @@ import {
 import { PricingCalculator } from "./pricing-calculator";
 import { DepotMaterialsTable } from "./depot-materials-table";
 import { PurchaseRequestModal } from "@/components/enquiry/purchase-request-modal";
+import { StartChatButton } from "@/components/chat/start-chat-button";
 import type { CatalogListing, ListingDetail } from "@/lib/data/catalog";
 
 interface ListingDetailViewProps {
@@ -282,6 +283,13 @@ export function ListingDetailView({
               <SendHorizontal className="h-4 w-4" />
               {t("buyer_request_enquiry_btn")}
             </Button>
+
+            <StartChatButton
+              listingId={listing.id}
+              directChatEnabled={listing.directChatEnabled}
+              variant={listing.directChatEnabled ? "secondary" : "outline"}
+              className="w-full gap-2 font-semibold"
+            />
 
             {/* Warehouse & Supplier Depot */}
             <Card className="border-border/60 bg-card">

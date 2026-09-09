@@ -10,6 +10,7 @@ import { getAuthenticatedUser } from "@/lib/supabase/server";
 import { fetchSellerListings } from "@/lib/data/admin";
 import { db } from "@/lib/db";
 import { SellerDashboardView } from "./seller-dashboard-view";
+import { resolveSubscription } from "@/lib/marketplace/subscription";
 
 export default async function SellerDashboardPage() {
   const user = await getAuthenticatedUser();
@@ -19,7 +20,16 @@ export default async function SellerDashboardPage() {
 
   const dbUser = await db.user.findUnique({
     where: { authId: user.id },
-    select: { role: true },
+    select: {
+      id: true,
+      role: true,
+      sellerProfile: {
+        select: {
+          subscriptionStatus: true,
+          subscriptionExpiresAt: true,
+        },
+      },
+    },
   });
 
   if (!dbUser || (dbUser.role !== "SELLER" && dbUser.role !== "ADMIN")) {
@@ -27,6 +37,17 @@ export default async function SellerDashboardPage() {
   }
 
   const listings = await fetchSellerListings(user.id);
+  const effectiveStatus = resolveSubscription(dbUser.sellerProfile);
 
-  return <SellerDashboardView listings={listings} />;
+  return (
+    <SellerDashboardView
+      listings={listings}
+      subscription={{
+        storedStatus: dbUser.sellerProfile?.subscriptionStatus ?? "FREE",
+        effectiveStatus,
+        expiresAt: dbUser.sellerProfile?.subscriptionExpiresAt?.toISOString() ?? null,
+        directChatEnabled: effectiveStatus === "ACTIVE",
+      }}
+    />
+  );
 }

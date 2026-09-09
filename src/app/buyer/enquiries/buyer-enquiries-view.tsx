@@ -36,6 +36,7 @@ import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n/language-context";
 import { getLocalizedUnit } from "@/lib/i18n/translations";
 import { raiseDisputeAction } from "@/app/actions/enquiries";
+import { StartChatButton } from "@/components/chat/start-chat-button";
 import { DisputeClaimType } from "@prisma/client";
 
 export interface BuyerEnquiryItem {
@@ -306,6 +307,13 @@ export function BuyerEnquiriesView({ initialEnquiries }: BuyerEnquiriesViewProps
                       )}
                     </div>
                   </div>
+
+                  <StartChatButton
+                    enquiryId={enq.id}
+                    size="sm"
+                    variant="outline"
+                    className="w-fit gap-1.5 text-xs font-semibold"
+                  />
 
                   {/* Details Grid */}
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 rounded-lg bg-muted/40 p-3.5 text-xs">

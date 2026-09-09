@@ -12,8 +12,8 @@ const CHARSET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
 
 const CODE_LENGTH = 6;
 
-/** `PRF` for proforma invoices, `ENQ` for purchase enquiries. */
-export const REFERENCE_PREFIXES = ["PRF", "ENQ"] as const;
+/** `PRF` for proformas, `ENQ` for enquiries, `DLT` for agent deal tickets. */
+export const REFERENCE_PREFIXES = ["PRF", "ENQ", "DLT"] as const;
 export type ReferencePrefix = (typeof REFERENCE_PREFIXES)[number];
 
 /**

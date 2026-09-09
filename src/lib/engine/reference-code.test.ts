@@ -16,6 +16,10 @@ describe("generateReferenceCode", () => {
     expect(generateReferenceCode("ENQ")).toMatch(/^ENQ-[2-9A-HJ-NP-Z]{6}$/);
   });
 
+  it("supports the deal-ticket prefix", () => {
+    expect(generateReferenceCode("DLT")).toMatch(/^DLT-[2-9A-HJ-NP-Z]{6}$/);
+  });
+
   it("never emits characters that are misread over the phone", () => {
     const codes = Array.from({ length: 500 }, () => generateReferenceCode());
 

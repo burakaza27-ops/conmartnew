@@ -23,6 +23,7 @@ const AUTHENTICATED_PREFIXES = [
   "/admin",
   "/seller",
   "/buyer",
+  "/agent",
   "/dashboard",
   "/api/upload",
 ] as const;

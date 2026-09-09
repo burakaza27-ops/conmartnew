@@ -16,6 +16,9 @@ import {
   ExternalLink,
   MapPin,
   Pencil,
+  Lock,
+  Unlock,
+  MessageCircle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -32,6 +35,7 @@ import { formatETB } from "@/lib/types";
 import { ListingStatusButton } from "./listing-status-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n/language-context";
 import {
@@ -61,9 +65,15 @@ export interface SellerListingItem {
 
 interface SellerDashboardViewProps {
   listings: SellerListingItem[];
+  subscription: {
+    storedStatus: string;
+    effectiveStatus: string;
+    expiresAt: string | null;
+    directChatEnabled: boolean;
+  };
 }
 
-export function SellerDashboardView({ listings }: SellerDashboardViewProps) {
+export function SellerDashboardView({ listings, subscription }: SellerDashboardViewProps) {
   const { t, locale } = useLanguage();
 
   return (
@@ -82,6 +92,59 @@ export function SellerDashboardView({ listings }: SellerDashboardViewProps) {
           </Link>
         }
       />
+
+      <Card className="border-border/60">
+        <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
+              {subscription.directChatEnabled ? (
+                <Unlock className="size-5 text-primary" />
+              ) : (
+                <Lock className="size-5 text-warning" />
+              )}
+            </div>
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-sm font-semibold text-foreground">
+                  {t("seller_sub_title", "Chat subscription")}
+                </p>
+                <StatusBadge
+                  domain="subscription"
+                  status={subscription.effectiveStatus}
+                  locale={locale}
+                  size="sm"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {subscription.directChatEnabled
+                  ? t(
+                      "seller_sub_active_desc",
+                      "Direct 1-on-1 chat with buyers is unlocked. Phone numbers may be exchanged in that channel."
+                    )
+                  : t(
+                      "seller_sub_free_desc",
+                      "Direct chat is locked. Every buyer conversation is routed to a local agent in the listing's zone."
+                    )}
+              </p>
+              {subscription.expiresAt ? (
+                <p className="text-2xs text-muted-foreground">
+                  {t("seller_sub_expires", "Expires")}{" "}
+                  {new Date(subscription.expiresAt).toLocaleDateString(
+                    locale === "am" ? "am-ET" : "en-US"
+                  )}
+                </p>
+              ) : null}
+            </div>
+          </div>
+          <Link
+            href="/seller/messages"
+            className={cn(buttonVariants({ variant: "outline" }), "gap-2 font-semibold")}
+          >
+            <MessageCircle className="size-4" />
+            {t("chat_inbox_title", "Messages")}
+          </Link>
+        </CardContent>
+      </Card>
 
       {listings.length === 0 ? (
         <EmptyState

@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutGrid, Package, FileText, SendHorizontal, LogOut } from "lucide-react";
+import { LayoutGrid, Package, FileText, SendHorizontal, LogOut, MessageCircle } from "lucide-react";
 
 import { MobileTabLink, SidebarNavLink } from "@/components/layout/nav-link";
 import { useLanguage } from "@/lib/i18n/language-context";
@@ -12,6 +12,7 @@ export function BuyerSidebarNav() {
     { href: "/buyer", label: t("nav_categories", "Categories"), icon: LayoutGrid, exact: true },
     { href: "/buyer/category/all", label: t("nav_all_materials", "All materials"), icon: Package },
     { href: "/buyer/enquiries", label: t("buyer_enquiries_title", "My enquiries"), icon: SendHorizontal },
+    { href: "/buyer/messages", label: t("chat_inbox_title", "Messages"), icon: MessageCircle },
     { href: "/buyer/orders", label: t("nav_bank_proformas", "Bank proformas"), icon: FileText },
   ];
 
@@ -35,7 +36,7 @@ export function BuyerMobileBottomNav({
     { href: "/buyer", label: t("nav_categories", "Home"), icon: LayoutGrid, exact: true },
     { href: "/buyer/category/all", label: t("nav_all_materials", "Materials"), icon: Package },
     { href: "/buyer/enquiries", label: t("buyer_enquiries_title", "Enquiries"), icon: SendHorizontal },
-    { href: "/buyer/orders", label: t("nav_bank_proformas", "Proformas"), icon: FileText },
+    { href: "/buyer/messages", label: t("chat_inbox_title", "Chat"), icon: MessageCircle },
   ];
 
   return (

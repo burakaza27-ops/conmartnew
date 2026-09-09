@@ -8,6 +8,7 @@
 import { db } from "@/lib/db";
 import type { ProductUnit } from "@/lib/types";
 import { coarsenLocation, getMaskedSellerLabel } from "@/lib/security/masking";
+import { isDirectChatEntitled } from "@/lib/marketplace/subscription";
 import { unstable_cache } from "next/cache";
 import { ensureDefaultCategories } from "@/lib/data/default-categories";
 
@@ -81,6 +82,8 @@ export interface ListingDetail {
     name: string;
     companyName: string;
   };
+  /** True when the supplier's subscription currently entitles direct chat. */
+  directChatEnabled: boolean;
   priceTiers: Array<{
     id: string;
     minQty: number;
@@ -265,6 +268,12 @@ export async function fetchListingDetail(
           id: true,
           name: true,
           companyName: true,
+          sellerProfile: {
+            select: {
+              subscriptionStatus: true,
+              subscriptionExpiresAt: true,
+            },
+          },
         },
       },
       priceTiers: {
@@ -291,6 +300,7 @@ export async function fetchListingDetail(
       category: listing.product.category,
     },
     seller: maskedSupplier(listing.seller.id),
+    directChatEnabled: isDirectChatEntitled(listing.seller.sellerProfile, now),
     priceTiers: listing.priceTiers.map((tier) => ({
       id: tier.id,
       minQty: tier.minQty,

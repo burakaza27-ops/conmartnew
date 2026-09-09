@@ -6,6 +6,7 @@
 // =============================================================================
 
 import type { Metadata, Viewport } from "next";
+import type { ReactNode } from "react";
 import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -54,7 +55,11 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default async function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
   // The nonce is minted per request by the proxy. Reading it opts the tree into
   // dynamic rendering, which this app already requires for its authenticated
   // routes; the alternative is a theme flash on every navigation.

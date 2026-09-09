@@ -34,6 +34,10 @@ yarn-error.log*
 .env*
 !.env.example
 
+# local notes (not for git)
+/DISCUSSION.md
+/discussion.md
+
 # locally uploaded product images (development fallback only)
 /public/uploads
 

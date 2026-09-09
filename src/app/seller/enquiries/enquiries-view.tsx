@@ -42,6 +42,7 @@ import {
   sellerDeclineEnquiryAction,
   reportDealOutcomeAction,
 } from "@/app/actions/enquiries";
+import { StartChatButton } from "@/components/chat/start-chat-button";
 
 export interface EnquiryItem {
   id: string;
@@ -388,6 +389,14 @@ export function SellerEnquiriesView({
                       )}
                     </div>
                   </div>
+
+                  <StartChatButton
+                    enquiryId={enq.id}
+                    portal="seller"
+                    size="sm"
+                    variant="outline"
+                    className="w-fit gap-1.5 text-xs font-semibold"
+                  />
 
                   {/* Requirements Grid */}
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 rounded-lg bg-muted/40 p-3.5 text-xs">

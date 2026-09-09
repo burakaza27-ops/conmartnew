@@ -48,6 +48,7 @@ import {
 } from "@/lib/security/rate-limit";
 import { DomainError, toSafeErrorMessage } from "@/lib/errors";
 import { EnquiryStatus, OutcomeType } from "@prisma/client";
+import { ensureDealTicketForEnquiry } from "@/lib/marketplace/service";
 
 /** A seller is suspended once they fail this many deals at this failure rate. */
 const SUSPENSION_MIN_FAILED_DEALS = 4;
@@ -108,7 +109,13 @@ export async function submitPurchaseEnquiryAction(
 
     const listing = await db.listing.findUnique({
       where: { id: data.listingId },
-      include: { product: { select: { unit: true } } },
+      include: {
+        product: { select: { unit: true } },
+        priceTiers: {
+          select: { minQty: true, maxQty: true, unitPrice: true },
+          orderBy: { minQty: "asc" },
+        },
+      },
     });
 
     if (!listing || !listing.active) {
@@ -143,8 +150,21 @@ export async function submitPurchaseEnquiryAction(
       select: { id: true, referenceCode: true },
     });
 
+    const matchedTier = listing.priceTiers.find(
+      (tier) => data.qty >= tier.minQty && data.qty <= tier.maxQty
+    );
+    await ensureDealTicketForEnquiry({
+      enquiryId: enquiry.id,
+      buyerId,
+      sellerId: listing.sellerId,
+      listingId: listing.id,
+      location: listing.location,
+      orderTotal: matchedTier ? Number(matchedTier.unitPrice) * data.qty : 0,
+    });
+
     revalidatePath("/buyer/enquiries");
     revalidatePath("/seller/enquiries");
+    revalidatePath("/agent");
 
     return {
       success: true,

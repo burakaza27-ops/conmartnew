@@ -64,6 +64,10 @@ export async function getAdminSellersAction() {
       enquiryCount: s._count.sellerEnquiries,
       cashBalance: Number(s.wallet?.cashBalance ?? 0),
       creditBalance: Number(s.wallet?.creditBalance ?? 0),
+      subscriptionStatus: s.sellerProfile?.subscriptionStatus ?? "FREE",
+      subscriptionExpiresAt: s.sellerProfile?.subscriptionExpiresAt
+        ? s.sellerProfile.subscriptionExpiresAt.toISOString()
+        : null,
     })),
   };
 }

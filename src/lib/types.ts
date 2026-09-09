@@ -72,6 +72,21 @@ export function formatETBCompact(amount: number): string {
 export const USER_ROLES = ["BUYER", "SELLER", "ADMIN", "FIELD_AGENT"] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
+export const SUBSCRIPTION_STATUSES = ["FREE", "ACTIVE"] as const;
+export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
+
+export const DEAL_TICKET_STATUSES = [
+  "PENDING_AGENT",
+  "AGENT_ASSIGNED",
+  "IN_INSPECTION",
+  "COMPLETED",
+  "CANCELLED",
+] as const;
+export type DealTicketStatus = (typeof DEAL_TICKET_STATUSES)[number];
+
+export const CHAT_ROOM_TYPES = ["DIRECT", "BUYER_AGENT", "SELLER_AGENT"] as const;
+export type ChatRoomType = (typeof CHAT_ROOM_TYPES)[number];
+
 /** Standard construction material units (Ethiopian market) */
 export const PRODUCT_UNITS = ["BAG", "QUINTAL", "TON", "PIECE", "M3"] as const;
 export type ProductUnit = (typeof PRODUCT_UNITS)[number];

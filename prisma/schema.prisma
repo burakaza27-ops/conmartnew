@@ -183,6 +183,44 @@ enum DisputeStatus {
   @@map("dispute_status")
 }
 
+/// Supplier chat entitlement. Expired ACTIVE rows resolve to FREE at read time.
+enum SubscriptionStatus {
+  FREE
+  ACTIVE
+
+  @@map("subscription_status")
+}
+
+/// Local-agent deal ticket lifecycle.
+enum DealTicketStatus {
+  PENDING_AGENT
+  AGENT_ASSIGNED
+  IN_INSPECTION
+  COMPLETED
+  CANCELLED
+
+  @@map("deal_ticket_status")
+}
+
+/// In-app conversation kind. Buyer and a FREE supplier never share a room.
+enum ChatRoomType {
+  DIRECT
+  BUYER_AGENT
+  SELLER_AGENT
+
+  @@map("chat_room_type")
+}
+
+/// Commission payout state after a mediated deal completes.
+enum CommissionPayoutStatus {
+  PENDING
+  DUE
+  PAID
+  VOID
+
+  @@map("commission_payout_status")
+}
+
 // =============================================================================
 // MODELS
 // =============================================================================
@@ -214,6 +252,14 @@ model User {
   topUpRequests    TopUpRequest[]
   buyerUnlocks     UnlockRecord[]  @relation("BuyerUnlocks")
   sellerUnlocks    UnlockRecord[]  @relation("SellerUnlocks")
+  agentProfile     AgentProfile?
+  buyerDealTickets DealTicket[]    @relation("BuyerDealTickets")
+  sellerDealTickets DealTicket[]   @relation("SellerDealTickets")
+  agentDealTickets DealTicket[]    @relation("AgentDealTickets")
+  buyerChatRooms   ChatRoom[]      @relation("BuyerChatRooms")
+  sellerChatRooms  ChatRoom[]      @relation("SellerChatRooms")
+  agentChatRooms   ChatRoom[]      @relation("AgentChatRooms")
+  chatMessages     ChatMessage[]
 
   @@map("users")
 }
@@ -234,6 +280,8 @@ model SellerProfile {
   responseTimeAvgMinutes Int                      @default(60) @map("response_time_avg_minutes")
   completedDealsCount    Int                      @default(0) @map("completed_deals_count")
   failedDealsCount       Int                      @default(0) @map("failed_deals_count")
+  subscriptionStatus     SubscriptionStatus       @default(FREE) @map("subscription_status")
+  subscriptionExpiresAt  DateTime?                @map("subscription_expires_at")
   createdAt              DateTime                 @default(now()) @map("created_at")
   updatedAt              DateTime                 @updatedAt @map("updated_at")
 
@@ -350,9 +398,10 @@ model Listing {
   seller     User        @relation("SellerListings", fields: [sellerId], references: [id], onDelete: Cascade)
   product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
   priceTiers PriceTier[]
-  orders     Order[]
-  orderItems OrderItem[]
-  enquiries  Enquiry[]
+  orders      Order[]
+  orderItems  OrderItem[]
+  enquiries   Enquiry[]
+  dealTickets DealTicket[]
 
   @@map("listings")
 }
@@ -397,6 +446,7 @@ model Enquiry {
   // --- Relations ---
   unlockRecord UnlockRecord?
   disputes     DisputeCase[]
+  dealTicket   DealTicket?
 
   @@map("enquiries")
 }
@@ -484,4 +534,131 @@ model OrderItem {
   seller  User    @relation("SellerOrderItems", fields: [sellerId], references: [id], onDelete: Restrict)
 
   @@map("order_items")
+}
+
+/// Geographic catchment for local-agent routing (district, alias list, optional box).
+model Zone {
+  id         String   @id @default(cuid())
+  name       String
+  slug       String   @unique
+  districtId String?  @map("district_id")
+  aliases    String[]
+  priority   Int      @default(1)
+  minLat     Decimal? @map("min_lat") @db.Decimal(9, 6)
+  minLng     Decimal? @map("min_lng") @db.Decimal(9, 6)
+  maxLat     Decimal? @map("max_lat") @db.Decimal(9, 6)
+  maxLng     Decimal? @map("max_lng") @db.Decimal(9, 6)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  agents      AgentProfile[]
+  dealTickets DealTicket[]
+
+  @@map("zones")
+}
+
+/// Field agent registration against a single zone. Agents do not self-serve this.
+model AgentProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  zoneId    String   @map("zone_id")
+  zone      Zone     @relation(fields: [zoneId], references: [id], onDelete: Restrict)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([zoneId, isActive])
+  @@map("agent_profiles")
+}
+
+/// Mediated deal for a FREE supplier. Subscribed suppliers never receive these.
+model DealTicket {
+  id            String           @id @default(cuid())
+  referenceCode String           @unique @map("reference_code")
+  buyerId       String           @map("buyer_id")
+  buyer         User             @relation("BuyerDealTickets", fields: [buyerId], references: [id], onDelete: Restrict)
+  sellerId      String           @map("seller_id")
+  seller        User             @relation("SellerDealTickets", fields: [sellerId], references: [id], onDelete: Restrict)
+  agentId       String?          @map("agent_id")
+  agent         User?            @relation("AgentDealTickets", fields: [agentId], references: [id], onDelete: SetNull)
+  zoneId        String           @map("zone_id")
+  zone          Zone             @relation(fields: [zoneId], references: [id], onDelete: Restrict)
+  listingId     String?          @map("listing_id")
+  listing       Listing?         @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  enquiryId     String?          @unique @map("enquiry_id")
+  enquiry       Enquiry?         @relation(fields: [enquiryId], references: [id], onDelete: SetNull)
+  status        DealTicketStatus @default(PENDING_AGENT)
+  orderTotal    Decimal          @default(0.00) @map("order_total") @db.Decimal(12, 2)
+  buyerBriefing String?          @map("buyer_briefing")
+  claimedAt     DateTime?        @map("claimed_at")
+  completedAt   DateTime?        @map("completed_at")
+  cancelledAt   DateTime?        @map("cancelled_at")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+
+  rooms      ChatRoom[]
+  commission Commission?
+
+  @@index([zoneId, status])
+  @@index([buyerId, sellerId, status])
+  @@index([agentId, status])
+  @@map("deal_tickets")
+}
+
+/// Fee split recorded when a mediated ticket reaches COMPLETED.
+model Commission {
+  id                   String                 @id @default(cuid())
+  dealTicketId         String                 @unique @map("deal_ticket_id")
+  dealTicket           DealTicket             @relation(fields: [dealTicketId], references: [id], onDelete: Cascade)
+  orderTotal           Decimal                @map("order_total") @db.Decimal(12, 2)
+  totalFeePercent      Decimal                @map("total_fee_percent") @db.Decimal(5, 2)
+  platformSharePercent Decimal                @map("platform_share_percent") @db.Decimal(5, 2)
+  agentSharePercent    Decimal                @map("agent_share_percent") @db.Decimal(5, 2)
+  platformAmount       Decimal                @map("platform_amount") @db.Decimal(12, 2)
+  agentAmount          Decimal                @map("agent_amount") @db.Decimal(12, 2)
+  payoutStatus         CommissionPayoutStatus @default(PENDING) @map("payout_status")
+  createdAt            DateTime               @default(now()) @map("created_at")
+  paidAt               DateTime?              @map("paid_at")
+
+  @@map("commissions")
+}
+
+/// Conversation. Participants are the non-null buyer/seller/agent FKs — no join table to forge.
+model ChatRoom {
+  id           String       @id @default(cuid())
+  type         ChatRoomType
+  buyerId      String?      @map("buyer_id")
+  buyer        User?        @relation("BuyerChatRooms", fields: [buyerId], references: [id], onDelete: Restrict)
+  sellerId     String?      @map("seller_id")
+  seller       User?        @relation("SellerChatRooms", fields: [sellerId], references: [id], onDelete: Restrict)
+  agentId      String?      @map("agent_id")
+  agent        User?        @relation("AgentChatRooms", fields: [agentId], references: [id], onDelete: Restrict)
+  dealTicketId String?      @map("deal_ticket_id")
+  dealTicket   DealTicket?  @relation(fields: [dealTicketId], references: [id], onDelete: Cascade)
+  enquiryId    String?      @map("enquiry_id")
+  listingId    String?      @map("listing_id")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  messages ChatMessage[]
+
+  @@unique([type, buyerId, sellerId])
+  @@unique([dealTicketId, type])
+  @@index([buyerId, updatedAt])
+  @@index([sellerId, updatedAt])
+  @@index([agentId, updatedAt])
+  @@map("chat_rooms")
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  roomId    String   @map("room_id")
+  room      ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  senderId  String   @map("sender_id")
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Restrict)
+  body      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([roomId, createdAt])
+  @@map("chat_messages")
 }

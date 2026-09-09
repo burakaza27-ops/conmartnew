@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   ethiopianPhoneSchema,
+  initiateConversationSchema,
   purchaseEnquirySchema,
   registerSchema,
   topUpRequestSchema,
@@ -36,7 +37,15 @@ describe("registerSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("refuses the field agent role, which is granted internally", () => {
+  it("accepts a field agent registration when a zone is selected", () => {
+    expect(
+      registerSchema.safeParse(
+        validRegistration({ role: "FIELD_AGENT", zoneId: "zone-koye-feche" })
+      ).success
+    ).toBe(true);
+  });
+
+  it("requires a zone when registering as a field agent", () => {
     const result = registerSchema.safeParse(
       validRegistration({ role: "FIELD_AGENT" })
     );
@@ -157,5 +166,36 @@ describe("topUpRequestSchema", () => {
     expect(
       topUpRequestSchema.safeParse({ ...base, paymentMethod: "BITCOIN" }).success
     ).toBe(false);
+  });
+});
+
+describe("initiateConversationSchema", () => {
+  it("accepts a listing-scoped start", () => {
+    expect(
+      initiateConversationSchema.safeParse({ listingId: "listing-1" }).success
+    ).toBe(true);
+  });
+
+  it("accepts an enquiry-scoped start", () => {
+    expect(
+      initiateConversationSchema.safeParse({ enquiryId: "enquiry-1" }).success
+    ).toBe(true);
+  });
+
+  it("rejects a request with neither listing nor enquiry — no way to invent a room", () => {
+    expect(initiateConversationSchema.safeParse({}).success).toBe(false);
+  });
+
+  it("has no forceDirect / bypass field a FREE supplier could set", () => {
+    const result = initiateConversationSchema.safeParse({
+      listingId: "listing-1",
+      forceDirect: true,
+      skipAgent: true,
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).not.toHaveProperty("forceDirect");
+      expect(result.data).not.toHaveProperty("skipAgent");
+    }
   });
 });

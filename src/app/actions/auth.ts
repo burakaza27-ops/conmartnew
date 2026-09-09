@@ -116,6 +116,7 @@ export async function signUp(
     phone: formData.get("phone"),
     companyName: formData.get("companyName"),
     role: formData.get("role"),
+    zoneId: formData.get("zoneId") || undefined,
   });
 
   if (!parsed.success) {
@@ -125,7 +126,7 @@ export async function signUp(
     };
   }
 
-  const { email, password, name, phone, companyName, role } = parsed.data;
+  const { email, password, name, phone, companyName, role, zoneId } = parsed.data;
 
   const clientId = await getClientIdentifier();
   const { allowed, retryAfterSeconds } = await rateLimit(`signup:ip:${clientId}`, {
@@ -167,6 +168,20 @@ export async function signUp(
 
   const authId = authData.user.id;
 
+  if (role === "FIELD_AGENT") {
+    const zone = await db.zone.findUnique({
+      where: { id: zoneId! },
+      select: { id: true },
+    });
+    if (!zone) {
+      await rollbackAuthUser(authId);
+      return {
+        success: false,
+        error: "The selected service zone is no longer available. Please choose another.",
+      };
+    }
+  }
+
   try {
     // Nested writes, not `db.$transaction(async (tx) => ...)`.
     // Interactive transactions pin a session, which PgBouncer in transaction
@@ -189,6 +204,16 @@ export async function signUp(
               },
               wallet: {
                 create: { cashBalance: 0, creditBalance: 0 },
+              },
+            }
+          : {}),
+        ...(role === "FIELD_AGENT" && zoneId
+          ? {
+              agentProfile: {
+                create: {
+                  zoneId,
+                  isActive: true,
+                },
               },
             }
           : {}),
