@@ -31,6 +31,7 @@ import {
   SellerType,
 } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { COVERAGE_AREAS } from "../src/lib/marketplace/coverage-areas";
 
 const connectionString = process.env.DATABASE_URL;
 
@@ -1186,56 +1187,35 @@ async function main(): Promise<void> {
   // ===========================================================================
   // ZONES, AGENT REGISTRATION, KOYE FECHE LISTING (free-supplier routing)
   // ===========================================================================
-  const zoneKoye = await prisma.zone.upsert({
-    where: { slug: "koye-feche" },
-    update: {
-      aliases: ["koye feche", "koyefeche", "koye", "lemi kura"],
-    },
-    create: {
-      id: "zone-koye-feche",
-      name: "Koye Feche",
-      slug: "koye-feche",
-      districtId: "lemi-kura",
-      aliases: ["koye feche", "koyefeche", "koye", "lemi kura"],
-    },
-  });
-
-  await Promise.all([
-    prisma.zone.upsert({
-      where: { slug: "merkato" },
-      update: { aliases: ["merkato", "addis ketema"] },
-      create: {
-        id: "zone-merkato",
-        name: "Merkato",
-        slug: "merkato",
-        districtId: "addis-ketema",
-        aliases: ["merkato", "addis ketema"],
-      },
-    }),
-    prisma.zone.upsert({
-      where: { slug: "kaliti" },
-      update: { aliases: ["kaliti", "kality", "akaki"] },
-      create: {
-        id: "zone-kaliti",
-        name: "Kaliti",
-        slug: "kaliti",
-        districtId: "akaki-kaliti",
-        aliases: ["kaliti", "kality", "akaki"],
-      },
-    }),
-    prisma.zone.upsert({
-      where: { slug: "addis-ababa" },
-      update: { aliases: ["addis", "addis ababa"], priority: 0 },
-      create: {
-        id: "zone-addis-ababa",
-        name: "Addis Ababa",
-        slug: "addis-ababa",
-        districtId: "addis-ababa",
-        aliases: ["addis", "addis ababa"],
-        priority: 0,
-      },
-    }),
-  ]);
+  const seededZones = await Promise.all(
+    COVERAGE_AREAS.map((area) =>
+      prisma.zone.upsert({
+        where: { slug: area.slug },
+        update: {
+          name: area.name,
+          aliases: [...area.aliases],
+          region: area.region,
+          priority: area.priority,
+          sortOrder: area.sortOrder,
+          districtId: area.districtId,
+        },
+        create: {
+          id: `zone-${area.slug}`,
+          name: area.name,
+          slug: area.slug,
+          aliases: [...area.aliases],
+          region: area.region,
+          priority: area.priority,
+          sortOrder: area.sortOrder,
+          districtId: area.districtId,
+        },
+      })
+    )
+  );
+  const zoneKoye = seededZones.find((zone) => zone.slug === "koye-feche");
+  if (!zoneKoye) {
+    throw new Error("Coverage catalog is missing koye-feche");
+  }
 
   await prisma.agentProfile.upsert({
     where: { userId: fieldAgentUser.id },
@@ -1277,7 +1257,7 @@ async function main(): Promise<void> {
   });
 
   console.log(
-    `✅ Seeded zones (Koye Feche, Merkato, Kaliti, Addis Ababa), agent ${fieldAgentUser.name} on Koye Feche, and a free-tier listing there`
+    `✅ Seeded ${COVERAGE_AREAS.length} coverage areas across Ethiopia, agent ${fieldAgentUser.name} on Koye Feche, and a free-tier listing there`
   );
   console.log("🎉 Database seeding complete!");
 }

@@ -1,15 +1,15 @@
 // =============================================================================
 // ConMart — Role Grant CLI
 // =============================================================================
-// ADMIN and FIELD_AGENT cannot be chosen at sign-up, because a public form
-// that mints privileged accounts is the same thing as no access control. They
-// are granted here instead, by someone with database credentials.
+// ADMIN cannot be chosen at sign-up. FIELD_AGENT can self-register, but this
+// script still promotes an existing account when operations needs to.
 //
 // Usage:
-//   npx tsx scripts/grant-role.ts <email> <BUYER|SELLER|ADMIN|FIELD_AGENT>
+//   npx tsx scripts/grant-role.ts <email> <BUYER|SELLER|ADMIN|FIELD_AGENT> [zone-slug]
 //
 // The account must already exist: register normally through the web form
-// first, then promote it.
+// first, then promote it. For FIELD_AGENT, pass a coverage slug such as
+// `koye-feche` or `bole`. Defaults to the nationwide fallback.
 // =============================================================================
 
 import dotenv from "dotenv";
@@ -28,11 +28,11 @@ function fail(message: string): never {
 }
 
 async function main(): Promise<void> {
-  const [email, requestedRole] = process.argv.slice(2);
+  const [email, requestedRole, zoneSlug] = process.argv.slice(2);
 
   if (!email || !requestedRole) {
     fail(
-      "Usage: npx tsx scripts/grant-role.ts <email> <role>\n" +
+      "Usage: npx tsx scripts/grant-role.ts <email> <role> [zone-slug]\n" +
         `  Roles: ${VALID_ROLES.join(", ")}`
     );
   }
@@ -95,8 +95,38 @@ async function main(): Promise<void> {
       );
     }
 
-    if (existing.role === requestedRole) {
+    if (existing.role === requestedRole && requestedRole !== "FIELD_AGENT") {
       console.log(`\n  ${email} is already ${requestedRole}. Nothing to do.\n`);
+      return;
+    }
+
+    if (requestedRole === "FIELD_AGENT") {
+      const slug = zoneSlug?.trim() || "ethiopia";
+      const zone = await prisma.zone.findUnique({
+        where: { slug },
+        select: { id: true, name: true },
+      });
+      if (!zone) {
+        fail(
+          `No coverage area with slug "${slug}". Seed coverage areas first, then retry.`
+        );
+      }
+
+      await prisma.user.update({
+        where: { id: existing.id },
+        data: { role: "FIELD_AGENT" },
+      });
+      await prisma.agentProfile.upsert({
+        where: { userId: existing.id },
+        update: { zoneId: zone.id, isActive: true },
+        create: { userId: existing.id, zoneId: zone.id, isActive: true },
+      });
+
+      console.log(
+        `\n  ${existing.name} <${email}>: ${existing.role} -> FIELD_AGENT (${zone.name})\n` +
+          "  The change takes effect on their next request; roles are read from the\n" +
+          "  database on every authorization check, so no re-login is needed.\n"
+      );
       return;
     }
 

@@ -18,9 +18,10 @@ import { useLanguage } from "@/lib/i18n/language-context";
 interface LoginFormProps {
   redirectUrl?: string;
   errorMessage?: string;
+  noticeMessage?: string;
 }
 
-export function LoginForm({ redirectUrl, errorMessage }: LoginFormProps) {
+export function LoginForm({ redirectUrl, errorMessage, noticeMessage }: LoginFormProps) {
   const router = useRouter();
   const { t } = useLanguage();
   const [isPending, startTransition] = useTransition();
@@ -75,6 +76,11 @@ export function LoginForm({ redirectUrl, errorMessage }: LoginFormProps) {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <FormAlert>{serverError}</FormAlert>
+        {noticeMessage && !serverError ? (
+          <p className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2.5 text-sm text-foreground">
+            {noticeMessage}
+          </p>
+        ) : null}
 
         <div className="space-y-2">
           <Label htmlFor="login-email">{t("auth_email_label")}</Label>

@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 interface LoginPageProps {
-  searchParams: Promise<{ redirect?: string; error?: string }>;
+  searchParams: Promise<{ redirect?: string; error?: string; registered?: string }>;
 }
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
@@ -20,6 +20,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   return (
     <LoginForm
       redirectUrl={params.redirect}
+      noticeMessage={
+        params.registered === "1"
+          ? "Account created. Sign in with the same email and password to continue."
+          : undefined
+      }
       errorMessage={
         params.error === "auth_failed"
           ? "Authentication failed. Please try again."

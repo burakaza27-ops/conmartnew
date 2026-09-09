@@ -543,7 +543,9 @@ model Zone {
   slug       String   @unique
   districtId String?  @map("district_id")
   aliases    String[]
+  region     String   @default("Ethiopia")
   priority   Int      @default(1)
+  sortOrder  Int      @default(100) @map("sort_order")
   minLat     Decimal? @map("min_lat") @db.Decimal(9, 6)
   minLng     Decimal? @map("min_lng") @db.Decimal(9, 6)
   maxLat     Decimal? @map("max_lat") @db.Decimal(9, 6)
@@ -556,7 +558,7 @@ model Zone {
   @@map("zones")
 }
 
-/// Field agent registration against a single zone. Agents do not self-serve this.
+/// Field agent registration against a single coverage zone.
 model AgentProfile {
   id        String   @id @default(cuid())
   userId    String   @unique @map("user_id")

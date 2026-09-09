@@ -23,7 +23,7 @@ import {
   canAgentClaimTicket,
   isOpenDealTicket,
 } from "@/lib/marketplace/deal-ticket";
-import { matchZone, type ZoneCandidate } from "@/lib/marketplace/zone-matching";
+import { resolveCoverageZone, type ZoneCandidate } from "@/lib/marketplace/zone-matching";
 import { resolveSubscription } from "@/lib/marketplace/subscription";
 
 export type InitiateKind = "DIRECT" | "MEDIATED" | "PENDING_AGENT";
@@ -76,11 +76,15 @@ export async function initiateConversation(input: {
   });
 
   if (ticket.agentId) {
-    const room = ticket.rooms.find((item) => item.type === "BUYER_AGENT");
-    if (!room) {
-      throw new DomainError("The agent channel for this deal is not ready yet.");
-    }
-    return { kind: "MEDIATED", roomId: room.id, ticketId: ticket.id };
+    const rooms = await ensureMediatedRooms({
+      ticketId: ticket.id,
+      agentId: ticket.agentId,
+      buyerId: ticket.buyerId,
+      sellerId: ticket.sellerId,
+      enquiryId: ticket.enquiryId ?? null,
+      listingId: ticket.listingId ?? null,
+    });
+    return { kind: "MEDIATED", roomId: rooms.buyerRoomId, ticketId: ticket.id };
   }
 
   return {
@@ -217,31 +221,19 @@ export async function claimDealTicket(input: {
     throw new DomainError("Another agent claimed this deal first.");
   }
 
-  const [buyerRoom, sellerRoom] = await Promise.all([
-    createMediatedRoom({
-      type: "BUYER_AGENT",
-      buyerId: ticket.buyerId,
-      sellerId: null,
-      agentId: input.actor.id,
-      dealTicketId: ticket.id,
-      enquiryId: ticket.enquiryId,
-      listingId: ticket.listingId,
-    }),
-    createMediatedRoom({
-      type: "SELLER_AGENT",
-      buyerId: null,
-      sellerId: ticket.sellerId,
-      agentId: input.actor.id,
-      dealTicketId: ticket.id,
-      enquiryId: ticket.enquiryId,
-      listingId: ticket.listingId,
-    }),
-  ]);
+  const rooms = await ensureMediatedRooms({
+    ticketId: ticket.id,
+    agentId: input.actor.id,
+    buyerId: ticket.buyerId,
+    sellerId: ticket.sellerId,
+    enquiryId: ticket.enquiryId ?? null,
+    listingId: ticket.listingId ?? null,
+  });
 
   return {
     ticketId: ticket.id,
-    buyerRoomId: buyerRoom.id,
-    sellerRoomId: sellerRoom.id,
+    buyerRoomId: rooms.buyerRoomId,
+    sellerRoomId: rooms.sellerRoomId,
   };
 }
 
@@ -579,29 +571,74 @@ async function ensureOpenDealTicket(input: {
     maxLng: zone.maxLng == null ? null : Number(zone.maxLng),
   }));
 
-  const match = matchZone(input.location, candidates);
+  const match = resolveCoverageZone(input.location, candidates);
   if (!match) {
     throw new DomainError(
-      "No local agent zone covers this depot. Ask ConMart operations to map the location."
+      "No coverage area is configured. Ask ConMart operations to seed location zones."
     );
   }
 
-  return db.dealTicket.create({
-    data: {
-      referenceCode: generateReferenceCode("DLT"),
+  try {
+    return await db.dealTicket.create({
+      data: {
+        referenceCode: generateReferenceCode("DLT"),
+        buyerId: input.buyerId,
+        sellerId: input.sellerId,
+        zoneId: match.zoneId,
+        listingId: input.listingId,
+        enquiryId: input.enquiryId,
+        status: "PENDING_AGENT",
+        orderTotal: input.orderTotal,
+        buyerBriefing: input.briefing
+          ? filterLeakedContactText(input.briefing)
+          : null,
+      },
+      include: { zone: { select: { name: true } }, rooms: { select: { id: true, type: true } } },
+    });
+  } catch {
+    if (input.enquiryId) {
+      const raced = await db.dealTicket.findUnique({
+        where: { enquiryId: input.enquiryId },
+        include: { zone: { select: { name: true } }, rooms: { select: { id: true, type: true } } },
+      });
+      if (raced && isOpenDealTicket(raced.status)) {
+        return raced;
+      }
+    }
+    throw new DomainError("Could not open an agent ticket for this deal. Please try again.");
+  }
+}
+
+async function ensureMediatedRooms(input: {
+  ticketId: string;
+  agentId: string;
+  buyerId: string;
+  sellerId: string;
+  enquiryId: string | null;
+  listingId: string | null;
+}): Promise<{ buyerRoomId: string; sellerRoomId: string }> {
+  const [buyerRoom, sellerRoom] = await Promise.all([
+    createMediatedRoom({
+      type: "BUYER_AGENT",
       buyerId: input.buyerId,
-      sellerId: input.sellerId,
-      zoneId: match.zoneId,
-      listingId: input.listingId,
+      sellerId: null,
+      agentId: input.agentId,
+      dealTicketId: input.ticketId,
       enquiryId: input.enquiryId,
-      status: "PENDING_AGENT",
-      orderTotal: input.orderTotal,
-      buyerBriefing: input.briefing
-        ? filterLeakedContactText(input.briefing)
-        : null,
-    },
-    include: { zone: { select: { name: true } }, rooms: { select: { id: true, type: true } } },
-  });
+      listingId: input.listingId,
+    }),
+    createMediatedRoom({
+      type: "SELLER_AGENT",
+      buyerId: null,
+      sellerId: input.sellerId,
+      agentId: input.agentId,
+      dealTicketId: input.ticketId,
+      enquiryId: input.enquiryId,
+      listingId: input.listingId,
+    }),
+  ]);
+
+  return { buyerRoomId: buyerRoom.id, sellerRoomId: sellerRoom.id };
 }
 
 async function createMediatedRoom(input: {
@@ -613,6 +650,19 @@ async function createMediatedRoom(input: {
   enquiryId: string | null;
   listingId: string | null;
 }) {
+  const existing = await db.chatRoom.findUnique({
+    where: {
+      dealTicketId_type: {
+        dealTicketId: input.dealTicketId,
+        type: input.type,
+      },
+    },
+    select: { id: true },
+  });
+  if (existing) {
+    return existing;
+  }
+
   const shape = validateRoomShape(
     {
       type: input.type,
@@ -628,18 +678,32 @@ async function createMediatedRoom(input: {
     throw new DomainError("Refusing to create a chat room that would bypass the agent.");
   }
 
-  return db.chatRoom.create({
-    data: {
-      type: input.type,
-      buyerId: input.buyerId,
-      sellerId: input.sellerId,
-      agentId: input.agentId,
-      dealTicketId: input.dealTicketId,
-      enquiryId: input.enquiryId,
-      listingId: input.listingId,
-    },
-    select: { id: true },
-  });
+  try {
+    return await db.chatRoom.create({
+      data: {
+        type: input.type,
+        buyerId: input.buyerId,
+        sellerId: input.sellerId,
+        agentId: input.agentId,
+        dealTicketId: input.dealTicketId,
+        enquiryId: input.enquiryId,
+        listingId: input.listingId,
+      },
+      select: { id: true },
+    });
+  } catch {
+    const raced = await db.chatRoom.findUnique({
+      where: {
+        dealTicketId_type: {
+          dealTicketId: input.dealTicketId,
+          type: input.type,
+        },
+      },
+      select: { id: true },
+    });
+    if (raced) return raced;
+    throw new DomainError("Could not open the agent channel. Please try again.");
+  }
 }
 
 function assertActorCanManageTicket(

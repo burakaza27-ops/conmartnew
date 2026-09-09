@@ -119,6 +119,37 @@ export function matchZone(
   return best;
 }
 
+/**
+ * Production routing: a named neighbourhood or city when possible, otherwise
+ * the nationwide catch-all so a free-supplier deal never dies for lack of a
+ * mapped depot string.
+ */
+export function resolveCoverageZone(
+  location: string,
+  zones: readonly ZoneCandidate[],
+  point?: GeoPoint | null
+): ZoneMatch | null {
+  const match = matchZone(location, zones, point);
+  if (match) return match;
+
+  const ethiopia = zones.find((zone) => zone.slug === "ethiopia");
+  if (ethiopia) {
+    return { zoneId: ethiopia.id, score: 0, matchedAlias: ethiopia.name };
+  }
+
+  const catchAll = zones
+    .filter((zone) => (zone.priority ?? 1) === 0)
+    .sort((a, b) => a.slug.localeCompare(b.slug))[0];
+
+  if (catchAll) {
+    return { zoneId: catchAll.id, score: 0, matchedAlias: catchAll.name };
+  }
+
+  return zones[0]
+    ? { zoneId: zones[0].id, score: 0, matchedAlias: zones[0].name }
+    : null;
+}
+
 function containsPhrase(haystack: string, needle: string): boolean {
   if (haystack === needle) return true;
   return ` ${haystack} `.includes(` ${needle} `);

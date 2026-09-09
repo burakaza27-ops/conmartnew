@@ -2,12 +2,12 @@
 // ConMart — Register Form (Client Component)
 // =============================================================================
 // Registration with role selection: BUYER, SELLER, or FIELD_AGENT (local agent).
-// Agents must pick a service zone so job-board routing works immediately.
+// Agents must pick a coverage area so job-board routing works immediately.
 // =============================================================================
 
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm, useWatch } from "react-hook-form";
@@ -28,11 +28,30 @@ interface RegisterFormProps {
   zones: RegistrationZoneOption[];
 }
 
+function groupedZones(zones: RegistrationZoneOption[], query: string) {
+  const needle = query.trim().toLowerCase();
+  const filtered = needle
+    ? zones.filter((zone) =>
+        `${zone.name} ${zone.region} ${zone.slug}`.toLowerCase().includes(needle)
+      )
+    : zones;
+
+  const groups = new Map<string, RegistrationZoneOption[]>();
+  for (const zone of filtered) {
+    const key = zone.region || "Ethiopia";
+    const list = groups.get(key) ?? [];
+    list.push(zone);
+    groups.set(key, list);
+  }
+  return groups;
+}
+
 export function RegisterForm({ zones }: RegisterFormProps) {
   const router = useRouter();
   const { t } = useLanguage();
   const [isPending, startTransition] = useTransition();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [zoneQuery, setZoneQuery] = useState("");
 
   const {
     register,
@@ -55,6 +74,18 @@ export function RegisterForm({ zones }: RegisterFormProps) {
   });
 
   const selectedRole = useWatch({ control, name: "role" });
+  const zoneGroups = useMemo(
+    () => groupedZones(zones, zoneQuery),
+    [zones, zoneQuery]
+  );
+
+  function selectRole(role: RegisterFormData["role"]) {
+    setValue("role", role, { shouldValidate: true });
+    if (role !== "FIELD_AGENT") {
+      setValue("zoneId", "", { shouldValidate: true });
+      setZoneQuery("");
+    }
+  }
 
   function onSubmit(data: RegisterFormData) {
     setServerError(null);
@@ -68,7 +99,7 @@ export function RegisterForm({ zones }: RegisterFormProps) {
       formData.set("phone", data.phone);
       formData.set("companyName", data.companyName);
       formData.set("role", data.role);
-      if (data.zoneId) {
+      if (data.role === "FIELD_AGENT" && data.zoneId) {
         formData.set("zoneId", data.zoneId);
       }
 
@@ -108,7 +139,7 @@ export function RegisterForm({ zones }: RegisterFormProps) {
           <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
-              onClick={() => setValue("role", "BUYER")}
+              onClick={() => selectRole("BUYER")}
               aria-pressed={selectedRole === "BUYER"}
               className={roleButtonClass("BUYER")}
             >
@@ -117,7 +148,7 @@ export function RegisterForm({ zones }: RegisterFormProps) {
             </button>
             <button
               type="button"
-              onClick={() => setValue("role", "SELLER")}
+              onClick={() => selectRole("SELLER")}
               aria-pressed={selectedRole === "SELLER"}
               className={roleButtonClass("SELLER")}
             >
@@ -126,12 +157,12 @@ export function RegisterForm({ zones }: RegisterFormProps) {
             </button>
             <button
               type="button"
-              onClick={() => setValue("role", "FIELD_AGENT")}
+              onClick={() => selectRole("FIELD_AGENT")}
               aria-pressed={selectedRole === "FIELD_AGENT"}
               className={roleButtonClass("FIELD_AGENT")}
             >
               <MapPin className="h-5 w-5" />
-              <span className="line-clamp-2">{t("auth_role_agent", "Local agent")}</span>
+              <span className="line-clamp-2">{t("auth_role_agent")}</span>
             </button>
           </div>
           <input type="hidden" {...register("role")} />
@@ -142,40 +173,54 @@ export function RegisterForm({ zones }: RegisterFormProps) {
 
         {selectedRole === "FIELD_AGENT" && (
           <div className="space-y-2">
-            <Label htmlFor="reg-zone">{t("auth_agent_zone_label", "Service zone")}</Label>
+            <Label htmlFor="reg-zone">{t("auth_agent_zone_label")}</Label>
             {zones.length === 0 ? (
               <p className="text-xs text-muted-foreground">
-                {t(
-                  "auth_agent_zone_empty",
-                  "No zones are configured yet. Contact ConMart operations to finish agent onboarding."
-                )}
+                {t("auth_agent_zone_empty")}
               </p>
             ) : (
-              <select
-                id="reg-zone"
-                disabled={isPending}
-                className="flex h-10 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40 disabled:opacity-60"
-                {...register("zoneId")}
-                aria-invalid={!!errors.zoneId}
-              >
-                <option value="">
-                  {t("auth_agent_zone_placeholder", "Select your coverage area")}
-                </option>
-                {zones.map((zone) => (
-                  <option key={zone.id} value={zone.id}>
-                    {zone.name}
+              <>
+                <Input
+                  id="reg-zone-search"
+                  value={zoneQuery}
+                  onChange={(event) => setZoneQuery(event.target.value)}
+                  placeholder={t("auth_agent_zone_search")}
+                  disabled={isPending}
+                  autoComplete="off"
+                />
+                <select
+                  id="reg-zone"
+                  disabled={isPending}
+                  className="flex h-10 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40 disabled:opacity-60"
+                  {...register("zoneId")}
+                  aria-invalid={!!errors.zoneId}
+                >
+                  <option value="">
+                    {t("auth_agent_zone_placeholder")}
                   </option>
-                ))}
-              </select>
+                  {[...zoneGroups.entries()].map(([region, regionZones]) => (
+                    <optgroup key={region} label={region}>
+                      {regionZones.map((zone) => (
+                        <option key={zone.id} value={zone.id}>
+                          {zone.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+                <p className="text-2xs text-muted-foreground">
+                  {t("auth_agent_zone_count").replace(
+                    "{count}",
+                    String(zones.length)
+                  )}
+                </p>
+              </>
             )}
             {errors.zoneId && (
               <p className="text-xs text-destructive">{errors.zoneId.message}</p>
             )}
             <p className="text-2xs text-muted-foreground">
-              {t(
-                "auth_agent_zone_hint",
-                "You will only see and claim free-supplier deals routed to this zone."
-              )}
+              {t("auth_agent_zone_hint")}
             </p>
           </div>
         )}
@@ -201,7 +246,7 @@ export function RegisterForm({ zones }: RegisterFormProps) {
             id="reg-company"
             placeholder={
               selectedRole === "FIELD_AGENT"
-                ? t("auth_agent_company_placeholder", "e.g. ConMart Field Operations")
+                ? t("auth_agent_company_placeholder")
                 : t("auth_company_placeholder")
             }
             disabled={isPending}

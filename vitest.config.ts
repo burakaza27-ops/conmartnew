@@ -20,6 +20,7 @@ export default defineConfig({
         "src/lib/marketplace/subscription.ts",
         "src/lib/marketplace/chat-guard.ts",
         "src/lib/marketplace/zone-matching.ts",
+        "src/lib/marketplace/coverage-areas.ts",
         "src/lib/marketplace/deal-ticket.ts",
         "src/lib/marketplace/commission.ts",
       ],

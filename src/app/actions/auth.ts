@@ -100,10 +100,10 @@ export async function signIn(
 }
 
 /**
- * Registers a buyer or supplier account.
+ * Registers a buyer, supplier, or local-agent account.
  *
- * Sellers start UNVERIFIED with an empty wallet. Verification is granted by an
- * administrator from the command center after documents are reviewed.
+ * Sellers start UNVERIFIED with an empty wallet. Agents must pick a coverage
+ * area before any Auth user is created, so a bad zone never orphans a login.
  */
 export async function signUp(
   formData: FormData
@@ -126,16 +126,38 @@ export async function signUp(
     };
   }
 
-  const { email, password, name, phone, companyName, role, zoneId } = parsed.data;
+  const { email, password, name, phone, companyName, role } = parsed.data;
+  const zoneId = role === "FIELD_AGENT" ? parsed.data.zoneId : undefined;
 
   const clientId = await getClientIdentifier();
-  const { allowed, retryAfterSeconds } = await rateLimit(`signup:ip:${clientId}`, {
-    limit: 5,
-    windowSeconds: 3600,
-  });
+  const emailKey = email.toLowerCase();
+  const [byEmail, byIp] = await Promise.all([
+    rateLimit(`signup:email:${emailKey}`, { limit: 5, windowSeconds: 3600 }),
+    rateLimit(`signup:ip:${clientId}`, { limit: 8, windowSeconds: 3600 }),
+  ]);
 
-  if (!allowed) {
-    return { success: false, error: rateLimitMessage(retryAfterSeconds) };
+  if (!byEmail.allowed || !byIp.allowed) {
+    const retryAfter = Math.max(byEmail.retryAfterSeconds, byIp.retryAfterSeconds);
+    return { success: false, error: rateLimitMessage(retryAfter) };
+  }
+
+  if (role === "FIELD_AGENT") {
+    if (!zoneId) {
+      return {
+        success: false,
+        error: "Select the coverage area you will work as a local agent.",
+      };
+    }
+    const zone = await db.zone.findUnique({
+      where: { id: zoneId },
+      select: { id: true },
+    });
+    if (!zone) {
+      return {
+        success: false,
+        error: "The selected coverage area is no longer available. Refresh the page and choose again.",
+      };
+    }
   }
 
   const supabase = await createSupabaseServerClient();
@@ -168,18 +190,17 @@ export async function signUp(
 
   const authId = authData.user.id;
 
-  if (role === "FIELD_AGENT") {
-    const zone = await db.zone.findUnique({
-      where: { id: zoneId! },
-      select: { id: true },
-    });
-    if (!zone) {
-      await rollbackAuthUser(authId);
-      return {
-        success: false,
-        error: "The selected service zone is no longer available. Please choose another.",
-      };
-    }
+  const existingProfile = await db.user.findUnique({
+    where: { authId },
+    select: { id: true, role: true },
+  });
+
+  if (existingProfile) {
+    revalidatePath("/", "layout");
+    return {
+      success: true,
+      data: { redirectUrl: defaultRouteForRole(existingProfile.role) },
+    };
   }
 
   try {
@@ -220,6 +241,14 @@ export async function signUp(
       },
     });
   } catch (dbError) {
+    const raced = await db.user.findUnique({
+      where: { authId },
+      select: { role: true },
+    });
+    if (raced) {
+      revalidatePath("/", "layout");
+      return { success: true, data: { redirectUrl: defaultRouteForRole(raced.role) } };
+    }
     await rollbackAuthUser(authId);
     return {
       success: false,
@@ -232,6 +261,9 @@ export async function signUp(
   }
 
   revalidatePath("/", "layout");
+  if (!authData.session) {
+    return { success: true, data: { redirectUrl: "/login?registered=1" } };
+  }
   return { success: true, data: { redirectUrl: defaultRouteForRole(role) } };
 }
 

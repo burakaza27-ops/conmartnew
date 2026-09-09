@@ -52,6 +52,13 @@ describe("registerSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  it("rejects a blank coverage area for a field agent", () => {
+    const result = registerSchema.safeParse(
+      validRegistration({ role: "FIELD_AGENT", zoneId: "   " })
+    );
+    expect(result.success).toBe(false);
+  });
+
   it("requires the two password entries to match", () => {
     const result = registerSchema.safeParse(
       validRegistration({ confirmPassword: "Password2" })
