@@ -33,7 +33,7 @@ import {
   defaultRouteForRole,
   getSessionUser,
 } from "@/lib/auth/session";
-import { getPublicOrigin } from "@/lib/auth/origin";
+import { getPasswordRecoveryRedirectUrl } from "@/lib/auth/origin";
 import {
   PASSWORD_RECOVERY_COOKIE,
 } from "@/lib/auth/password-recovery";
@@ -515,10 +515,10 @@ export async function requestPasswordResetAction(
     return { success: false, error: rateLimitMessage(retryAfter) };
   }
 
-  const origin = await getPublicOrigin();
+  const redirectTo = await getPasswordRecoveryRedirectUrl();
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: `${origin}/auth/callback?next=/reset-password`,
+    redirectTo,
   });
 
   if (error) {

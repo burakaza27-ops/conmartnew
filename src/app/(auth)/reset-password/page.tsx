@@ -21,7 +21,7 @@ export default async function ResetPasswordPage() {
   }
 
   if (!hasRecovery) {
-    redirect("/account/settings");
+    redirect("/forgot-password?error=expired");
   }
 
   return <ResetPasswordForm />;

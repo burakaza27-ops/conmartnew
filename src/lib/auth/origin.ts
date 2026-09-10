@@ -1,9 +1,11 @@
 // =============================================================================
 // ConMart — Public origin for email links
 // =============================================================================
-// Password-reset emails must bounce the contractor back to *this* deployment,
-// not a hardcoded production host. The request Host header is the source of
-// truth; NEXT_PUBLIC_SITE_URL is the fallback when headers are missing.
+// Password-reset emails must always use your *canonical* production domain,
+// not whichever Vercel preview URL happened to handle the forgot-password
+// form. Set NEXT_PUBLIC_SITE_URL in Vercel to your real domain (e.g.
+// https://conmart.et). Request Host is only used when that variable is unset
+// (local dev).
 // =============================================================================
 
 import "server-only";
@@ -13,11 +15,17 @@ import { headers } from "next/headers";
 /**
  * Absolute origin used in `resetPasswordForEmail` redirectTo.
  *
- * Must be listed under Supabase Authentication → URL Configuration →
- * Redirect URLs (for example `http://localhost:3000/auth/callback` and
- * `https://your-domain/auth/callback`).
+ * Add every callback URL in Supabase → Authentication → URL Configuration:
+ *   https://YOUR-DOMAIN/auth/callback
+ *   https://YOUR-DOMAIN/auth/callback/recovery
+ *   https://YOUR-DOMAIN/auth/confirm
  */
 export async function getPublicOrigin(): Promise<string> {
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+  if (configured) {
+    return configured;
+  }
+
   const headerList = await headers();
   const hostHeader =
     headerList.get("x-forwarded-host") ?? headerList.get("host");
@@ -31,14 +39,15 @@ export async function getPublicOrigin(): Promise<string> {
     return `${proto}://${host}`;
   }
 
-  const configured = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
-  if (configured) {
-    return configured;
-  }
-
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
 
   return "http://localhost:3000";
+}
+
+/** Build the Supabase redirectTo URL for password recovery emails. */
+export async function getPasswordRecoveryRedirectUrl(): Promise<string> {
+  const origin = await getPublicOrigin();
+  return `${origin}/auth/callback/recovery`;
 }
