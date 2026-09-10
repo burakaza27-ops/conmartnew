@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Briefcase, Loader2 } from "lucide-react";
@@ -40,15 +40,19 @@ export function AgentJobBoardView({ zoneName, tickets }: AgentJobBoardViewProps)
   const { t, locale } = useLanguage();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [claimError, setClaimError] = useState<string | null>(null);
   const openJobs = tickets.filter((ticket) => ticket.status === "PENDING_AGENT");
   const mine = tickets.filter((ticket) => ticket.assignedToMe);
 
   const claim = (ticketId: string) => {
+    setClaimError(null);
     startTransition(async () => {
       const result = await claimDealTicketAction({ ticketId });
       if (result.success) {
         router.push(`/agent/deals/${result.data.ticketId}`);
+        return;
       }
+      setClaimError(result.error ?? "Could not claim this deal.");
     });
   };
 
@@ -62,6 +66,12 @@ export function AgentJobBoardView({ zoneName, tickets }: AgentJobBoardViewProps)
         )}
         eyebrow={zoneName}
       />
+
+      {claimError ? (
+        <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          {claimError}
+        </p>
+      ) : null}
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-foreground">

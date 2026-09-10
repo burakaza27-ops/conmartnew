@@ -53,6 +53,13 @@ export interface BuyerEnquiryItem {
   categoryName: string;
   listingLocation: string;
   isUnlocked: boolean;
+  directChatEnabled: boolean;
+  dealTicket: {
+    id: string;
+    referenceCode: string;
+    status: string;
+    roomId: string | null;
+  } | null;
   sellerContact: {
     name?: string;
     companyName?: string | null;
@@ -310,6 +317,7 @@ export function BuyerEnquiriesView({ initialEnquiries }: BuyerEnquiriesViewProps
 
                   <StartChatButton
                     enquiryId={enq.id}
+                    directChatEnabled={enq.directChatEnabled}
                     size="sm"
                     variant="outline"
                     className="w-fit gap-1.5 text-xs font-semibold"

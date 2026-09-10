@@ -35,6 +35,8 @@ import {
   getLocalizedLocation,
 } from "@/lib/i18n/translations";
 import { PurchaseRequestModal } from "@/components/enquiry/purchase-request-modal";
+import { StartChatButton } from "@/components/chat/start-chat-button";
+import { StatusBadge } from "@/components/ui/status-badge";
 import type { ProductWithOffers, CompetingOffer } from "@/lib/data/catalog";
 
 interface ProductOffersViewProps {
@@ -178,6 +180,12 @@ export function ProductOffersView({ product }: ProductOffersViewProps) {
                           <Badge variant="outline" className="text-[10px] font-mono uppercase">
                             {offer.sellerType}
                           </Badge>
+                          <StatusBadge
+                            domain="subscription"
+                            status={offer.directChatEnabled ? "ACTIVE" : "FREE"}
+                            locale={locale}
+                            size="sm"
+                          />
                         </div>
 
                         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-1.5">
@@ -266,6 +274,14 @@ export function ProductOffersView({ product }: ProductOffersViewProps) {
                           <Calculator className="h-3.5 w-3.5" />
                           {t("offers_btn_proforma")}
                         </Link>
+
+                        <StartChatButton
+                          listingId={offer.listingId}
+                          directChatEnabled={offer.directChatEnabled}
+                          size="sm"
+                          variant={offer.directChatEnabled ? "secondary" : "outline"}
+                          className="gap-1.5 text-xs font-semibold"
+                        />
 
                         <Button
                           size="sm"

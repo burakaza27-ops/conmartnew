@@ -25,6 +25,8 @@ interface ChatThreadProps {
   roomId: string;
   type: string;
   messages: ChatMessageItem[];
+  counterpartName?: string | null;
+  listingTitle?: string | null;
   ticket?: {
     id: string;
     referenceCode: string;
@@ -33,7 +35,14 @@ interface ChatThreadProps {
   } | null;
 }
 
-export function ChatThread({ roomId, type, messages, ticket }: ChatThreadProps) {
+export function ChatThread({
+  roomId,
+  type,
+  messages,
+  counterpartName,
+  listingTitle,
+  ticket,
+}: ChatThreadProps) {
   const { t, locale } = useLanguage();
   const router = useRouter();
   const [body, setBody] = useState("");
@@ -77,18 +86,18 @@ export function ChatThread({ roomId, type, messages, ticket }: ChatThreadProps) 
     <div className="flex min-h-[70vh] flex-col rounded-xl border border-border bg-card">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
         <div>
-          <h1 className="text-base font-semibold text-foreground">{title}</h1>
-          {ticket ? (
-            <p className="text-xs text-muted-foreground">
-              {ticket.referenceCode} · {ticket.zoneName}
-            </p>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              {t("chat_direct_hint", "Subscribed supplier — contacts may be exchanged here.")}
-            </p>
-          )}
+          <h1 className="text-base font-semibold text-foreground">
+            {counterpartName || title}
+          </h1>
+          <p className="text-xs text-muted-foreground">
+            {title}
+            {listingTitle ? ` · ${listingTitle}` : ""}
+            {ticket ? ` · ${ticket.referenceCode} · ${ticket.zoneName}` : ""}
+          </p>
         </div>
-        {ticket ? <StatusBadge domain="dealTicket" status={ticket.status} locale={locale} /> : null}
+        {ticket ? <StatusBadge domain="dealTicket" status={ticket.status} locale={locale} /> : (
+          <StatusBadge domain="subscription" status="ACTIVE" locale={locale} size="sm" />
+        )}
       </div>
 
       <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">

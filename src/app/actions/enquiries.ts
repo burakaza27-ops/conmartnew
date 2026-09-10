@@ -49,6 +49,7 @@ import {
 import { DomainError, toSafeErrorMessage } from "@/lib/errors";
 import { EnquiryStatus, OutcomeType } from "@prisma/client";
 import { ensureDealTicketForEnquiry } from "@/lib/marketplace/service";
+import { isDirectChatEntitled } from "@/lib/marketplace/subscription";
 
 /** A seller is suspended once they fail this many deals at this failure rate. */
 const SUSPENSION_MIN_FAILED_DEALS = 4;
@@ -164,6 +165,9 @@ export async function submitPurchaseEnquiryAction(
 
     revalidatePath("/buyer/enquiries");
     revalidatePath("/seller/enquiries");
+    revalidatePath("/seller/dashboard");
+    revalidatePath("/buyer/deals");
+    revalidatePath("/seller/deals");
     revalidatePath("/agent");
 
     return {
@@ -702,7 +706,17 @@ export async function getSellerEnquiriesAction() {
     where: { sellerId: seller.id },
     include: {
       buyer: { select: { id: true, name: true, phone: true, companyName: true } },
-      seller: { select: { id: true, name: true, phone: true, companyName: true } },
+      seller: {
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          companyName: true,
+          sellerProfile: {
+            select: { subscriptionStatus: true, subscriptionExpiresAt: true },
+          },
+        },
+      },
       listing: {
         include: {
           product: {
@@ -711,6 +725,14 @@ export async function getSellerEnquiriesAction() {
         },
       },
       unlockRecord: true,
+      dealTicket: {
+        select: {
+          id: true,
+          referenceCode: true,
+          status: true,
+          rooms: { select: { id: true, type: true } },
+        },
+      },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -738,6 +760,8 @@ export async function getSellerEnquiriesAction() {
         categoryName: enquiry.listing.product.category.name,
         unlockFee: Number(enquiry.listing.product.category.unlockFee),
         isUnlocked: contact.isUnlocked,
+        directChatEnabled: isDirectChatEntitled(enquiry.seller.sellerProfile),
+        dealTicket: mapEnquiryDealTicket(enquiry.dealTicket, "SELLER"),
         buyerContact: contact.buyer,
         unlockRecord: enquiry.unlockRecord
           ? {
@@ -764,7 +788,17 @@ export async function getBuyerEnquiriesAction() {
     where: { buyerId: buyer.id },
     include: {
       buyer: { select: { id: true, name: true, phone: true, companyName: true } },
-      seller: { select: { id: true, name: true, phone: true, companyName: true } },
+      seller: {
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          companyName: true,
+          sellerProfile: {
+            select: { subscriptionStatus: true, subscriptionExpiresAt: true },
+          },
+        },
+      },
       listing: {
         include: {
           product: {
@@ -773,6 +807,14 @@ export async function getBuyerEnquiriesAction() {
         },
       },
       unlockRecord: true,
+      dealTicket: {
+        select: {
+          id: true,
+          referenceCode: true,
+          status: true,
+          rooms: { select: { id: true, type: true } },
+        },
+      },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -802,6 +844,8 @@ export async function getBuyerEnquiriesAction() {
         // the supplier's street-level depot address.
         listingLocation: contact.seller.location,
         isUnlocked: contact.isUnlocked,
+        directChatEnabled: isDirectChatEntitled(enquiry.seller.sellerProfile),
+        dealTicket: mapEnquiryDealTicket(enquiry.dealTicket, "BUYER"),
         sellerContact: contact.seller,
         unlockRecord: enquiry.unlockRecord
           ? {
@@ -811,5 +855,27 @@ export async function getBuyerEnquiriesAction() {
           : null,
       };
     }),
+  };
+}
+
+function mapEnquiryDealTicket(
+  ticket:
+    | {
+        id: string;
+        referenceCode: string;
+        status: string;
+        rooms: { id: string; type: string }[];
+      }
+    | null
+    | undefined,
+  viewer: "BUYER" | "SELLER"
+) {
+  if (!ticket) return null;
+  const roomType = viewer === "BUYER" ? "BUYER_AGENT" : "SELLER_AGENT";
+  return {
+    id: ticket.id,
+    referenceCode: ticket.referenceCode,
+    status: ticket.status,
+    roomId: ticket.rooms.find((room) => room.type === roomType)?.id ?? null,
   };
 }

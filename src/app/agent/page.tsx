@@ -2,6 +2,8 @@ import { requireRole } from "@/lib/auth/session";
 import { getAgentJobBoardAction } from "@/app/actions/marketplace";
 import { AgentJobBoardView } from "./job-board-view";
 
+export const dynamic = "force-dynamic";
+
 export default async function AgentJobBoardPage() {
   await requireRole(["FIELD_AGENT", "ADMIN"], "/agent");
   const result = await getAgentJobBoardAction();

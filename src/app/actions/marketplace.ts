@@ -252,13 +252,15 @@ export async function setSellerSubscriptionAction(
         subscriptionStatus: parsed.data.status,
         subscriptionExpiresAt: parsed.data.expiresAt
           ? new Date(parsed.data.expiresAt)
-          : parsed.data.status === "FREE"
-            ? null
-            : undefined,
+          : null,
       },
     });
+    revalidateMarketplaceSurfaces();
     revalidatePath("/admin/command-center");
-    revalidatePath("/seller/dashboard");
+    revalidatePath("/buyer", "layout");
+    revalidatePath("/buyer/catalog");
+    revalidatePath("/buyer/category/all");
+    revalidatePath("/buyer/product", "layout");
     return { success: true, data: null };
   } catch (error) {
     return {
@@ -295,6 +297,12 @@ export async function getInboxAction() {
       dealTicket: {
         select: { id: true, referenceCode: true, status: true },
       },
+      listing: {
+        select: { product: { select: { title: true } } },
+      },
+      buyer: { select: { name: true, companyName: true } },
+      seller: { select: { name: true, companyName: true } },
+      agent: { select: { name: true, companyName: true } },
     },
     orderBy: { updatedAt: "desc" },
     take: 80,
@@ -310,6 +318,8 @@ export async function getInboxAction() {
         ticketId: room.dealTicket?.id ?? null,
         ticketReference: room.dealTicket?.referenceCode ?? null,
         ticketStatus: room.dealTicket?.status ?? null,
+        listingTitle: room.listing?.product.title ?? null,
+        counterpartName: counterpartName(room, user.id, user.role),
         lastMessage: room.messages[0]?.body ?? null,
         lastMessageAt: room.messages[0]?.createdAt.toISOString() ?? room.updatedAt.toISOString(),
       })),
@@ -339,6 +349,12 @@ export async function getChatRoomAction(roomId: string) {
       dealTicket: {
         select: { id: true, referenceCode: true, status: true, zone: { select: { name: true } } },
       },
+      listing: {
+        select: { product: { select: { title: true } } },
+      },
+      buyer: { select: { name: true, companyName: true } },
+      seller: { select: { name: true, companyName: true } },
+      agent: { select: { name: true, companyName: true } },
     },
   });
 
@@ -356,6 +372,8 @@ export async function getChatRoomAction(roomId: string) {
       id: room.id,
       type: room.type,
       viewerId: auth.user.id,
+      counterpartName: counterpartName(room, auth.user.id, auth.user.role),
+      listingTitle: room.listing?.product.title ?? null,
       ticket: room.dealTicket
         ? {
             id: room.dealTicket.id,
@@ -399,6 +417,13 @@ export async function getAgentJobBoardAction() {
     return {
       success: false as const,
       error: "Your account is not registered to a location zone. Contact operations.",
+    };
+  }
+
+  if (auth.user.role === "FIELD_AGENT" && profile && !profile.isActive) {
+    return {
+      success: false as const,
+      error: "Your agent account is inactive. Contact ConMart operations to reactivate it.",
     };
   }
 
@@ -553,12 +578,95 @@ export async function getSellerSubscriptionAction() {
   };
 }
 
+export async function getPartyDealTicketsAction() {
+  const auth = await authorize(["BUYER", "SELLER", "ADMIN"]);
+  if (!auth.ok) {
+    return { success: false as const, error: auth.error };
+  }
+
+  const tickets = await db.dealTicket.findMany({
+    where:
+      auth.user.role === "ADMIN"
+        ? {}
+        : auth.user.role === "SELLER"
+          ? { sellerId: auth.user.id }
+          : { buyerId: auth.user.id },
+    include: {
+      zone: { select: { name: true } },
+      listing: {
+        select: {
+          location: true,
+          product: { select: { title: true } },
+        },
+      },
+      rooms: { select: { id: true, type: true } },
+    },
+    orderBy: { updatedAt: "desc" },
+    take: 80,
+  });
+
+  return {
+    success: true as const,
+    data: tickets.map((ticket) => {
+      const myRoom = ticket.rooms.find((room) => {
+        if (auth.user.role === "BUYER") return room.type === "BUYER_AGENT";
+        if (auth.user.role === "SELLER") return room.type === "SELLER_AGENT";
+        return room.type === "BUYER_AGENT";
+      });
+      return {
+        id: ticket.id,
+        referenceCode: ticket.referenceCode,
+        status: ticket.status,
+        zoneName: ticket.zone.name,
+        productTitle: ticket.listing?.product.title ?? "Materials deal",
+        location: ticket.listing?.location ?? ticket.zone.name,
+        createdAt: ticket.createdAt.toISOString(),
+        roomId: myRoom?.id ?? null,
+      };
+    }),
+  };
+}
+
+function counterpartName(
+  room: {
+    type: string;
+    buyer?: { name: string; companyName: string } | null;
+    seller?: { name: string; companyName: string } | null;
+    agent?: { name: string; companyName: string } | null;
+  },
+  _viewerId: string,
+  viewerRole: string
+): string {
+  const label = (user?: { name: string; companyName: string } | null) =>
+    user?.companyName || user?.name || null;
+
+  if (room.type === "DIRECT") {
+    if (viewerRole === "SELLER") return label(room.buyer) ?? "Buyer";
+    return label(room.seller) ?? "Supplier";
+  }
+  if (room.type === "BUYER_AGENT") {
+    if (viewerRole === "FIELD_AGENT" || viewerRole === "ADMIN") {
+      return label(room.buyer) ?? "Buyer";
+    }
+    return label(room.agent) ?? "Local agent";
+  }
+  if (viewerRole === "FIELD_AGENT" || viewerRole === "ADMIN") {
+    return label(room.seller) ?? "Supplier";
+  }
+  return label(room.agent) ?? "Local agent";
+}
+
 function revalidateMarketplaceSurfaces() {
   revalidatePath("/buyer/messages");
   revalidatePath("/seller/messages");
   revalidatePath("/seller/dashboard");
+  revalidatePath("/seller/deals");
+  revalidatePath("/buyer/deals");
   revalidatePath("/agent");
   revalidatePath("/agent/messages");
+  revalidatePath("/agent/deals", "layout");
   revalidatePath("/buyer/enquiries");
   revalidatePath("/seller/enquiries");
+  revalidatePath("/buyer/catalog");
+  revalidatePath("/buyer/category/all");
 }

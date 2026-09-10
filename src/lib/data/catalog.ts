@@ -52,6 +52,8 @@ export interface CatalogListing {
     name: string;
     companyName: string;
   };
+  /** True when this supplier currently entitles buyer↔supplier chat. */
+  directChatEnabled: boolean;
   /** Lowest price across all non-expired tiers */
   lowestPrice: number | null;
   /** Total number of active price tiers */
@@ -187,6 +189,12 @@ export async function fetchCatalogListings(
           id: true,
           name: true,
           companyName: true,
+          sellerProfile: {
+            select: {
+              subscriptionStatus: true,
+              subscriptionExpiresAt: true,
+            },
+          },
         },
       },
       priceTiers: {
@@ -213,6 +221,7 @@ export async function fetchCatalogListings(
       category: listing.product.category,
     },
     seller: maskedSupplier(listing.seller.id),
+    directChatEnabled: isDirectChatEntitled(listing.seller.sellerProfile, now),
     lowestPrice:
       listing.priceTiers.length > 0
         ? Number(listing.priceTiers[0].unitPrice)
@@ -678,6 +687,12 @@ export async function fetchDepotListings(
           id: true,
           name: true,
           companyName: true,
+          sellerProfile: {
+            select: {
+              subscriptionStatus: true,
+              subscriptionExpiresAt: true,
+            },
+          },
         },
       },
       priceTiers: {
@@ -704,6 +719,7 @@ export async function fetchDepotListings(
       category: listing.product.category,
     },
     seller: maskedSupplier(listing.seller.id),
+    directChatEnabled: isDirectChatEntitled(listing.seller.sellerProfile, now),
     lowestPrice:
       listing.priceTiers.length > 0
         ? Number(listing.priceTiers[0].unitPrice)
@@ -720,6 +736,7 @@ export interface CompetingOffer {
   sellerType: string;
   verificationStatus: string;
   vatRegistered: boolean;
+  directChatEnabled: boolean;
   lowestPrice: number | null;
   moq: number;
   tiers: Array<{
@@ -784,6 +801,8 @@ export async function fetchProductWithCompetingOffers(
                   sellerType: true,
                   verificationStatus: true,
                   vatRegistered: true,
+                  subscriptionStatus: true,
+                  subscriptionExpiresAt: true,
                 },
               },
             },
@@ -822,6 +841,7 @@ export async function fetchProductWithCompetingOffers(
       // to VERIFIED / VAT-registered would show a trust badge nobody earned.
       verificationStatus: profile?.verificationStatus || "UNVERIFIED",
       vatRegistered: profile?.vatRegistered ?? false,
+      directChatEnabled: isDirectChatEntitled(profile, now),
       lowestPrice,
       moq,
       tiers: listing.priceTiers.map((t) => ({

@@ -41,11 +41,7 @@ export function StartChatButton({
         return;
       }
 
-      if (result.data.kind === "DIRECT" && result.data.roomId) {
-        router.push(`/${portal}/messages/${result.data.roomId}`);
-        return;
-      }
-      if (result.data.kind === "MEDIATED" && result.data.roomId) {
+      if (result.data.roomId) {
         router.push(`/${portal}/messages/${result.data.roomId}`);
         return;
       }

@@ -53,12 +53,13 @@ export interface SellerListingItem {
   productUnit: string;
   categoryName: string;
   orderCount: number;
+  enquiryCount: number;
   priceTiers: {
     id: string;
     minQty: number;
     maxQty: number;
     unitPrice: number;
-    validUntil: Date;
+    validUntil: string;
     isExpired: boolean;
   }[];
 }
@@ -75,6 +76,8 @@ interface SellerDashboardViewProps {
 
 export function SellerDashboardView({ listings, subscription }: SellerDashboardViewProps) {
   const { t, locale } = useLanguage();
+  const totalOrders = listings.reduce((sum, listing) => sum + listing.orderCount, 0);
+  const totalEnquiries = listings.reduce((sum, listing) => sum + listing.enquiryCount, 0);
 
   return (
     <div className="space-y-6">
@@ -136,15 +139,63 @@ export function SellerDashboardView({ listings, subscription }: SellerDashboardV
               ) : null}
             </div>
           </div>
-          <Link
-            href="/seller/messages"
-            className={cn(buttonVariants({ variant: "outline" }), "gap-2 font-semibold")}
-          >
-            <MessageCircle className="size-4" />
-            {t("chat_inbox_title", "Messages")}
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            {!subscription.directChatEnabled ? (
+              <Link
+                href="/seller/deals"
+                className={cn(buttonVariants({ variant: "outline" }), "gap-2 font-semibold")}
+              >
+                {t("deals_nav", "Agent deals")}
+              </Link>
+            ) : null}
+            <Link
+              href="/seller/messages"
+              className={cn(buttonVariants({ variant: "outline" }), "gap-2 font-semibold")}
+            >
+              <MessageCircle className="size-4" />
+              {t("chat_inbox_title", "Messages")}
+            </Link>
+          </div>
         </CardContent>
       </Card>
+
+      {listings.length > 0 ? (
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Card className="border-border/60">
+            <CardContent className="flex items-center gap-3 p-4">
+              <Package className="size-4 text-muted-foreground" />
+              <div>
+                <p className="text-2xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {t("seller_stat_listings", "Listings")}
+                </p>
+                <p className="text-lg font-semibold tabular-nums">{listings.length}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border/60">
+            <CardContent className="flex items-center gap-3 p-4">
+              <ShoppingCart className="size-4 text-primary" />
+              <div>
+                <p className="text-2xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {t("seller_stat_orders", "Orders")}
+                </p>
+                <p className="text-lg font-semibold tabular-nums">{totalOrders}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border/60">
+            <CardContent className="flex items-center gap-3 p-4">
+              <MessageCircle className="size-4 text-muted-foreground" />
+              <div>
+                <p className="text-2xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {t("seller_stat_enquiries", "Enquiries")}
+                </p>
+                <p className="text-lg font-semibold tabular-nums">{totalEnquiries}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
 
       {listings.length === 0 ? (
         <EmptyState
@@ -217,6 +268,12 @@ export function SellerDashboardView({ listings, subscription }: SellerDashboardV
                         </span>{" "}
                         {t("seller_orders_badge")}
                       </div>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/40 px-2.5 py-1 rounded-md border border-border/40">
+                        <span className="font-semibold text-foreground">
+                          {listing.enquiryCount}
+                        </span>{" "}
+                        {t("seller_enquiries_badge", "enquiries")}
+                      </div>
 
                       <ListingStatusButton
                         listingId={listing.id}
@@ -280,7 +337,7 @@ export function SellerDashboardView({ listings, subscription }: SellerDashboardV
                           <TableCell className="text-xs text-muted-foreground">
                             <span className="inline-flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
-                              {tier.validUntil.toLocaleDateString(
+                              {new Date(tier.validUntil).toLocaleDateString(
                                 locale === "am" ? "am-ET" : "en-US",
                                 {
                                   month: "short",

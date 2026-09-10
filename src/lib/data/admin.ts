@@ -205,7 +205,50 @@ export async function fetchAdminStats(): Promise<AdminStats> {
 }
 
 /**
- * Fetches seller listings with product and tier info.
+ * Distinct proforma/order count per listing.
+ *
+ * Cart checkouts write line items (`OrderItem`) and only stamp `Order.listingId`
+ * on the first material. Single-item proformas write the header and no items.
+ * Counting either relation alone leaves the supplier dashboard stuck at zero.
+ */
+async function countOrdersByListing(
+  listingIds: string[]
+): Promise<Map<string, number>> {
+  const counts = new Map<string, Set<string>>();
+  for (const id of listingIds) {
+    counts.set(id, new Set());
+  }
+  if (listingIds.length === 0) {
+    return new Map();
+  }
+
+  const [headerOrders, lineItems] = await Promise.all([
+    db.order.findMany({
+      where: { listingId: { in: listingIds } },
+      select: { id: true, listingId: true },
+    }),
+    db.orderItem.findMany({
+      where: { listingId: { in: listingIds } },
+      select: { orderId: true, listingId: true },
+    }),
+  ]);
+
+  for (const order of headerOrders) {
+    if (order.listingId) {
+      counts.get(order.listingId)?.add(order.id);
+    }
+  }
+  for (const item of lineItems) {
+    counts.get(item.listingId)?.add(item.orderId);
+  }
+
+  return new Map(
+    [...counts.entries()].map(([listingId, orderIds]) => [listingId, orderIds.size])
+  );
+}
+
+/**
+ * Fetches seller listings with product, tier, order, and enquiry info.
  */
 export async function fetchSellerListings(sellerAuthId: string) {
   const dbUser = await db.user.findUnique({
@@ -226,9 +269,13 @@ export async function fetchSellerListings(sellerAuthId: string) {
       priceTiers: {
         orderBy: { minQty: "asc" },
       },
-      _count: { select: { orders: true } },
+      _count: { select: { enquiries: true } },
     },
+    orderBy: { id: "desc" },
   });
+
+  const now = new Date();
+  const orderCounts = await countOrdersByListing(listings.map((listing) => listing.id));
 
   return listings.map((listing) => ({
     id: listing.id,
@@ -238,14 +285,15 @@ export async function fetchSellerListings(sellerAuthId: string) {
     productTitle: listing.product.title,
     productUnit: listing.product.unit,
     categoryName: listing.product.category.name,
-    orderCount: listing._count.orders,
+    orderCount: orderCounts.get(listing.id) ?? 0,
+    enquiryCount: listing._count.enquiries,
     priceTiers: listing.priceTiers.map((t) => ({
       id: t.id,
       minQty: t.minQty,
       maxQty: t.maxQty,
       unitPrice: Number(t.unitPrice),
-      validUntil: t.validUntil,
-      isExpired: t.validUntil < new Date(),
+      validUntil: t.validUntil.toISOString(),
+      isExpired: t.validUntil < now,
     })),
   }));
 }

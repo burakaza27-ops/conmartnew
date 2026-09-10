@@ -24,7 +24,10 @@ import {
   isOpenDealTicket,
 } from "@/lib/marketplace/deal-ticket";
 import { resolveCoverageZone, type ZoneCandidate } from "@/lib/marketplace/zone-matching";
-import { resolveSubscription } from "@/lib/marketplace/subscription";
+import {
+  resolveSubscription,
+  type SubscriptionRecord,
+} from "@/lib/marketplace/subscription";
 
 export type InitiateKind = "DIRECT" | "MEDIATED" | "PENDING_AGENT";
 
@@ -60,6 +63,7 @@ export async function initiateConversation(input: {
       sellerId: context.seller.id,
       listingId: context.listingId,
       enquiryId: context.enquiryId,
+      sellerSubscription: sellerSub,
     });
 
     return { kind: "DIRECT", roomId: room.id };
@@ -229,6 +233,13 @@ export async function claimDealTicket(input: {
     enquiryId: ticket.enquiryId ?? null,
     listingId: ticket.listingId ?? null,
   });
+
+  if (ticket.enquiryId) {
+    await db.enquiry.updateMany({
+      where: { id: ticket.enquiryId, agentId: null },
+      data: { agentId: input.actor.id },
+    });
+  }
 
   return {
     ticketId: ticket.id,
@@ -451,14 +462,13 @@ async function findOrCreateDirectRoom(input: {
   sellerId: string;
   listingId?: string;
   enquiryId?: string;
+  sellerSubscription: SubscriptionRecord | null | undefined;
 }) {
-  const existing = await db.chatRoom.findUnique({
+  const existing = await db.chatRoom.findFirst({
     where: {
-      type_buyerId_sellerId: {
-        type: "DIRECT",
-        buyerId: input.buyerId,
-        sellerId: input.sellerId,
-      },
+      type: "DIRECT",
+      buyerId: input.buyerId,
+      sellerId: input.sellerId,
     },
     select: { id: true },
   });
@@ -469,7 +479,7 @@ async function findOrCreateDirectRoom(input: {
 
   const shape = validateRoomShape(
     { type: "DIRECT", buyerId: input.buyerId, sellerId: input.sellerId },
-    { subscriptionStatus: "ACTIVE", subscriptionExpiresAt: null }
+    input.sellerSubscription
   );
 
   if (!shape.allowed) {
@@ -490,13 +500,11 @@ async function findOrCreateDirectRoom(input: {
       select: { id: true },
     });
   } catch {
-    const raced = await db.chatRoom.findUnique({
+    const raced = await db.chatRoom.findFirst({
       where: {
-        type_buyerId_sellerId: {
-          type: "DIRECT",
-          buyerId: input.buyerId,
-          sellerId: input.sellerId,
-        },
+        type: "DIRECT",
+        buyerId: input.buyerId,
+        sellerId: input.sellerId,
       },
       select: { id: true },
     });

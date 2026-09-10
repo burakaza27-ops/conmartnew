@@ -58,6 +58,13 @@ export interface EnquiryItem {
   categoryName: string;
   unlockFee: number;
   isUnlocked: boolean;
+  directChatEnabled: boolean;
+  dealTicket: {
+    id: string;
+    referenceCode: string;
+    status: string;
+    roomId: string | null;
+  } | null;
   buyerContact: {
     name: string;
     companyName?: string | null;
@@ -393,6 +400,7 @@ export function SellerEnquiriesView({
                   <StartChatButton
                     enquiryId={enq.id}
                     portal="seller"
+                    directChatEnabled={enq.directChatEnabled}
                     size="sm"
                     variant="outline"
                     className="w-fit gap-1.5 text-xs font-semibold"

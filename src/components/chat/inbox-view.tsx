@@ -14,6 +14,8 @@ export interface InboxRoomItem {
   ticketId: string | null;
   ticketReference: string | null;
   ticketStatus: string | null;
+  listingTitle: string | null;
+  counterpartName: string;
   lastMessage: string | null;
   lastMessageAt: string;
 }
@@ -61,7 +63,11 @@ export function InboxView({ rooms, basePath }: InboxViewProps) {
               >
                 <div className="min-w-0 space-y-1">
                   <p className="text-sm font-semibold text-foreground">
+                    {room.counterpartName}
+                  </p>
+                  <p className="text-2xs font-medium text-muted-foreground">
                     {roomLabel(room.type, t)}
+                    {room.listingTitle ? ` · ${room.listingTitle}` : ""}
                     {room.ticketReference ? ` · ${room.ticketReference}` : ""}
                   </p>
                   <p className="truncate text-xs text-muted-foreground">

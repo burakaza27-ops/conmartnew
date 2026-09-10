@@ -31,6 +31,7 @@ import {
   getLocalizedUnit,
   getLocalizedLocation,
 } from "@/lib/i18n/translations";
+import { StatusBadge } from "@/components/ui/status-badge";
 import type { CatalogListing } from "@/lib/data/catalog";
 import { CategoryToolbar } from "./category-toolbar";
 
@@ -256,6 +257,14 @@ function ListingCard({ listing }: { listing: CatalogListing }) {
           >
             {localizedCategory}
           </Badge>
+        </div>
+        <div className="absolute top-3 right-3">
+          <StatusBadge
+            domain="subscription"
+            status={listing.directChatEnabled ? "ACTIVE" : "FREE"}
+            locale={locale}
+            size="sm"
+          />
         </div>
 
         {/* Volume Tiers Indicator overlay */}

@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { requireRole } from "@/lib/auth/session";
 import { getChatRoomAction } from "@/app/actions/marketplace";
@@ -9,7 +9,13 @@ export default async function BuyerChatRoomPage({
 }: {
   params: Promise<{ roomId: string }>;
 }) {
-  await requireRole(["BUYER", "FIELD_AGENT", "ADMIN"], "/buyer/messages");
+  const user = await requireRole(["BUYER", "FIELD_AGENT", "ADMIN"], "/buyer/messages");
+
+  if (user.role === "FIELD_AGENT") {
+    const { roomId } = await params;
+    redirect(`/agent/messages/${roomId}`);
+  }
+
   const { roomId } = await params;
   const result = await getChatRoomAction(roomId);
   if (!result.success) {
@@ -20,6 +26,8 @@ export default async function BuyerChatRoomPage({
     <ChatThread
       roomId={result.data.id}
       type={result.data.type}
+      counterpartName={result.data.counterpartName}
+      listingTitle={result.data.listingTitle}
       messages={result.data.messages}
       ticket={result.data.ticket}
     />

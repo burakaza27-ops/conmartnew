@@ -402,6 +402,7 @@ model Listing {
   orderItems  OrderItem[]
   enquiries   Enquiry[]
   dealTickets DealTicket[]
+  chatRooms   ChatRoom[]
 
   @@map("listings")
 }
@@ -639,6 +640,7 @@ model ChatRoom {
   dealTicket   DealTicket?  @relation(fields: [dealTicketId], references: [id], onDelete: Cascade)
   enquiryId    String?      @map("enquiry_id")
   listingId    String?      @map("listing_id")
+  listing      Listing?     @relation(fields: [listingId], references: [id], onDelete: SetNull)
   createdAt    DateTime     @default(now()) @map("created_at")
   updatedAt    DateTime     @updatedAt @map("updated_at")
 

@@ -14,14 +14,15 @@ export default async function BuyerLayout({
   children: React.ReactNode;
 }) {
   const user = await requireRole(["BUYER", "FIELD_AGENT", "ADMIN"], "/buyer/catalog");
+  const assistMode = user.role === "FIELD_AGENT";
 
   return (
     <CartProvider>
       <AppShell
-        portal="Buyer"
+        portal={assistMode ? "Agent assist" : "Buyer"}
         userName={user.name}
         userEmail={user.email ?? ""}
-        sidebarNav={<BuyerSidebarNav />}
+        sidebarNav={<BuyerSidebarNav assistMode={assistMode} />}
         sidebarFooter={
           <div className="space-y-2">
             <CartTriggerButton />
@@ -38,7 +39,7 @@ export default async function BuyerLayout({
             </form>
           </div>
         }
-        mobileNav={<BuyerMobileBottomNav signOutAction={signOut} />}
+        mobileNav={<BuyerMobileBottomNav signOutAction={signOut} assistMode={assistMode} />}
         mobileActions={<CartTriggerButton />}
       >
         {children}

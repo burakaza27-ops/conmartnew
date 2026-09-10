@@ -12,6 +12,7 @@
 import { revalidatePath } from "next/cache";
 import { authorize } from "@/lib/auth/session";
 import { db } from "@/lib/db";
+import { resolveSubscription } from "@/lib/marketplace/subscription";
 import { SellerVerificationStatus, SellerType } from "@prisma/client";
 
 export async function getAdminSellersAction() {
@@ -64,7 +65,8 @@ export async function getAdminSellersAction() {
       enquiryCount: s._count.sellerEnquiries,
       cashBalance: Number(s.wallet?.cashBalance ?? 0),
       creditBalance: Number(s.wallet?.creditBalance ?? 0),
-      subscriptionStatus: s.sellerProfile?.subscriptionStatus ?? "FREE",
+      subscriptionStatus: resolveSubscription(s.sellerProfile),
+      storedSubscriptionStatus: s.sellerProfile?.subscriptionStatus ?? "FREE",
       subscriptionExpiresAt: s.sellerProfile?.subscriptionExpiresAt
         ? s.sellerProfile.subscriptionExpiresAt.toISOString()
         : null,

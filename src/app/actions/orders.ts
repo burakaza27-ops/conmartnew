@@ -165,6 +165,7 @@ export async function generateProformaAction(
     revalidatePath("/buyer/catalog");
     revalidatePath("/buyer/orders");
     revalidatePath("/buyer");
+    revalidatePath("/seller/dashboard");
     revalidatePath("/admin/command-center");
 
     return { success: true, data: { referenceCode } };
@@ -317,6 +318,7 @@ export async function generateMultiItemProformaAction(
     revalidatePath("/buyer/catalog");
     revalidatePath("/buyer/orders");
     revalidatePath("/buyer");
+    revalidatePath("/seller/dashboard");
     revalidatePath("/admin/command-center");
 
     return { success: true, data: { referenceCode } };
@@ -412,6 +414,8 @@ export async function updateOrderStatusAction(
 
     revalidatePath("/admin/command-center");
     revalidatePath("/buyer/catalog");
+    revalidatePath("/buyer/orders");
+    revalidatePath("/seller/dashboard");
 
     return {
       success: true,
@@ -469,6 +473,7 @@ export async function cancelOrderInquiryAction(
 
     revalidatePath("/buyer/orders");
     revalidatePath(`/buyer/proforma/${order.referenceCode}`);
+    revalidatePath("/seller/dashboard");
     revalidatePath("/admin/command-center");
 
     return { success: true, data: { orderId } };

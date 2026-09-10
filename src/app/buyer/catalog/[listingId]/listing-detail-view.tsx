@@ -40,6 +40,7 @@ import {
 import { PricingCalculator } from "./pricing-calculator";
 import { DepotMaterialsTable } from "./depot-materials-table";
 import { PurchaseRequestModal } from "@/components/enquiry/purchase-request-modal";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { StartChatButton } from "@/components/chat/start-chat-button";
 import type { CatalogListing, ListingDetail } from "@/lib/data/catalog";
 
@@ -128,6 +129,12 @@ export function ListingDetailView({
                   <MapPin className="h-3.5 w-3.5 text-primary" />
                   {localizedLocation}
                 </span>
+                <StatusBadge
+                  domain="subscription"
+                  status={listing.directChatEnabled ? "ACTIVE" : "FREE"}
+                  locale={locale}
+                  size="sm"
+                />
               </div>
             </div>
           </div>

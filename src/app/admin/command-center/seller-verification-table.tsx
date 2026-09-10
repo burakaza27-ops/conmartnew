@@ -103,7 +103,9 @@ export function SellerVerificationTable({ initialSellers }: SellerVerificationTa
       if (res.success) {
         setSellers((prev) =>
           prev.map((s) =>
-            s.profileId === profileId ? { ...s, subscriptionStatus: next } : s
+            s.profileId === profileId
+              ? { ...s, subscriptionStatus: next, subscriptionExpiresAt: null }
+              : s
           )
         );
         setStatusMsg({

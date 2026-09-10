@@ -1,6 +1,6 @@
 "use client";
 
-import { Briefcase, LogOut, MessageCircle } from "lucide-react";
+import { Briefcase, LogOut, MessageCircle, Package } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { MobileTabLink, SidebarNavLink } from "@/components/layout/nav-link";
@@ -13,6 +13,11 @@ export function AgentSidebarNav() {
   const links = [
     { href: "/agent", label: t("agent_job_board", "Job board"), icon: Briefcase, exact: true },
     { href: "/agent/messages", label: t("chat_inbox_title", "Messages"), icon: MessageCircle },
+    {
+      href: "/buyer/category/all",
+      label: t("agent_browse_materials", "Browse materials"),
+      icon: Package,
+    },
   ];
 
   return (
@@ -31,6 +36,11 @@ export function AgentBottomNav() {
     <>
       <MobileTabLink href="/agent" label={t("agent_job_board", "Jobs")} icon={Briefcase} exact />
       <MobileTabLink href="/agent/messages" label={t("chat_inbox_title", "Messages")} icon={MessageCircle} />
+      <MobileTabLink
+        href="/buyer/category/all"
+        label={t("agent_browse_materials", "Catalog")}
+        icon={Package}
+      />
       <form action={signOut} className="flex flex-1">
         <button
           type="submit"

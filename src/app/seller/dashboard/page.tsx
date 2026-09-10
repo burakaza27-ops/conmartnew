@@ -12,6 +12,8 @@ import { db } from "@/lib/db";
 import { SellerDashboardView } from "./seller-dashboard-view";
 import { resolveSubscription } from "@/lib/marketplace/subscription";
 
+export const dynamic = "force-dynamic";
+
 export default async function SellerDashboardPage() {
   const user = await getAuthenticatedUser();
   if (!user) {
