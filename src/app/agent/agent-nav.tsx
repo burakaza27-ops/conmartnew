@@ -1,6 +1,6 @@
 "use client";
 
-import { Briefcase, LogOut, MessageCircle, Package } from "lucide-react";
+import { Briefcase, LogOut, MessageCircle, Package, Settings } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { MobileTabLink, SidebarNavLink } from "@/components/layout/nav-link";
@@ -18,6 +18,7 @@ export function AgentSidebarNav() {
       label: t("agent_browse_materials", "Browse materials"),
       icon: Package,
     },
+    { href: "/account/settings", label: t("nav_account_settings", "Settings"), icon: Settings, exact: true },
   ];
 
   return (

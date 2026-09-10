@@ -30,6 +30,51 @@ export const ethiopianPhoneSchema = z
     "Enter a valid Ethiopian phone number (e.g., +251 91 234 5678)"
   );
 
+/**
+ * Canonical Ethiopian mobile form: `+251 91 234 5678`.
+ * Signup and settings both store this so unlocks, agent lookups, and uniqueness
+ * checks compare the same string rather than spacing variants of one number.
+ */
+export function normalizeEthiopianPhone(phone: string): string {
+  const digits = phone.replace(/\s+/g, "");
+  const match = digits.match(/^\+251(\d{9})$/);
+  if (!match) {
+    return phone.trim();
+  }
+  const local = match[1];
+  return `+251 ${local.slice(0, 2)} ${local.slice(2, 5)} ${local.slice(5)}`;
+}
+
+/** Lookup variants so a number stored without spaces still matches. */
+export function ethiopianPhoneLookupVariants(phone: string): string[] {
+  const canonical = normalizeEthiopianPhone(phone);
+  const compact = canonical.replace(/\s+/g, "");
+  return Array.from(new Set([canonical, compact, phone.trim()].filter(Boolean)));
+}
+
+/** Password rules shared by registration, settings, and reset. */
+export const passwordSchema = z
+  .string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+  .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+  .regex(/[0-9]/, "Password must contain at least one number");
+
+export const personNameSchema = z
+  .string()
+  .min(2, "Name must be at least 2 characters")
+  .max(100, "Name must be less than 100 characters");
+
+export const companyNameSchema = z
+  .string()
+  .min(2, "Company name must be at least 2 characters")
+  .max(200, "Company name must be less than 200 characters");
+
+export const emailSchema = z
+  .string()
+  .min(1, "Email is required")
+  .email("Please enter a valid email address");
+
 /** Positive whole-number quantity of a material unit. */
 export const quantitySchema = z
   .number()
@@ -50,10 +95,7 @@ export const etbAmountSchema = z
 
 /** Login form validation */
 export const loginSchema = z.object({
-  email: z
-    .string()
-    .min(1, "Email is required")
-    .email("Please enter a valid email address"),
+  email: emailSchema,
   password: z
     .string()
     .min(6, "Password must be at least 6 characters"),
@@ -62,32 +104,12 @@ export type LoginFormData = z.infer<typeof loginSchema>;
 
 /** Registration form validation */
 export const registerSchema = z.object({
-  email: z
-    .string()
-    .min(1, "Email is required")
-    .email("Please enter a valid email address"),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(
-      /[A-Z]/,
-      "Password must contain at least one uppercase letter"
-    )
-    .regex(
-      /[a-z]/,
-      "Password must contain at least one lowercase letter"
-    )
-    .regex(/[0-9]/, "Password must contain at least one number"),
+  email: emailSchema,
+  password: passwordSchema,
   confirmPassword: z.string().min(1, "Please confirm your password"),
-  name: z
-    .string()
-    .min(2, "Name must be at least 2 characters")
-    .max(100, "Name must be less than 100 characters"),
+  name: personNameSchema,
   phone: ethiopianPhoneSchema,
-  companyName: z
-    .string()
-    .min(2, "Company name must be at least 2 characters")
-    .max(200, "Company name must be less than 200 characters"),
+  companyName: companyNameSchema,
   role: z.enum(SELF_REGISTERABLE_ROLES, {
     error: "Please select your account type",
   }),
@@ -105,6 +127,49 @@ export const registerSchema = z.object({
     }
   );
 export type RegisterFormData = z.infer<typeof registerSchema>;
+
+/** Signed-in user editing name, phone, and company. Email is not editable. */
+export const updateProfileSchema = z.object({
+  name: personNameSchema,
+  phone: ethiopianPhoneSchema,
+  companyName: companyNameSchema,
+});
+export type UpdateProfileFormData = z.infer<typeof updateProfileSchema>;
+
+/** Signed-in user changing password from Account Settings. */
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Current password is required"),
+    newPassword: passwordSchema,
+    confirmPassword: z.string().min(1, "Please confirm your new password"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  })
+  .refine((data) => data.currentPassword !== data.newPassword, {
+    message: "New password must be different from your current password",
+    path: ["newPassword"],
+  });
+export type ChangePasswordFormData = z.infer<typeof changePasswordSchema>;
+
+/** Forgot-password form: email only. */
+export const requestPasswordResetSchema = z.object({
+  email: emailSchema,
+});
+export type RequestPasswordResetFormData = z.infer<typeof requestPasswordResetSchema>;
+
+/** Set a new password after clicking the email recovery link. */
+export const resetPasswordSchema = z
+  .object({
+    newPassword: passwordSchema,
+    confirmPassword: z.string().min(1, "Please confirm your new password"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 
 // =============================================================================
 // PRICE TIER SCHEMAS

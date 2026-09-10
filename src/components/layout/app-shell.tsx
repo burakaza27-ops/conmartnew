@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
+import { Settings } from "lucide-react";
 
 import { Logo } from "@/components/brand/logo";
 import { LanguageToggle } from "@/components/language-toggle";
@@ -57,17 +59,22 @@ export function AppShell({
         <div className="flex-1 overflow-y-auto px-3 py-3">{sidebarNav}</div>
 
         <div className="mt-auto border-t border-sidebar-border p-3">
-          <div className="mb-3 flex items-center gap-2.5 px-1">
+          <Link
+            href="/account/settings"
+            className="mb-3 flex items-center gap-2.5 rounded-lg px-1 py-1 hover:bg-muted"
+          >
             <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
               {initials || "U"}
             </span>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-foreground">
                 {userName}
               </p>
               <p className="truncate text-2xs text-muted-foreground">{userEmail}</p>
             </div>
-          </div>
+            <Settings className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <span className="sr-only">Account settings</span>
+          </Link>
           {sidebarFooter}
         </div>
       </aside>
@@ -77,6 +84,13 @@ export function AppShell({
         <div className="flex items-center gap-0.5">
           <LanguageToggle />
           <ThemeToggle />
+          <Link
+            href="/account/settings"
+            aria-label="Account settings"
+            className="inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <Settings className="size-5" />
+          </Link>
           {mobileActions}
         </div>
       </header>

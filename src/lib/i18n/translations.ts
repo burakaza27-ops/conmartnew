@@ -22,6 +22,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     nav_cart: "Cart",
     nav_sign_in: "Sign In",
     nav_sign_out: "Sign Out",
+    nav_account_settings: "Settings",
     nav_get_started: "Get Started",
     nav_seller_portal: "Seller Inventory",
     nav_command_center: "Command Center",
@@ -383,6 +384,52 @@ export const translations: Record<Locale, Record<string, string>> = {
     auth_have_account: "Already have an account?",
     auth_sign_in_link: "Sign In",
     auth_copyright: "ConMart. Industrial-grade procurement.",
+    auth_forgot_link: "Forgot password?",
+    auth_forgot_title: "Reset your password",
+    auth_forgot_subtitle:
+      "Enter the email you registered with. If an account exists, we will send a reset link.",
+    auth_forgot_submit: "Send reset link",
+    auth_forgot_sending: "Sending...",
+    auth_forgot_sent:
+      "If that email is registered, a reset link is on its way. Check your inbox and spam folder.",
+    auth_back_to_sign_in: "Back to sign in",
+    auth_reset_title: "Choose a new password",
+    auth_reset_subtitle:
+      "Use at least 8 characters with an uppercase letter, a lowercase letter, and a number.",
+    auth_reset_submit: "Save new password",
+    auth_reset_expired:
+      "This reset link has expired or was already used. Request a new one.",
+    account_settings_title: "Account settings",
+    account_settings_subtitle:
+      "Update the name, phone, and company shown on enquiries and introductions. Change your password here, or use the email reset link if you forgot it.",
+    account_profile_title: "Profile",
+    account_profile_desc:
+      "This name, phone, and company are what counterparties see after an enquiry is unlocked.",
+    account_profile_saved: "Profile saved.",
+    account_email_readonly:
+      "Email is your login and cannot be changed here. Contact ConMart support if you need a new address.",
+    account_phone_hint: "Ethiopian mobile in international form, e.g. +251 91 234 5678",
+    account_save_profile: "Save profile",
+    account_saving: "Saving...",
+    account_password_title: "Password",
+    account_password_desc:
+      "Use at least 8 characters with an uppercase letter, a lowercase letter, and a number.",
+    account_current_password: "Current password",
+    account_new_password: "New password",
+    account_change_password: "Update password",
+    account_updating_password: "Updating...",
+    account_password_saved: "Password updated. Other devices have been signed out.",
+    account_password_no_email:
+      "This account has no email, so the password cannot be changed here.",
+    account_password_other_sessions:
+      "Updating your password signs other devices out of this account.",
+    account_password_reset_done: "Your password has been updated. You are signed in.",
+    account_recovery_pending:
+      "Finish setting your new password on the reset page, or change it below with your current password.",
+    account_role_BUYER: "Contractor",
+    account_role_SELLER: "Supplier",
+    account_role_FIELD_AGENT: "Local agent",
+    account_role_ADMIN: "Administrator",
 
     // -------------------------------------------------------------------------
     // Toolbar & Filters
@@ -712,6 +759,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     nav_cart: "የዕቃ ጋሪ",
     nav_sign_in: "ይግቡ",
     nav_sign_out: "ይውጡ",
+    nav_account_settings: "ቅንብሮች",
     nav_get_started: "አሁኑኑ ይጀምሩ",
     nav_seller_portal: "የአቅራቢ ዕቃዎች",
     nav_command_center: "የአስተዳዳሪ ማዕከል",
@@ -1053,6 +1101,52 @@ export const translations: Record<Locale, Record<string, string>> = {
     auth_have_account: "ቀደም ሲል የተከፈተ አካውንት አለዎት?",
     auth_sign_in_link: "ይግቡ",
     auth_copyright: "ኮንማርት። ለግንባታ ኢንዱስትሪው ጥራት ያለው የጅምላ አቅርቦት።",
+    auth_forgot_link: "የይለፍ ቃል ረሱ?",
+    auth_forgot_title: "የይለፍ ቃልዎን ያዘምኑ",
+    auth_forgot_subtitle:
+      "በምዝገባ ጊዜ የተጠቀሙበትን ኢሜይል ያስገቡ። አካውንት ካለ የማዘመኛ አገናኝ እንልካለን።",
+    auth_forgot_submit: "የማዘመኛ አገናኝ ላክ",
+    auth_forgot_sending: "በመላክ ላይ...",
+    auth_forgot_sent:
+      "ያ ኢሜይል ተመዝግቦ ከሆነ የማዘመኛ አገናኝ በመንገድ ላይ ነው። የኢሜይል ሳጥንዎንና ስፓም ይመልከቱ።",
+    auth_back_to_sign_in: "ወደ መግቢያ ተመለስ",
+    auth_reset_title: "አዲስ የይለፍ ቃል ይምረጡ",
+    auth_reset_subtitle:
+      "ቢያንስ 8 ቁምፊዎች፣ አንድ አቢይ ፊደል፣ አንድ ንዑስ ፊደል እና አንድ ቁጥር ይጠቀሙ።",
+    auth_reset_submit: "አዲሱን የይለፍ ቃል አስቀምጥ",
+    auth_reset_expired:
+      "ይህ የማዘመኛ አገናኝ ጊዜው አልፏል ወይም ተጠቅመውበታል። አዲስ ይጠይቁ።",
+    account_settings_title: "የአካውንት ቅንብሮች",
+    account_settings_subtitle:
+      "በጥያቄዎችና በመግቢያዎች ላይ የሚታየውን ስም፣ ስልክ እና የድርጅት ስም ያዘምኑ። የይለፍ ቃልዎን እዚህ ይቀይሩ፣ ወይም ከረሱት በኢሜይል ያዘምኑ።",
+    account_profile_title: "መገለጫ",
+    account_profile_desc:
+      "ይህ ስም፣ ስልክ እና የድርጅት ስም ጥያቄ ከተከፈተ በኋላ ተቃራኒ ወገን የሚያየው ነው።",
+    account_profile_saved: "መገለጫው ተቀምጧል።",
+    account_email_readonly:
+      "ኢሜይል የመግቢያዎ ነውና እዚህ ሊቀየር አይችልም። አዲስ አድራሻ ከፈለጉ የኮንማርት ድጋፍን ያግኙ።",
+    account_phone_hint: "የኢትዮጵያ ስልክ በአለም አቀፍ ቅርጸት፣ ለምሳሌ +251 91 234 5678",
+    account_save_profile: "መገለጫ አስቀምጥ",
+    account_saving: "በማስቀመጥ ላይ...",
+    account_password_title: "የይለፍ ቃል",
+    account_password_desc:
+      "ቢያንስ 8 ቁምፊዎች፣ አንድ አቢይ ፊደል፣ አንድ ንዑስ ፊደል እና አንድ ቁጥር ይጠቀሙ።",
+    account_current_password: "አሁን ያለው የይለፍ ቃል",
+    account_new_password: "አዲስ የይለፍ ቃል",
+    account_change_password: "የይለፍ ቃል አዘምን",
+    account_updating_password: "በማዘመን ላይ...",
+    account_password_saved: "የይለፍ ቃል ተዘምኗል። ሌሎች መሣሪያዎች ከመለያው ወጥተዋል።",
+    account_password_no_email:
+      "ይህ መለያ ኢሜይል የለውም፣ ስለዚህ የይለፍ ቃል እዚህ ሊቀየር አይችልም።",
+    account_password_other_sessions:
+      "የይለፍ ቃል ማዘመን ሌሎች መሣሪያዎችን ከዚህ መለያ ያወጣል።",
+    account_password_reset_done: "የይለፍ ቃልዎ ተዘምኗል። ገብተዋል።",
+    account_recovery_pending:
+      "አዲሱን የይለፍ ቃል በማዘመኛ ገጹ ይጨርሱ፣ ወይም ከታች በአሁኑ የይለፍ ቃል ይቀይሩ።",
+    account_role_BUYER: "ተቋራጭ",
+    account_role_SELLER: "አቅራቢ",
+    account_role_FIELD_AGENT: "የአካባቢ ወኪል",
+    account_role_ADMIN: "አስተዳዳሪ",
 
     // -------------------------------------------------------------------------
     // Toolbar & Filters

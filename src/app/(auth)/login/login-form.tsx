@@ -14,6 +14,7 @@ import { FormAlert } from "@/components/ui/form-alert";
 import { loginSchema, type LoginFormData } from "@/lib/validations";
 import { signIn } from "@/app/actions/auth";
 import { useLanguage } from "@/lib/i18n/language-context";
+import { safeAppPath } from "@/lib/auth/redirect";
 
 interface LoginFormProps {
   redirectUrl?: string;
@@ -53,14 +54,8 @@ export function LoginForm({ redirectUrl, errorMessage, noticeMessage }: LoginFor
         return;
       }
 
-      const isSafeRedirect =
-        redirectUrl &&
-        redirectUrl.startsWith("/") &&
-        !redirectUrl.startsWith("//") &&
-        !redirectUrl.includes("\\") &&
-        !redirectUrl.includes(":");
-
-      router.push(isSafeRedirect ? redirectUrl : result.data.redirectUrl);
+      const destination = safeAppPath(redirectUrl, result.data.redirectUrl);
+      router.push(destination);
       router.refresh();
     });
   }
@@ -99,7 +94,15 @@ export function LoginForm({ redirectUrl, errorMessage, noticeMessage }: LoginFor
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="login-password">{t("auth_password_label")}</Label>
+          <div className="flex items-center justify-between gap-3">
+            <Label htmlFor="login-password">{t("auth_password_label")}</Label>
+            <Link
+              href="/forgot-password"
+              className="text-xs font-medium text-primary underline-offset-4 hover:underline"
+            >
+              {t("auth_forgot_link", "Forgot password?")}
+            </Link>
+          </div>
           <Input
             id="login-password"
             type="password"

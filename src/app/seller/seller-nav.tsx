@@ -1,6 +1,6 @@
 "use client";
 
-import { Package, PlusCircle, LogOut, Wallet, Inbox, MessageCircle, Handshake } from "lucide-react";
+import { Package, PlusCircle, LogOut, Wallet, Inbox, MessageCircle, Handshake, Settings } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { MobileTabLink, SidebarNavLink } from "@/components/layout/nav-link";
@@ -16,6 +16,7 @@ export function SellerSidebarNav() {
     { href: "/seller/messages", label: t("chat_inbox_title", "Messages"), icon: MessageCircle },
     { href: "/seller/deals", label: t("deals_nav", "Agent deals"), icon: Handshake },
     { href: "/seller/wallet", label: t("wallet_title"), icon: Wallet, exact: true },
+    { href: "/account/settings", label: t("nav_account_settings", "Settings"), icon: Settings, exact: true },
     { href: "/seller/listings/new", label: t("seller_add_material"), icon: PlusCircle, exact: true },
   ];
 

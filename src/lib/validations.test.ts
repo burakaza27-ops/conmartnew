@@ -1,11 +1,17 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  changePasswordSchema,
+  ethiopianPhoneLookupVariants,
   ethiopianPhoneSchema,
   initiateConversationSchema,
+  normalizeEthiopianPhone,
   purchaseEnquirySchema,
   registerSchema,
+  requestPasswordResetSchema,
+  resetPasswordSchema,
   topUpRequestSchema,
+  updateProfileSchema,
 } from "@/lib/validations";
 
 function validRegistration(overrides: Record<string, unknown> = {}) {
@@ -204,5 +210,101 @@ describe("initiateConversationSchema", () => {
       expect(result.data).not.toHaveProperty("forceDirect");
       expect(result.data).not.toHaveProperty("skipAgent");
     }
+  });
+});
+
+describe("normalizeEthiopianPhone", () => {
+  it("canonicalizes compact and spaced numbers to the same form", () => {
+    expect(normalizeEthiopianPhone("+251912345678")).toBe("+251 91 234 5678");
+    expect(normalizeEthiopianPhone("+251 91 234 5678")).toBe("+251 91 234 5678");
+  });
+
+  it("includes both forms in lookup variants", () => {
+    const variants = ethiopianPhoneLookupVariants("+251912345678");
+    expect(variants).toContain("+251 91 234 5678");
+    expect(variants).toContain("+251912345678");
+  });
+});
+
+describe("updateProfileSchema", () => {
+  it("accepts a complete profile", () => {
+    expect(
+      updateProfileSchema.safeParse({
+        name: "Abebe Bekele",
+        phone: "+251 91 234 5678",
+        companyName: "Bekele Construction PLC",
+      }).success
+    ).toBe(true);
+  });
+
+  it("rejects a short name or company", () => {
+    expect(
+      updateProfileSchema.safeParse({
+        name: "A",
+        phone: "+251 91 234 5678",
+        companyName: "Bekele Construction PLC",
+      }).success
+    ).toBe(false);
+  });
+});
+
+describe("changePasswordSchema", () => {
+  const base = {
+    currentPassword: "Password1",
+    newPassword: "Password2",
+    confirmPassword: "Password2",
+  };
+
+  it("accepts a matching new password that differs from the current one", () => {
+    expect(changePasswordSchema.safeParse(base).success).toBe(true);
+  });
+
+  it("rejects a confirmation mismatch", () => {
+    expect(
+      changePasswordSchema.safeParse({ ...base, confirmPassword: "Password3" })
+        .success
+    ).toBe(false);
+  });
+
+  it("rejects reusing the current password", () => {
+    expect(
+      changePasswordSchema.safeParse({
+        currentPassword: "Password1",
+        newPassword: "Password1",
+        confirmPassword: "Password1",
+      }).success
+    ).toBe(false);
+  });
+});
+
+describe("resetPasswordSchema", () => {
+  it("accepts a matching pair", () => {
+    expect(
+      resetPasswordSchema.safeParse({
+        newPassword: "Password2",
+        confirmPassword: "Password2",
+      }).success
+    ).toBe(true);
+  });
+
+  it("rejects a weak password", () => {
+    expect(
+      resetPasswordSchema.safeParse({
+        newPassword: "short",
+        confirmPassword: "short",
+      }).success
+    ).toBe(false);
+  });
+});
+
+describe("requestPasswordResetSchema", () => {
+  it("accepts an email", () => {
+    expect(
+      requestPasswordResetSchema.safeParse({ email: "abebe@example.com" }).success
+    ).toBe(true);
+  });
+
+  it("rejects a blank email", () => {
+    expect(requestPasswordResetSchema.safeParse({ email: "" }).success).toBe(false);
   });
 });

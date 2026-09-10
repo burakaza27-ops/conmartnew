@@ -19,6 +19,9 @@ import type { UserRole } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 
+/** Every role that can sign in to the application. */
+export const ALL_APP_ROLES = ["BUYER", "SELLER", "FIELD_AGENT", "ADMIN"] as const;
+
 export interface SessionUser {
   id: string;
   authId: string;

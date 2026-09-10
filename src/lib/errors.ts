@@ -61,6 +61,42 @@ export function mapSignUpAuthError(message: string): string {
   return "Something went wrong. Please try again.";
 }
 
+/** Maps Supabase password-update failures to messages that are safe to show. */
+export function mapPasswordUpdateError(message: string): string {
+  const lower = message.toLowerCase();
+
+  if (
+    lower.includes("same") ||
+    lower.includes("should be different") ||
+    lower.includes("different from the old")
+  ) {
+    return "New password must be different from your current password.";
+  }
+
+  if (
+    lower.includes("pwned") ||
+    lower.includes("leaked") ||
+    lower.includes("data breach") ||
+    lower.includes("haveibeenpwned")
+  ) {
+    return "That password appears in a public breach list. Choose a different password.";
+  }
+
+  if (lower.includes("weak") || lower.includes("too short")) {
+    return "Password does not meet security requirements. Use at least 8 characters with upper, lower, and a number.";
+  }
+
+  if (lower.includes("rate limit") || lower.includes("too many")) {
+    return "Too many attempts. Please wait a few minutes and try again.";
+  }
+
+  if (lower.includes("session") || lower.includes("jwt") || lower.includes("expired")) {
+    return "Your reset session has expired. Request a new password reset email.";
+  }
+
+  return "We could not update your password. Please try again.";
+}
+
 /**
  * Converts a caught value into a message safe to return over the wire.
  * Unexpected errors are logged with `context` and replaced with `fallback`.

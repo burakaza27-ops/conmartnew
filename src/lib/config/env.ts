@@ -29,6 +29,9 @@ const serverEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1, "is required"),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
 
+  /** Optional public origin for password-reset emails when Host cannot be read. */
+  NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
+
   SUPABASE_STORAGE_BUCKET: z.string().min(1).default("products"),
 
   PLATFORM_FEE_PERCENT: percentage.default(0),

@@ -24,12 +24,13 @@ const AUTHENTICATED_PREFIXES = [
   "/seller",
   "/buyer",
   "/agent",
+  "/account",
   "/dashboard",
   "/api/upload",
 ] as const;
 
 /** Pages that make no sense once signed in. */
-const ANONYMOUS_ONLY_ROUTES = ["/login", "/register"] as const;
+const ANONYMOUS_ONLY_ROUTES = ["/login", "/register", "/forgot-password"] as const;
 
 const SUPABASE_ORIGIN = new URL(
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://placeholder.supabase.co"

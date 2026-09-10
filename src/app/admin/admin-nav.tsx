@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, LogOut } from "lucide-react";
+import { BarChart3, LogOut, Settings } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { MobileTabLink, SidebarNavLink } from "@/components/layout/nav-link";
@@ -16,6 +16,12 @@ export function AdminSidebarNav() {
         href="/admin/command-center"
         label={t("nav_command_center")}
         icon={BarChart3}
+        exact
+      />
+      <SidebarNavLink
+        href="/account/settings"
+        label={t("nav_account_settings", "Settings")}
+        icon={Settings}
         exact
       />
     </nav>
