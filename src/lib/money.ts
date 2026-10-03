@@ -55,3 +55,61 @@ export function roundCurrency(value: number): number {
 
   return (value < 0 ? -cents : cents) / CENTS;
 }
+
+// =============================================================================
+// FORMATTING
+// =============================================================================
+// Using Intl.NumberFormat rather than .toFixed() so the decimal separator,
+// digit grouping, and currency symbol are locale-correct for both English and
+// Amharic readers. Node.js 18+ ships full ICU data so am-ET works server-side.
+// =============================================================================
+
+export const SUPPORTED_LOCALES = ["en-ET", "am-ET"] as const;
+export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
+
+const formattersCache = new Map<string, Intl.NumberFormat>();
+
+function getFormatter(locale: string, style: "currency" | "decimal"): Intl.NumberFormat {
+  const key = `${locale}:${style}`;
+  if (!formattersCache.has(key)) {
+    formattersCache.set(
+      key,
+      new Intl.NumberFormat(locale, {
+        style,
+        currency: style === "currency" ? "ETB" : undefined,
+        minimumFractionDigits: style === "currency" ? 2 : 0,
+        maximumFractionDigits: style === "currency" ? 2 : 0,
+      })
+    );
+  }
+  return formattersCache.get(key)!;
+}
+
+/**
+ * Formats an amount in Ethiopian Birr with the currency symbol.
+ *
+ * @example formatCurrency(1280) → "ETB 1,280.00"
+ * @example formatCurrency(1280, "am-ET") → "ብር 1,280.00" (Amharic)
+ */
+export function formatCurrency(
+  amount: number,
+  locale: SupportedLocale | (string & {}) = "en-ET"
+): string {
+  const rounded = roundCurrency(amount);
+  return getFormatter(locale, "currency").format(rounded);
+}
+
+/**
+ * Short-form number with comma grouping (no currency symbol).
+ * Useful in compact table cells where the ETB column header implies the unit.
+ *
+ * @example formatAmount(1280.5) → "1,281"
+ */
+export function formatAmount(
+  amount: number,
+  locale: SupportedLocale | (string & {}) = "en-ET"
+): string {
+  const rounded = roundCurrency(amount);
+  return getFormatter(locale, "decimal").format(rounded);
+}
+

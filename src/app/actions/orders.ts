@@ -30,6 +30,11 @@ import {
   type ActionResult,
   type OrderStatus,
 } from "@/lib/types";
+import {
+  getClientIdentifier,
+  rateLimit,
+  rateLimitMessage,
+} from "@/lib/security/rate-limit";
 
 // =============================================================================
 // GENERATE PROFORMA (Buyer Action)
@@ -55,14 +60,34 @@ export async function generateProformaAction(
   // ---------------------------------------------------------------------------
   // 1. Authenticate
   // ---------------------------------------------------------------------------
-  const auth = await authorize(["BUYER", "ADMIN"]);
+  const auth = await authorize(["ADMIN"]);
   if (!auth.ok) {
-    return { success: false, error: auth.error };
+    return {
+      success: false,
+      error: "Direct proforma generation is disabled. Please submit a Purchase Enquiry or request an Agent.",
+    };
   }
   const dbUser = auth.user;
 
   // ---------------------------------------------------------------------------
-  // 2. Validate input
+  // 2. Rate limit — 5 proformas / user / hour, 10 / IP / hour
+  // ---------------------------------------------------------------------------
+  const clientId = await getClientIdentifier();
+  const [byUser, byIp] = await Promise.all([
+    rateLimit(`proforma:user:${dbUser.id}`, { limit: 5, windowSeconds: 3600 }),
+    rateLimit(`proforma:ip:${clientId}`, { limit: 10, windowSeconds: 3600 }),
+  ]);
+  if (!byUser.allowed || !byIp.allowed) {
+    return {
+      success: false,
+      error: rateLimitMessage(
+        Math.max(byUser.retryAfterSeconds, byIp.retryAfterSeconds)
+      ),
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // 3. Validate input
   // ---------------------------------------------------------------------------
   const parsed = generateProformaSchema.safeParse(input);
   if (!parsed.success) {
@@ -199,10 +224,13 @@ export async function generateMultiItemProformaAction(
     return { success: false, error: "Cart cannot be empty." };
   }
 
-  // 1. Authenticate
-  const auth = await authorize(["BUYER", "ADMIN"]);
+  // 1. Authenticate (Admin only quarantine)
+  const auth = await authorize(["ADMIN"]);
   if (!auth.ok) {
-    return { success: false, error: auth.error };
+    return {
+      success: false,
+      error: "Cart proforma generation is disabled. Please submit a Purchase Enquiry.",
+    };
   }
   const dbUser = auth.user;
 

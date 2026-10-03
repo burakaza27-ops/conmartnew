@@ -278,7 +278,7 @@ export function EditListingForm({
         <Card className="border-border/60 shadow-xs">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-bold">
-              {t("uploader_quick_presets")}
+              {t("seller_form_image_label", "Material Photo")}
             </CardTitle>
           </CardHeader>
           <CardContent>

@@ -5,6 +5,7 @@ import { Settings } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { LanguageToggle } from "@/components/language-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { NotificationBell } from "@/components/notification-bell";
 import { cn } from "@/lib/utils";
 
 interface AppShellProps {
@@ -12,6 +13,9 @@ interface AppShellProps {
   portal: string;
   userName: string;
   userEmail: string;
+  /** Authenticated user ID — used to subscribe to Realtime notifications. */
+  userId?: string;
+  unreadNotifications?: number;
   sidebarNav: ReactNode;
   sidebarFooter?: ReactNode;
   mobileNav: ReactNode;
@@ -31,6 +35,8 @@ export function AppShell({
   portal,
   userName,
   userEmail,
+  userId,
+  unreadNotifications = 0,
   sidebarNav,
   sidebarFooter,
   mobileNav,
@@ -50,7 +56,8 @@ export function AppShell({
       <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-border bg-sidebar md:flex">
         <div className="flex h-16 items-center justify-between gap-2 px-4">
           <Logo size="sm" subtitle={portal} />
-          <div className="flex items-center">
+          <div className="flex items-center gap-0.5">
+            <NotificationBell initialUnread={unreadNotifications} userId={userId} />
             <LanguageToggle />
             <ThemeToggle />
           </div>
@@ -82,6 +89,7 @@ export function AppShell({
       <header className="sticky top-0 z-40 flex h-14 items-center justify-between gap-3 border-b border-border bg-background/85 px-3 backdrop-blur-md md:hidden">
         <Logo size="sm" subtitle={portal} />
         <div className="flex items-center gap-0.5">
+          <NotificationBell initialUnread={unreadNotifications} userId={userId} />
           <LanguageToggle />
           <ThemeToggle />
           <Link

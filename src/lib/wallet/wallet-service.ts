@@ -117,13 +117,34 @@ export async function executeUnlockIntroductionTransaction({
       throw new DomainError("Enquiry not found.");
     }
 
+    if (enquiry.sellerId !== sellerId) {
+      throw new DomainError("Enquiry seller does not match the wallet being charged.");
+    }
+
     if (enquiry.status !== EnquiryStatus.PENDING) {
       throw new DomainError(
         `This enquiry is already ${enquiry.status.toLowerCase()} and cannot be unlocked again.`
       );
     }
 
-    // 2. Fetch or create seller wallet
+    // 2. Advance the enquiry from PENDING to ACCEPTED first with atomic updateMany.
+    // This locks the enquiry and guarantees that any concurrent decline or accept
+    // attempt fails before any wallet balance is deducted or ledger record created.
+    const accepted = await tx.enquiry.updateMany({
+      where: { id: enquiry.id, status: EnquiryStatus.PENDING },
+      data: {
+        status: EnquiryStatus.ACCEPTED,
+        respondedAt: new Date(),
+      },
+    });
+
+    if (accepted.count !== 1) {
+      throw new DomainError(
+        "This enquiry was already answered or declined from another session. No fee has been charged."
+      );
+    }
+
+    // 3. Fetch or create seller wallet
     let wallet = await tx.wallet.findUnique({
       where: { sellerId },
     });
@@ -143,7 +164,7 @@ export async function executeUnlockIntroductionTransaction({
     const newCredit = roundCurrency(currentCredit - creditDeduction);
     const newCash = roundCurrency(currentCash - cashDeduction);
 
-    // 3. Debit the wallet, guarding on the balances we just read.
+    // 4. Debit the wallet, guarding on the balances we just read.
     //
     // Two enquiries accepted at the same moment would otherwise both pass the
     // affordability check and both write an absolute balance, letting the
@@ -167,7 +188,7 @@ export async function executeUnlockIntroductionTransaction({
       );
     }
 
-    // 4. Record immutable wallet ledger entry
+    // 5. Record immutable wallet ledger entry
     await tx.walletTransaction.create({
       data: {
         walletId: wallet.id,
@@ -181,7 +202,7 @@ export async function executeUnlockIntroductionTransaction({
       },
     });
 
-    // 5. Create the revenue record. The unique constraint on `enquiry_id` is
+    // 6. Create the revenue record. The unique constraint on `enquiry_id` is
     //    the final backstop against charging twice for one introduction.
     const unlockRecord = await tx.unlockRecord.create({
       data: {
@@ -196,21 +217,6 @@ export async function executeUnlockIntroductionTransaction({
         refundStatus: RefundStatus.NONE,
       },
     });
-
-    // 6. Advance the enquiry, again guarding on the state we read.
-    const accepted = await tx.enquiry.updateMany({
-      where: { id: enquiry.id, status: EnquiryStatus.PENDING },
-      data: {
-        status: EnquiryStatus.ACCEPTED,
-        respondedAt: new Date(),
-      },
-    });
-
-    if (accepted.count !== 1) {
-      throw new DomainError(
-        "This enquiry was answered from another session. No fee has been charged."
-      );
-    }
 
     // Prisma Decimal fields are class instances and cannot cross the server
     // action boundary, so amounts are converted to numbers here rather than
@@ -331,16 +337,19 @@ export async function processDealFailureRefund({
 
     // Update seller metrics. Read back by suspendSellerIfUnreliable to decide
     // whether this supplier's failure rate warrants suspension.
-    await tx.sellerProfile.upsert({
-      where: { userId: unlockRecord.sellerId },
-      update: {
-        failedDealsCount: { increment: 1 },
-      },
-      create: {
-        userId: unlockRecord.sellerId,
-        failedDealsCount: 1,
-      },
-    });
+    // If the seller already self-reported failure, failedDealsCount was already incremented.
+    if (unlockRecord.sellerReportedOutcome !== OutcomeType.FAILURE) {
+      await tx.sellerProfile.upsert({
+        where: { userId: unlockRecord.sellerId },
+        update: {
+          failedDealsCount: { increment: 1 },
+        },
+        create: {
+          userId: unlockRecord.sellerId,
+          failedDealsCount: 1,
+        },
+      });
+    }
 
     return {
       success: true as const,
@@ -468,6 +477,8 @@ export async function approveTopUpRequest({
     return {
       success: true as const,
       topUpId,
+      sellerId: topUp.sellerId,
+      referenceCode: topUp.referenceCode,
       amount: roundCurrency(creditAmount),
       newCashBalance: newCash,
     };

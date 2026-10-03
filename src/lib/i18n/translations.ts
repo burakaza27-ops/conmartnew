@@ -12,7 +12,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     // -------------------------------------------------------------------------
     // Brand & Navigation
     // -------------------------------------------------------------------------
-    brand_name: "ConMart Ethiopia",
+    brand_name: "ECON Ethiopia",
     brand_tagline: "B2B Construction Materials Marketplace",
     brand_subtitle: "Wholesale materials with guaranteed depot pricing",
     nav_categories: "Categories",
@@ -749,7 +749,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     // -------------------------------------------------------------------------
     // Brand & Navigation
     // -------------------------------------------------------------------------
-    brand_name: "ኮንማርት ኢትዮጵያ",
+    brand_name: "ኢኮን ኢትዮጵያ (ECON)",
     brand_tagline: "የኢትዮጵያ የሕንፃ ግንባታ ዕቃዎች የጅምላ ገበያ",
     brand_subtitle: "ከአስተማማኝ መጋዘኖች በቀጥታ ዋስትና ያለው የጅምላ ዋጋ",
     nav_categories: "የዕቃዎች ምድብ",

@@ -1,11 +1,7 @@
-// =============================================================================
 // ConMart — Depot Available Materials Table (Client Component)
-// =============================================================================
-// Displays all other active materials stocked at the current seller's depot yard.
-// Allows buyers to bundle multiple products from the same physical location
-// into their Proforma Cart to optimize Sino-truck / Isuzu freight logistics.
+// Shows other active materials at the same depot yard so buyers can identify
+// same-trip freight savings. Links to listing detail for enquiry or chat.
 // Fully bilingual English & Amharic.
-// =============================================================================
 
 "use client";
 
@@ -14,7 +10,6 @@ import {
   Building2,
   MapPin,
   Truck,
-  Plus,
   ArrowRight,
   Sparkles,
   Package,
@@ -31,7 +26,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatETB } from "@/lib/types";
-import { useCart } from "@/lib/cart/cart-context";
 import { useLanguage } from "@/lib/i18n/language-context";
 import {
   getCategoryTitle,
@@ -51,32 +45,11 @@ export function DepotMaterialsTable({
   location,
   listings,
 }: DepotMaterialsTableProps) {
-  const { addItem } = useCart();
   const { t, locale } = useLanguage();
 
   if (listings.length === 0) {
     return null;
   }
-
-  const handleQuickAdd = (item: CatalogListing) => {
-    if (!item.lowestPrice) return;
-    const unitLabel = getLocalizedUnit(item.product.unit, locale);
-    const defaultQty = 100; // sensible default or min
-    addItem({
-      listingId: item.id,
-      sellerId: item.seller.id,
-      depotCode: item.seller.companyName,
-      location: item.location,
-      productTitle: item.product.title,
-      unit: unitLabel,
-      imageUrl: item.imageUrl,
-      qty: defaultQty,
-      unitPrice: item.lowestPrice,
-      subtotal: defaultQty * item.lowestPrice,
-      minQty: 1,
-      maxQty: 100000,
-    });
-  };
 
   const localizedLocation = getLocalizedLocation(location, locale);
 
@@ -195,22 +168,12 @@ export function DepotMaterialsTable({
                     </TableCell>
 
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          className="h-8 text-xs font-semibold gap-1"
-                          onClick={() => handleQuickAdd(item)}
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                          <span className="hidden sm:inline">{t("depot_btn_add_cart")}</span>
+                      <Link href={`/buyer/catalog/${item.id}`}>
+                        <Button size="sm" variant="ghost" className="h-8 gap-1 text-xs" title="View listing">
+                          {t("depot_btn_view", "View")}
+                          <ArrowRight className="h-3.5 w-3.5" />
                         </Button>
-                        <Link href={`/buyer/catalog/${item.id}`}>
-                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0" title="View details">
-                            <ArrowRight className="h-3.5 w-3.5" />
-                          </Button>
-                        </Link>
-                      </div>
+                      </Link>
                     </TableCell>
                   </TableRow>
                 );

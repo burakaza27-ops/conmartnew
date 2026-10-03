@@ -5,8 +5,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { ALL_APP_ROLES, requireRole } from "@/lib/auth/session";
 import { signOut } from "@/app/actions/auth";
-import { CartProvider } from "@/lib/cart/cart-context";
-import { CartDrawer, CartTriggerButton } from "@/components/cart/cart-drawer";
+
 import { BuyerSidebarNav, BuyerMobileBottomNav } from "@/app/buyer/buyer-nav";
 import {
   SellerSidebarNav,
@@ -80,34 +79,27 @@ export default async function AccountLayout({
   }
 
   return (
-    <CartProvider>
-      <AppShell
-        portal="Buyer"
-        userName={user.name}
-        userEmail={user.email ?? ""}
-        sidebarNav={<BuyerSidebarNav />}
-        sidebarFooter={
-          <div className="space-y-2">
-            <CartTriggerButton />
-            <form action={signOut}>
-              <Button
-                type="submit"
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start gap-2 text-muted-foreground"
-              >
-                <LogOut className="size-4" />
-                Sign out
-              </Button>
-            </form>
-          </div>
-        }
-        mobileNav={<BuyerMobileBottomNav signOutAction={signOut} />}
-        mobileActions={<CartTriggerButton />}
-      >
-        {children}
-      </AppShell>
-      <CartDrawer />
-    </CartProvider>
+    <AppShell
+      portal="Buyer"
+      userName={user.name}
+      userEmail={user.email ?? ""}
+      sidebarNav={<BuyerSidebarNav />}
+      sidebarFooter={
+        <form action={signOut}>
+          <Button
+            type="submit"
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start gap-2 text-muted-foreground"
+          >
+            <LogOut className="size-4" />
+            Sign out
+          </Button>
+        </form>
+      }
+      mobileNav={<BuyerMobileBottomNav signOutAction={signOut} />}
+    >
+      {children}
+    </AppShell>
   );
 }

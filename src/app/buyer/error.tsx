@@ -1,8 +1,5 @@
-// =============================================================================
 // ConMart — Buyer Dashboard Error Boundary (Client Component)
-// =============================================================================
-// Isolates errors to the buyer content area without breaking the sidebar or cart.
-// =============================================================================
+// Isolates render errors to the buyer content area without breaking the sidebar.
 
 "use client";
 
@@ -32,7 +29,7 @@ export default function BuyerErrorBoundary({
         Unable to load this section
       </h3>
       <p className="mt-1.5 max-w-sm text-xs text-muted-foreground">
-        There was a temporary problem retrieving material data. Your active cart and orders are safe.
+        There was a temporary problem retrieving material data. Please retry or browse the catalog.
       </p>
 
       <div className="mt-6 flex items-center gap-3">

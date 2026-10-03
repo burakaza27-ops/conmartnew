@@ -28,8 +28,10 @@ export interface AdminOrderRow {
   id: string;
   referenceCode: string;
   qty: number;
-  grandTotal: number;
+  baseSubtotal: number;
   platformFee: number;
+  tax: number;
+  grandTotal: number;
   status: OrderStatus;
   createdAt: Date;
   buyerName: string;
@@ -130,8 +132,10 @@ export async function fetchAllOrders(): Promise<AdminOrderRow[]> {
       id: order.id,
       referenceCode: order.referenceCode,
       qty: order.qty ?? mappedItems.reduce((acc, i) => acc + i.qty, 0),
-      grandTotal: Number(order.grandTotal),
+      baseSubtotal: Number(order.baseSubtotal),
       platformFee: Number(order.platformFee),
+      tax: Number(order.tax),
+      grandTotal: Number(order.grandTotal),
       status: order.status as OrderStatus,
       createdAt: order.createdAt,
       buyerName: order.buyer.name,

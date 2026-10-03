@@ -8,7 +8,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Phone, MapPin, Calendar, Send } from "lucide-react";
+import { ArrowLeft, Phone, MapPin, Calendar, Send, Download } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -110,6 +110,18 @@ export function ProformaView({ order, adminPhone }: ProformaViewProps) {
               <span className="hidden sm:inline">{t("proforma_btn_telegram")}</span>
             </a>
           )}
+          {/* PDF Download — hits streaming API route, triggers native save dialog */}
+          <a
+            href={`/api/proforma/${order.referenceCode}/pdf`}
+            download={`ConMart-Proforma-${order.referenceCode}.pdf`}
+            className={cn(
+              buttonVariants({ variant: "default", size: "sm" }),
+              "gap-1.5 text-xs"
+            )}
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Download PDF</span>
+          </a>
           <PrintButton />
         </div>
       </div>

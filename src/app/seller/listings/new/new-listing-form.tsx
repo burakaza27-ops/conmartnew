@@ -376,12 +376,12 @@ export function NewListingForm({
             <CardHeader className="pb-3 border-b border-border/40">
               <CardTitle className="text-sm font-bold flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-primary" />
-                <span>2. {t("uploader_quick_presets")}</span>
+                <span>2. {t("seller_form_image_label", "Material Photo")}</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
               <p className="text-xs text-muted-foreground mb-3">
-                {t("uploader_ready")}
+                {t("uploader_file_support", "Upload high-res inventory photos (up to 5MB) or choose from standard presets.")}
               </p>
               <ImageUploader
                 value={imageUrl}

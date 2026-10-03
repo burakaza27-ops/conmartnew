@@ -235,7 +235,7 @@ model User {
   authId      String?  @unique @map("auth_id")
   role        UserRole
   name        String
-  phone       String
+  phone       String   @unique
   companyName String   @map("company_name")
   createdAt   DateTime @default(now()) @map("created_at")
 
@@ -260,6 +260,7 @@ model User {
   sellerChatRooms  ChatRoom[]      @relation("SellerChatRooms")
   agentChatRooms   ChatRoom[]      @relation("AgentChatRooms")
   chatMessages     ChatMessage[]
+  notifications    AppNotification[]
 
   @@map("users")
 }
@@ -338,6 +339,7 @@ model TopUpRequest {
   reviewedAt    DateTime?      @map("reviewed_at")
   createdAt     DateTime       @default(now()) @map("created_at")
 
+  @@unique([sellerId, referenceCode])
   @@map("top_up_requests")
 }
 
@@ -374,6 +376,7 @@ model Product {
   category Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   listings Listing[]
 
+  @@index([categoryId])
   @@map("products")
 }
 
@@ -404,6 +407,8 @@ model Listing {
   dealTickets DealTicket[]
   chatRooms   ChatRoom[]
 
+  @@index([sellerId, active])
+  @@index([productId, active])
   @@map("listings")
 }
 
@@ -448,7 +453,11 @@ model Enquiry {
   unlockRecord UnlockRecord?
   disputes     DisputeCase[]
   dealTicket   DealTicket?
+  chatRooms    ChatRoom[]
 
+  @@index([sellerId, status, createdAt(sort: Desc)])
+  @@index([buyerId, status, createdAt(sort: Desc)])
+  @@index([agentId, status])
   @@map("enquiries")
 }
 
@@ -639,6 +648,7 @@ model ChatRoom {
   dealTicketId String?      @map("deal_ticket_id")
   dealTicket   DealTicket?  @relation(fields: [dealTicketId], references: [id], onDelete: Cascade)
   enquiryId    String?      @map("enquiry_id")
+  enquiry      Enquiry?     @relation(fields: [enquiryId], references: [id], onDelete: SetNull)
   listingId    String?      @map("listing_id")
   listing      Listing?     @relation(fields: [listingId], references: [id], onDelete: SetNull)
   createdAt    DateTime     @default(now()) @map("created_at")
@@ -665,4 +675,41 @@ model ChatMessage {
 
   @@index([roomId, createdAt])
   @@map("chat_messages")
+}
+
+// =============================================================================
+// IN-APP NOTIFICATIONS
+// =============================================================================
+// Stores transient user-facing notifications (new enquiry, acceptance, wallet
+// credit, deal status change). Supabase Realtime listens on this table so the
+// bell icon badge updates without a page reload.
+// =============================================================================
+
+enum NotificationType {
+  ENQUIRY_RECEIVED      // seller: a buyer sent an enquiry on your listing
+  ENQUIRY_ACCEPTED      // buyer: supplier accepted and unlocked your enquiry
+  ENQUIRY_DECLINED      // buyer: supplier declined your enquiry
+  WALLET_TOPPED_UP      // seller: admin approved a top-up request
+  DEAL_STATUS_CHANGED   // buyer/seller: deal ticket moved to a new state
+  MESSAGE_RECEIVED      // either party: new chat message in a room
+  DEAL_FAILURE_REFUND   // seller: credit returned after a failed deal
+
+  @@map("notification_type")
+}
+
+model AppNotification {
+  id        String           @id @default(cuid())
+  userId    String           @map("user_id")
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  body      String?
+  /// JSON payload for deep-linking (enquiry id, room id, etc.)
+  meta      Json?
+  readAt    DateTime?        @map("read_at")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  /// Primary query: all unread notifications for a user, newest first
+  @@index([userId, readAt, createdAt(sort: Desc)])
+  @@map("app_notifications")
 }

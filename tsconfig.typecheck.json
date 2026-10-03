@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "incremental": false,
+    "plugins": [{ "name": "next" }],
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "files": [
+    "src/app/buyer/layout.tsx",
+    "src/app/buyer/catalog/[listingId]/listing-detail-view.tsx",
+    "src/app/buyer/catalog/[listingId]/page.tsx",
+    "src/app/buyer/catalog/[listingId]/pricing-calculator.tsx",
+    "src/app/buyer/catalog/[listingId]/depot-materials-table.tsx",
+    "src/app/buyer/product/[productId]/product-offers-view.tsx",
+    "src/app/buyer/product/[productId]/page.tsx",
+    "src/components/layout/public-browse-shell.tsx",
+    "src/components/auth/auth-gate-modal.tsx",
+    "src/proxy.ts",
+    "src/app/sitemap.ts",
+    "src/app/robots.ts"
+  ]
+}

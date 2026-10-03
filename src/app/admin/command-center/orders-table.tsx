@@ -157,8 +157,8 @@ export function OrdersTable({ orders }: OrdersTableProps) {
       "Materials Summary",
       "Supplier Depot",
       "Subtotal (ETB)",
-      "Platform Fee 10% (ETB)",
-      "VAT 15% (ETB)",
+      "Platform Fee (ETB)",
+      "VAT (ETB)",
       "Grand Total (ETB)",
     ];
 
@@ -179,9 +179,6 @@ export function OrdersTable({ orders }: OrdersTableProps) {
             ).join("; ")
           : `${order.sellerCompany} [${order.location}]`;
 
-      const vatEst = (order.grandTotal * 0.15) / 1.15;
-      const subtotalEst = order.grandTotal - order.platformFee - vatEst;
-
       return [
         order.referenceCode,
         new Date(order.createdAt).toISOString().replace("T", " ").substring(0, 19),
@@ -191,9 +188,9 @@ export function OrdersTable({ orders }: OrdersTableProps) {
         order.buyerPhone,
         materialsSummary,
         depotSummary,
-        subtotalEst > 0 ? subtotalEst.toFixed(2) : "0.00",
+        order.baseSubtotal.toFixed(2),
         order.platformFee.toFixed(2),
-        vatEst.toFixed(2),
+        order.tax.toFixed(2),
         order.grandTotal.toFixed(2),
       ];
     });
@@ -571,15 +568,9 @@ export function OrdersTable({ orders }: OrdersTableProps) {
                                       </div>
                                     </div>
 
-                                    <div className="flex justify-between text-[10px] text-muted-foreground pt-1">
-                                      <span>
-                                        {locale === "am" ? "ለአቅራቢው (90%)፡ " : "Seller Payout (90%): "}
-                                        {formatETB(item.subtotal * 0.9, locale)}
-                                      </span>
-                                      <span className="text-emerald-600 font-semibold">
-                                        {locale === "am" ? "የኮንማርት ድርሻ፡ " : "ConMart Cut: "}
-                                        {formatETB(item.subtotal * 0.1, locale)}
-                                      </span>
+                                    <div className="text-[10px] text-muted-foreground pt-1">
+                                      {locale === "am" ? "ጠቅላላ ንዑስ ድምር፡ " : "Item Subtotal: "}
+                                      {formatETB(item.subtotal, locale)}
                                     </div>
                                   </div>
                                 );

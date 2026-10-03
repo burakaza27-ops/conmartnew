@@ -228,8 +228,7 @@ CREATE POLICY "orders_select_admin" ON public.orders
   FOR SELECT
   USING (public.get_user_role() = 'ADMIN');
 
--- Only the system (via server actions with service role) can insert orders.
--- Buyers trigger this through the Proforma generation server action.
+-- Buyers can insert their own orders via server actions.
 CREATE POLICY "orders_insert_buyer" ON public.orders
   FOR INSERT
   WITH CHECK (
@@ -245,3 +244,23 @@ CREATE POLICY "orders_update_admin" ON public.orders
 
 -- Orders should never be deleted — no delete policy.
 -- If soft-delete is needed in the future, add a `deleted_at` column.
+
+-- =============================================================================
+-- TABLE: app_notifications
+-- =============================================================================
+ALTER TABLE public.app_notifications ENABLE ROW LEVEL SECURITY;
+
+-- Users can only SELECT/LISTEN their own notifications.
+CREATE POLICY "notifications_select_own" ON public.app_notifications
+  FOR SELECT
+  USING (user_id = public.get_user_id());
+
+-- Users can only UPDATE their own notifications (e.g. marking read).
+CREATE POLICY "notifications_update_own" ON public.app_notifications
+  FOR UPDATE
+  USING (user_id = public.get_user_id())
+  WITH CHECK (user_id = public.get_user_id());
+
+-- Only the server (service role) creates notifications.
+-- Direct client inserts are rejected by RLS.
+

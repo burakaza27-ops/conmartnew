@@ -35,15 +35,17 @@ import {
   getLocalizedLocation,
 } from "@/lib/i18n/translations";
 import { PurchaseRequestModal } from "@/components/enquiry/purchase-request-modal";
-import { StartChatButton } from "@/components/chat/start-chat-button";
+import { AuthGateButton } from "@/components/auth/auth-gate-modal";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { ProductWithOffers, CompetingOffer } from "@/lib/data/catalog";
 
 interface ProductOffersViewProps {
   product: ProductWithOffers;
+  /** Whether the current visitor has an active session. */
+  isAuthenticated?: boolean;
 }
 
-export function ProductOffersView({ product }: ProductOffersViewProps) {
+export function ProductOffersView({ product, isAuthenticated = false }: ProductOffersViewProps) {
   const { locale, t } = useLanguage();
   const [selectedListingForEnquiry, setSelectedListingForEnquiry] = useState<CompetingOffer | null>(
     null
@@ -264,33 +266,44 @@ export function ProductOffersView({ product }: ProductOffersViewProps) {
                       </div>
 
                       <div className="flex items-center gap-2 ml-auto">
-                        <Link
-                          href={`/buyer/catalog/${offer.listingId}`}
-                          className={cn(
-                            buttonVariants({ variant: "outline", size: "sm" }),
-                            "gap-1.5 text-xs font-medium"
-                          )}
+                        <AuthGateButton
+                          isAuthenticated={isAuthenticated}
+                          redirectTo={`/buyer/product/${product.id}`}
+                          fallbackLabel={t("offers_btn_proforma")}
+                          fallbackIcon={<Calculator className="h-3.5 w-3.5" />}
+                          fallbackVariant="outline"
+                          fallbackSize="sm"
+                          fallbackClassName="gap-1.5 text-xs font-medium"
                         >
-                          <Calculator className="h-3.5 w-3.5" />
-                          {t("offers_btn_proforma")}
-                        </Link>
+                          <Link
+                            href={`/buyer/catalog/${offer.listingId}`}
+                            className={cn(
+                              buttonVariants({ variant: "outline", size: "sm" }),
+                              "gap-1.5 text-xs font-medium"
+                            )}
+                          >
+                            <Calculator className="h-3.5 w-3.5" />
+                            {t("offers_btn_proforma")}
+                          </Link>
+                        </AuthGateButton>
 
-                        <StartChatButton
-                          listingId={offer.listingId}
-                          directChatEnabled={offer.directChatEnabled}
-                          size="sm"
-                          variant={offer.directChatEnabled ? "secondary" : "outline"}
-                          className="gap-1.5 text-xs font-semibold"
-                        />
-
-                        <Button
-                          size="sm"
-                          onClick={() => setSelectedListingForEnquiry(offer)}
-                          className="gap-1.5 text-xs font-semibold shadow-xs"
+                        <AuthGateButton
+                          isAuthenticated={isAuthenticated}
+                          redirectTo={`/buyer/product/${product.id}`}
+                          fallbackLabel={t("offers_btn_send_enquiry")}
+                          fallbackIcon={<SendHorizontal className="h-3.5 w-3.5" />}
+                          fallbackSize="sm"
+                          fallbackClassName="gap-1.5 text-xs font-semibold shadow-xs"
                         >
-                          <SendHorizontal className="h-3.5 w-3.5" />
-                          {t("offers_btn_send_enquiry")}
-                        </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => setSelectedListingForEnquiry(offer)}
+                            className="gap-1.5 text-xs font-semibold shadow-xs"
+                          >
+                            <SendHorizontal className="h-3.5 w-3.5" />
+                            {t("offers_btn_send_enquiry")}
+                          </Button>
+                        </AuthGateButton>
                       </div>
                     </div>
                   </div>

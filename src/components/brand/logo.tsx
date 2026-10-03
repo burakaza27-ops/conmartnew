@@ -62,7 +62,7 @@ export function Logo({
             scale.type
           )}
         >
-          ConMart
+          ECON
         </span>
         {subtitle ? (
           <span

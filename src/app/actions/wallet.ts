@@ -19,6 +19,7 @@ import {
   approveTopUpRequest,
   rejectTopUpRequest,
 } from "@/lib/wallet/wallet-service";
+import { createNotification } from "@/lib/notifications";
 import { topUpRequestSchema } from "@/lib/validations";
 import {
   getClientIdentifier,
@@ -139,6 +140,14 @@ export async function approveTopUpAction(topUpId: string) {
 
   try {
     const result = await approveTopUpRequest({ topUpId, adminUserId: auth.user.id });
+
+    await createNotification({
+      userId: result.sellerId,
+      type: "WALLET_TOPPED_UP",
+      title: "Deposit Approved",
+      body: `Your wallet deposit of ETB ${result.amount} has been verified and added to your balance (Ref: ${result.referenceCode}).`,
+      meta: { topUpId, amount: result.amount },
+    });
 
     revalidatePath("/admin/command-center");
     revalidatePath("/seller/wallet");

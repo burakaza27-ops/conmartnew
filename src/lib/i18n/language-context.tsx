@@ -1,10 +1,6 @@
 "use client";
 
-// =============================================================================
-// ConMart — Language Context (Client Component with useSyncExternalStore)
-// =============================================================================
-
-import React, { createContext, useContext, useSyncExternalStore } from "react";
+import React, { createContext, useContext, useEffect, useSyncExternalStore } from "react";
 import { translations, type Locale } from "./translations";
 
 interface LanguageContextType {
@@ -17,8 +13,8 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 const LANG_STORAGE_KEY = "conmart_locale";
+const LANG_COOKIE_NAME = "conmart_locale";
 
-// Store listeners
 const listeners = new Set<() => void>();
 
 function subscribe(callback: () => void) {
@@ -46,11 +42,20 @@ function notify() {
   }
 }
 
+function persistLocale(locale: Locale) {
+  localStorage.setItem(LANG_STORAGE_KEY, locale);
+  document.cookie = `${LANG_COOKIE_NAME}=${locale}; path=/; SameSite=Lax; max-age=${60 * 60 * 24 * 365}`;
+}
+
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const locale = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
+
   const setLocale = (newLocale: Locale) => {
-    localStorage.setItem(LANG_STORAGE_KEY, newLocale);
+    persistLocale(newLocale);
     notify();
   };
 

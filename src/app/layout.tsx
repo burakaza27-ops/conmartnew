@@ -3,11 +3,13 @@
 // =============================================================================
 // App-wide layout with Geist font family, dark theme by default,
 // and SEO metadata for the B2B Construction Marketplace.
+// The `lang` attribute is read server-side from the locale cookie so that
+// screen readers and search engines always receive the correct language tag.
 // =============================================================================
 
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -27,28 +29,53 @@ import { ToastProvider } from "@/components/ui/toast";
 
 export const metadata: Metadata = {
   title: {
-    default: "ConMart — B2B Construction Marketplace",
-    template: "%s | ConMart",
+    default: "ECON — B2B Construction Marketplace Ethiopia",
+    template: "%s | ECON",
   },
   description:
-    "Industrial-grade B2B marketplace for construction materials. Volume pricing, proforma invoicing, and managed procurement for builders and contractors.",
+    "Ethiopia's B2B marketplace for depot-direct construction materials. Compare wholesale prices, send purchase requests, and get introduced to verified suppliers in Addis Ababa and beyond.",
   keywords: [
-    "construction materials",
-    "B2B marketplace",
-    "building supplies",
-    "cement",
-    "steel",
-    "rebar",
-    "aggregates",
-    "volume pricing",
-    "proforma invoice",
+    "construction materials Ethiopia",
+    "B2B marketplace Addis Ababa",
+    "building supplies Ethiopia",
+    "cement wholesale Ethiopia",
+    "steel rebar Ethiopia",
+    "Dangote OPC Addis",
+    "aggregates Ethiopia",
+    "volume pricing ETB",
+    "proforma invoice Ethiopia",
+    "building contractor marketplace",
   ],
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    siteName: "ECON",
+    title: "ECON — B2B Construction Marketplace Ethiopia",
+    description:
+      "Ethiopia's B2B marketplace for depot-direct construction materials. Verified suppliers. Transparent wholesale pricing.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ECON — B2B Construction Marketplace",
+    description: "Ethiopia's B2B marketplace for depot-direct construction materials.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
 };
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#1a1c22" },
-    { media: "(prefers-color-scheme: light)", color: "#f7f7f8" },
+    { media: "(prefers-color-scheme: dark)", color: "#272722" },
+    { media: "(prefers-color-scheme: light)", color: "#f7f7f4" },
   ],
   width: "device-width",
   initialScale: 1,
@@ -61,13 +88,19 @@ export default async function RootLayout({
   children: ReactNode;
 }) {
   // The nonce is minted per request by the proxy. Reading it opts the tree into
-  // dynamic rendering, which this app already requires for its authenticated
-  // routes; the alternative is a theme flash on every navigation.
-  const nonce = (await headers()).get("x-nonce") ?? undefined;
+  // dynamic rendering, which this app already requires for its authenticated routes.
+  const [headersList, cookieStore] = await Promise.all([headers(), cookies()]);
+  const nonce = headersList.get("x-nonce") ?? undefined;
+
+  // Read locale server-side so the HTML lang attribute is correct on first render.
+  // Screen readers use lang to select the correct voice/pronunciation engine.
+  // The client LanguageProvider keeps it in sync on subsequent navigations.
+  const savedLocale = cookieStore.get("conmart_locale")?.value;
+  const lang = savedLocale === "am" ? "am" : "en";
 
   return (
     <html
-      lang="en"
+      lang={lang}
       suppressHydrationWarning
       /** Dark theme by default — industrial B2B aesthetic */
       className={`${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}
@@ -112,3 +145,4 @@ export default async function RootLayout({
     </html>
   );
 }
+

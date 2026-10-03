@@ -7,7 +7,7 @@
 
 import { notFound } from "next/navigation";
 import { fetchListingDetail, fetchDepotListings } from "@/lib/data/catalog";
-import { getPlatformFeePercent, getVatRatePercent } from "@/lib/config/env";
+import { getSessionUser } from "@/lib/auth/session";
 import { ListingDetailView } from "./listing-detail-view";
 
 interface ListingDetailPageProps {
@@ -18,7 +18,10 @@ export default async function ListingDetailPage({
   params,
 }: ListingDetailPageProps) {
   const { listingId } = await params;
-  const listing = await fetchListingDetail(listingId);
+  const [listing, user] = await Promise.all([
+    fetchListingDetail(listingId),
+    getSessionUser(),
+  ]);
 
   if (!listing || !listing.active) {
     notFound();
@@ -33,11 +36,7 @@ export default async function ListingDetailPage({
       listing={listing}
       depotListings={depotListings}
       adminPhone={adminPhone}
-      // Passed down so the buyer's live calculator uses the same rates the
-      // server will apply. Fee and VAT are server-only configuration and are
-      // undefined if a client component reads process.env directly.
-      platformFeePercent={getPlatformFeePercent()}
-      vatRatePercent={getVatRatePercent()}
+      isAuthenticated={Boolean(user)}
     />
   );
 }

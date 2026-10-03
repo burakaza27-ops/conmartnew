@@ -26,7 +26,20 @@ const AUTHENTICATED_PREFIXES = [
   "/agent",
   "/account",
   "/dashboard",
+  "/notifications",
   "/api/upload",
+] as const;
+
+/**
+ * Buyer routes that are publicly accessible without authentication.
+ * The "Browse Free, Gate Only the Action" strategy: anonymous users can see
+ * prices, products, and tiers — sign-up is triggered only at high-intent
+ * actions (enquiry submission, proforma generation, chat).
+ */
+const PUBLIC_BUYER_PREFIXES = [
+  "/buyer/catalog",
+  "/buyer/category",
+  "/buyer/product",
 ] as const;
 
 /** Pages that make no sense once signed in. */
@@ -82,7 +95,15 @@ export async function proxy(request: NextRequest) {
     console.error("Proxy auth check failed, treating request as anonymous:", error);
   }
 
-  const { pathname } = request.nextUrl;
+  const { pathname, searchParams } = request.nextUrl;
+
+  // Supabase falls back to Site URL when redirectTo is not allowlisted, which
+  // lands password-reset codes on /?code=… instead of /auth/callback/recovery.
+  if (pathname === "/" && searchParams.has("code")) {
+    const recoveryCallback = new URL("/auth/callback/recovery", request.url);
+    recoveryCallback.search = request.nextUrl.search;
+    return withSecurityHeaders(NextResponse.redirect(recoveryCallback), csp);
+  }
 
   if (isAuthenticated && ANONYMOUS_ONLY_ROUTES.some((route) => pathname.startsWith(route))) {
     return withSecurityHeaders(
@@ -91,7 +112,11 @@ export async function proxy(request: NextRequest) {
     );
   }
 
-  const requiresAuth = AUTHENTICATED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  const isPublicBuyerRoute =
+    pathname === "/buyer" ||
+    PUBLIC_BUYER_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  const requiresAuth =
+    AUTHENTICATED_PREFIXES.some((prefix) => pathname.startsWith(prefix)) && !isPublicBuyerRoute;
 
   if (requiresAuth && !isAuthenticated) {
     if (pathname.startsWith("/api/")) {

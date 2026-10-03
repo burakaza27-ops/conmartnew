@@ -115,8 +115,20 @@ export function ImageUploader({
 
   const handleFileUpload = async (file: File) => {
     setErrorMessage(null);
-    setIsUploading(true);
     setImageLoadFailed(false);
+
+    // Instant client validation for responsive feedback
+    if (!file.type.startsWith("image/")) {
+      setErrorMessage("Please upload a valid image file (JPEG, PNG, WebP, or GIF).");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMessage("File exceeds 5MB limit. Please choose a smaller image.");
+      return;
+    }
+
+    setIsUploading(true);
 
     try {
       const formData = new FormData();
@@ -140,6 +152,9 @@ export function ImageUploader({
       setErrorMessage(message);
     } finally {
       setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 

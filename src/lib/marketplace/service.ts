@@ -129,8 +129,25 @@ export async function sendChatMessage(input: {
   }
 
   const rawBody = input.body.trim();
-  const body =
-    room.type === "DIRECT" ? rawBody : filterLeakedContactText(rawBody);
+  let body = rawBody;
+
+  if (room.type !== "DIRECT") {
+    body = filterLeakedContactText(rawBody);
+  } else {
+    // In a DIRECT room, strip contact patterns until an UnlockRecord exists
+    // for this buyer+seller pair so chat cannot bypass the unlock fee.
+    const hasUnlock =
+      room.buyerId && room.sellerId
+        ? await db.unlockRecord.findFirst({
+            where: { buyerId: room.buyerId, sellerId: room.sellerId },
+            select: { id: true },
+          })
+        : null;
+
+    if (!hasUnlock) {
+      body = filterLeakedContactText(rawBody);
+    }
+  }
 
   if (!body) {
     throw new DomainError("Message cannot be empty after removing contact details.");
@@ -277,7 +294,7 @@ export async function transitionDealTicket(input: {
 export async function completeDealTicket(input: {
   actor: Actor;
   ticketId: string;
-  orderTotal: number;
+  orderTotal?: number;
 }): Promise<{ platformAmount: number; agentAmount: number }> {
   const ticket = await db.dealTicket.findUnique({
     where: { id: input.ticketId },
@@ -287,6 +304,19 @@ export async function completeDealTicket(input: {
       agentId: true,
       buyerId: true,
       sellerId: true,
+      enquiry: {
+        select: {
+          qty: true,
+          listing: {
+            select: {
+              priceTiers: {
+                select: { minQty: true, maxQty: true, unitPrice: true },
+                orderBy: { minQty: "asc" },
+              },
+            },
+          },
+        },
+      },
       commission: { select: { id: true } },
     },
   });
@@ -302,7 +332,22 @@ export async function completeDealTicket(input: {
     throw new DomainError("Commission for this deal has already been recorded.");
   }
 
-  const breakdown = calculateCommission({ orderTotal: input.orderTotal });
+  // Derive GMV: use persisted enquiry qty * server tiers when enquiry exists;
+  // otherwise require an explicit, validated admin/agent settlement amount.
+  let finalOrderTotal = 0;
+  if (ticket.enquiry) {
+    finalOrderTotal = estimateOrderTotal(
+      ticket.enquiry.qty,
+      ticket.enquiry.listing.priceTiers
+    );
+  } else {
+    if (!input.orderTotal || input.orderTotal <= 0 || input.orderTotal > 100_000_000) {
+      throw new DomainError("A valid settlement order total is required for this mediated deal.");
+    }
+    finalOrderTotal = input.orderTotal;
+  }
+
+  const breakdown = calculateCommission({ orderTotal: finalOrderTotal });
 
   await db.$transaction([
     db.dealTicket.update({

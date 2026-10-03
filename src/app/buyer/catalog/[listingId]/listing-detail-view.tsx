@@ -1,9 +1,4 @@
-// =============================================================================
-// ConMart — Listing Detail Client View (Bilingual English & Amharic)
-// =============================================================================
-// Displays hero product photo, verified supplier info, technical specifications,
-// volume pricing tier schedule, interactive Proforma calculator, and depot bundling.
-// =============================================================================
+// ConMart — Listing Detail View (Bilingual English & Amharic)
 
 "use client";
 
@@ -42,22 +37,21 @@ import { DepotMaterialsTable } from "./depot-materials-table";
 import { PurchaseRequestModal } from "@/components/enquiry/purchase-request-modal";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { StartChatButton } from "@/components/chat/start-chat-button";
+import { AuthGateButton } from "@/components/auth/auth-gate-modal";
 import type { CatalogListing, ListingDetail } from "@/lib/data/catalog";
 
 interface ListingDetailViewProps {
   listing: ListingDetail;
   depotListings: CatalogListing[];
   adminPhone: string;
-  platformFeePercent: number;
-  vatRatePercent: number;
+  isAuthenticated?: boolean;
 }
 
 export function ListingDetailView({
   listing,
   depotListings,
   adminPhone,
-  platformFeePercent,
-  vatRatePercent,
+  isAuthenticated = false,
 }: ListingDetailViewProps) {
   const { t, locale } = useLanguage();
   const [isEnquiryOpen, setIsEnquiryOpen] = useState(false);
@@ -265,11 +259,6 @@ export function ListingDetailView({
         <div className="lg:col-span-2">
           <div className="sticky top-6 space-y-4">
             <PricingCalculator
-              listingId={listing.id}
-              sellerId={listing.seller.id}
-              depotCode={listing.seller.companyName}
-              location={listing.location}
-              productTitle={listing.product.title}
               unitLabel={unitLabel}
               tiers={activeTiers.map((tier) => ({
                 id: tier.id,
@@ -277,26 +266,46 @@ export function ListingDetailView({
                 maxQty: tier.maxQty,
                 unitPrice: tier.unitPrice,
               }))}
-              platformFeePercent={platformFeePercent}
-              vatRatePercent={vatRatePercent}
             />
 
             {/* Send Verified Purchase Enquiry Button */}
-            <Button
-              size="lg"
-              onClick={() => setIsEnquiryOpen(true)}
-              className="w-full gap-2 font-bold shadow-md bg-primary hover:bg-primary/90 text-primary-foreground"
+            <AuthGateButton
+              isAuthenticated={isAuthenticated}
+              redirectTo={`/buyer/catalog/${listing.id}`}
+              fallbackLabel={t("buyer_request_enquiry_btn")}
+              fallbackIcon={<SendHorizontal className="h-4 w-4" />}
+              fallbackSize="lg"
+              fallbackClassName="w-full gap-2 font-bold shadow-md bg-primary hover:bg-primary/90 text-primary-foreground"
             >
-              <SendHorizontal className="h-4 w-4" />
-              {t("buyer_request_enquiry_btn")}
-            </Button>
+              <Button
+                size="lg"
+                onClick={() => setIsEnquiryOpen(true)}
+                className="w-full gap-2 font-bold shadow-md bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                <SendHorizontal className="h-4 w-4" />
+                {t("buyer_request_enquiry_btn")}
+              </Button>
+            </AuthGateButton>
 
-            <StartChatButton
-              listingId={listing.id}
-              directChatEnabled={listing.directChatEnabled}
-              variant={listing.directChatEnabled ? "secondary" : "outline"}
-              className="w-full gap-2 font-semibold"
-            />
+            <AuthGateButton
+              isAuthenticated={isAuthenticated}
+              redirectTo={`/buyer/catalog/${listing.id}`}
+              fallbackLabel={
+                listing.directChatEnabled
+                  ? t("chat_start_direct", "Message supplier")
+                  : t("chat_start_agent", "Request local agent")
+              }
+              fallbackVariant={listing.directChatEnabled ? "secondary" : "outline"}
+              fallbackSize="lg"
+              fallbackClassName="w-full gap-2 font-semibold"
+            >
+              <StartChatButton
+                listingId={listing.id}
+                directChatEnabled={listing.directChatEnabled}
+                variant={listing.directChatEnabled ? "secondary" : "outline"}
+                className="w-full gap-2 font-semibold"
+              />
+            </AuthGateButton>
 
             {/* Warehouse & Supplier Depot */}
             <Card className="border-border/60 bg-card">

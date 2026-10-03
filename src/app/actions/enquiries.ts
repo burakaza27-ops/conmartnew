@@ -47,9 +47,10 @@ import {
   rateLimitMessage,
 } from "@/lib/security/rate-limit";
 import { DomainError, toSafeErrorMessage } from "@/lib/errors";
-import { EnquiryStatus, OutcomeType } from "@prisma/client";
+import { EnquiryStatus, OutcomeType, RefundStatus } from "@prisma/client";
 import { ensureDealTicketForEnquiry } from "@/lib/marketplace/service";
 import { isDirectChatEntitled } from "@/lib/marketplace/subscription";
+import { createNotification } from "@/lib/notifications";
 
 /** A seller is suspended once they fail this many deals at this failure rate. */
 const SUSPENSION_MIN_FAILED_DEALS = 4;
@@ -111,7 +112,7 @@ export async function submitPurchaseEnquiryAction(
     const listing = await db.listing.findUnique({
       where: { id: data.listingId },
       include: {
-        product: { select: { unit: true } },
+        product: { select: { title: true, unit: true } },
         priceTiers: {
           select: { minQty: true, maxQty: true, unitPrice: true },
           orderBy: { minQty: "asc" },
@@ -161,6 +162,14 @@ export async function submitPurchaseEnquiryAction(
       listingId: listing.id,
       location: listing.location,
       orderTotal: matchedTier ? Number(matchedTier.unitPrice) * data.qty : 0,
+    });
+
+    await createNotification({
+      userId: listing.sellerId,
+      type: "ENQUIRY_RECEIVED",
+      title: "New Purchase Enquiry",
+      body: `Buyer requested ${data.qty} ${listing.product.unit.toLowerCase()} of ${listing.product.title}. Ref: ${enquiry.referenceCode}`,
+      meta: { enquiryId: enquiry.id, referenceCode: enquiry.referenceCode },
     });
 
     revalidatePath("/buyer/enquiries");
@@ -310,6 +319,14 @@ export async function sellerAcceptEnquiryAction(
       feeAmount: Number(enquiry.listing.product.category.unlockFee),
     });
 
+    await createNotification({
+      userId: enquiry.buyerId,
+      type: "ENQUIRY_ACCEPTED",
+      title: "Enquiry Accepted & Introduced",
+      body: "The supplier has accepted your request. Direct communication and contact details are unlocked.",
+      meta: { enquiryId: enquiry.id },
+    });
+
     revalidatePath("/seller/enquiries");
     revalidatePath("/seller/wallet");
     revalidatePath("/buyer/enquiries");
@@ -343,7 +360,7 @@ export async function sellerDeclineEnquiryAction(
   try {
     const enquiry = await db.enquiry.findUnique({
       where: { id: enquiryId },
-      select: { id: true, sellerId: true, status: true },
+      select: { id: true, sellerId: true, buyerId: true, status: true },
     });
 
     if (!enquiry || (enquiry.sellerId !== auth.user.id && auth.user.role !== "ADMIN")) {
@@ -356,9 +373,25 @@ export async function sellerDeclineEnquiryAction(
       throw new DomainError(`This enquiry is already ${enquiry.status.toLowerCase()}.`);
     }
 
-    await db.enquiry.update({
-      where: { id: enquiry.id },
+    const updated = await db.enquiry.updateMany({
+      where: {
+        id: enquiry.id,
+        sellerId: auth.user.role === "ADMIN" ? undefined : auth.user.id,
+        status: EnquiryStatus.PENDING,
+      },
       data: { status: EnquiryStatus.DECLINED, respondedAt: new Date() },
+    });
+
+    if (updated.count !== 1) {
+      throw new DomainError("This enquiry is no longer pending.");
+    }
+
+    await createNotification({
+      userId: enquiry.buyerId,
+      type: "ENQUIRY_DECLINED",
+      title: "Enquiry Declined",
+      body: "The supplier was unable to accept your purchase request at this time.",
+      meta: { enquiryId: enquiry.id },
     });
 
     revalidatePath("/seller/enquiries");
@@ -379,7 +412,7 @@ export async function sellerDeclineEnquiryAction(
 
 export async function reportDealOutcomeAction(
   input: DealOutcomeInput
-): Promise<ActionResponse<{ refundAmount?: number }>> {
+): Promise<ActionResponse<{ refundAmount?: number; awaitingConfirmation?: boolean }>> {
   const auth = await authorize(["SELLER", "ADMIN"]);
   if (!auth.ok) {
     return { success: false, error: auth.error };
@@ -401,8 +434,9 @@ export async function reportDealOutcomeAction(
       select: {
         id: true,
         sellerId: true,
+        buyerId: true,
         status: true,
-        unlockRecord: { select: { id: true } },
+        unlockRecord: { select: { id: true, refundStatus: true } },
       },
     });
 
@@ -410,8 +444,6 @@ export async function reportDealOutcomeAction(
       throw new DomainError("No unlocked deal was found for this enquiry.");
     }
 
-    // The refund debits ConMart's revenue, so only the supplier who paid the
-    // fee — or an administrator mediating — may declare the outcome.
     if (enquiry.sellerId !== auth.user.id && auth.user.role !== "ADMIN") {
       throw new DomainError("You do not have permission to report on this deal.");
     }
@@ -423,21 +455,65 @@ export async function reportDealOutcomeAction(
     }
 
     if (outcome === "FAILURE") {
-      const refund = await processDealFailureRefund({
-        unlockRecordId: enquiry.unlockRecord.id,
-        refundPercentage: getDealFailureRefundPercent(),
-        reason,
-      });
+      // INVARIANT: Sellers MUST NOT unilaterally report FAILURE and refund themselves.
+      // A refund is only granted via administrative mediation/approval or buyer confirmation.
+      if (auth.user.role === "ADMIN") {
+        const refund = await processDealFailureRefund({
+          unlockRecordId: enquiry.unlockRecord.id,
+          refundPercentage: getDealFailureRefundPercent(),
+          reason,
+        });
 
-      await db.enquiry.update({
-        where: { id: enquiry.id },
-        data: { status: EnquiryStatus.FAILED },
-      });
+        await db.enquiry.update({
+          where: { id: enquiry.id },
+          data: { status: EnquiryStatus.FAILED },
+        });
+
+        await suspendSellerIfUnreliable(enquiry.sellerId);
+
+        await createNotification({
+          userId: enquiry.sellerId,
+          type: "DEAL_FAILURE_REFUND",
+          title: "Deal Refund Credited",
+          body: `ETB ${refund.refundAmount} has been refunded to your wallet credit balance.`,
+          meta: { enquiryId: enquiry.id, refundAmount: refund.refundAmount },
+        });
+
+        revalidateDealSurfaces();
+        return { success: true, data: { refundAmount: refund.refundAmount } };
+      }
+
+      // Seller reports failure without self-refunding:
+      // Increment failedDealsCount in the same transaction so the subsequent
+      // suspension check reads the updated value.
+      await db.$transaction([
+        db.unlockRecord.update({
+          where: { id: enquiry.unlockRecord.id },
+          data: { sellerReportedOutcome: OutcomeType.FAILURE },
+        }),
+        db.enquiry.update({
+          where: { id: enquiry.id },
+          data: { status: EnquiryStatus.FAILED },
+        }),
+        db.sellerProfile.upsert({
+          where: { userId: enquiry.sellerId },
+          update: { failedDealsCount: { increment: 1 } },
+          create: { userId: enquiry.sellerId, failedDealsCount: 1 },
+        }),
+      ]);
 
       await suspendSellerIfUnreliable(enquiry.sellerId);
 
+      await createNotification({
+        userId: enquiry.buyerId,
+        type: "DEAL_STATUS_CHANGED",
+        title: "Supplier Reported Deal Incomplete",
+        body: "The supplier reported that this deal did not materialize. Please confirm or raise a dispute with ConMart.",
+        meta: { enquiryId: enquiry.id },
+      });
+
       revalidateDealSurfaces();
-      return { success: true, data: { refundAmount: refund.refundAmount } };
+      return { success: true, data: { awaitingConfirmation: true } };
     }
 
     await db.$transaction([
@@ -462,6 +538,76 @@ export async function reportDealOutcomeAction(
     return {
       success: false,
       error: toSafeErrorMessage(error, "reportDealOutcome"),
+    };
+  }
+}
+
+/**
+ * Buyer confirms that an introduced deal could not be fulfilled.
+ * Triggers the deal failure refund credit for the seller's wallet.
+ */
+export async function buyerConfirmDealFailureAction(
+  enquiryId: string,
+  reason?: string
+): Promise<ActionResponse<{ refundAmount: number }>> {
+  const auth = await authorize(["BUYER", "ADMIN"]);
+  if (!auth.ok) {
+    return { success: false, error: auth.error };
+  }
+
+  try {
+    const enquiry = await db.enquiry.findUnique({
+      where: { id: enquiryId },
+      include: {
+        unlockRecord: true,
+      },
+    });
+
+    if (!enquiry || !enquiry.unlockRecord) {
+      throw new DomainError("No unlocked deal found for this enquiry.");
+    }
+
+    if (enquiry.buyerId !== auth.user.id && auth.user.role !== "ADMIN") {
+      throw new DomainError("You are not authorized to confirm this deal outcome.");
+    }
+
+    if (enquiry.unlockRecord.refundStatus !== RefundStatus.NONE) {
+      throw new DomainError("A refund has already been processed for this introduction.");
+    }
+
+    const refund = await processDealFailureRefund({
+      unlockRecordId: enquiry.unlockRecord.id,
+      refundPercentage: getDealFailureRefundPercent(),
+      reason: reason ?? "Buyer confirmed deal failure",
+    });
+
+    await db.$transaction([
+      db.unlockRecord.update({
+        where: { id: enquiry.unlockRecord.id },
+        data: {
+          buyerOutcomeResponse: OutcomeType.FAILURE,
+        },
+      }),
+      db.enquiry.update({
+        where: { id: enquiry.id },
+        data: { status: EnquiryStatus.FAILED },
+      }),
+    ]);
+
+    await createNotification({
+      userId: enquiry.sellerId,
+      type: "DEAL_FAILURE_REFUND",
+      title: "Deal Refund Credited",
+      body: `Buyer confirmed deal could not proceed. ETB ${refund.refundAmount} has been refunded to your wallet credit balance.`,
+      meta: { enquiryId: enquiry.id, refundAmount: refund.refundAmount },
+    });
+
+    revalidateDealSurfaces();
+    return { success: true, data: { refundAmount: refund.refundAmount } };
+  } catch (error) {
+    return {
+      success: false,
+      error: toSafeErrorMessage(error, "buyerConfirmDealFailure"),
     };
   }
 }
@@ -602,6 +748,7 @@ export async function getAdminDisputesAction() {
       unlockRecord: true,
     },
     orderBy: { createdAt: "desc" },
+    take: 100,
   });
 
   return {
@@ -662,7 +809,7 @@ export async function resolveDisputeAction(
       throw new DomainError("This dispute has already been resolved.");
     }
 
-    if (grantRefund && dispute.unlockRecord.refundStatus !== "REFUNDED_CREDIT") {
+    if (grantRefund && dispute.unlockRecord.refundStatus === RefundStatus.NONE) {
       await processDealFailureRefund({
         unlockRecordId: dispute.unlockRecord.id,
         refundPercentage: getDealFailureRefundPercent(),
@@ -684,6 +831,24 @@ export async function resolveDisputeAction(
     ]);
 
     revalidateDealSurfaces();
+
+    if (grantRefund) {
+      await createNotification({
+        userId: dispute.unlockRecord.buyerId,
+        type: "DEAL_FAILURE_REFUND",
+        title: "Dispute Resolved",
+        body: `ConMart mediation resolved your dispute. The deal has been closed.`,
+        meta: { enquiryId: dispute.enquiryId },
+      });
+      await createNotification({
+        userId: dispute.unlockRecord.sellerId,
+        type: "DEAL_FAILURE_REFUND",
+        title: "Dispute Resolved — Wallet Credited",
+        body: `ConMart mediation resolved the dispute for enquiry #${dispute.enquiryId}. Your wallet has been credited.`,
+        meta: { enquiryId: dispute.enquiryId },
+      });
+    }
+
     return { success: true, data: null };
   } catch (error) {
     return { success: false, error: toSafeErrorMessage(error, "resolveDispute") };
@@ -735,6 +900,7 @@ export async function getSellerEnquiriesAction() {
       },
     },
     orderBy: { createdAt: "desc" },
+    take: 100,
   });
 
   return {
@@ -817,6 +983,7 @@ export async function getBuyerEnquiriesAction() {
       },
     },
     orderBy: { createdAt: "desc" },
+    take: 100,
   });
 
   return {

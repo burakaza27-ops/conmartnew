@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import {
   Package,
   Search,
@@ -21,7 +20,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { PageHeader } from "@/components/layout/page-header";
-import { getAuthenticatedUser } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/auth/session";
 import {
   fetchCategoriesWithCounts,
   fetchRecentBuyerEnquiries,
@@ -40,19 +39,19 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 
 export default async function BuyerCategoryHubPage() {
-  const user = await getAuthenticatedUser();
-  if (!user) {
-    redirect("/login?redirect=/buyer");
-  }
+  const user = await getSessionUser();
 
-  const buyerName = (user.user_metadata?.name as string) ?? "Contractor";
-  const companyName =
-    (user.user_metadata?.companyName as string) ?? "your company";
+  // Personalized data only for authenticated users
+  const buyerName = user?.name?.split(" ")[0] ?? "Contractor";
+  const companyName = user?.companyName ?? "your company";
 
   const [categories, recentEnquiries] = await Promise.all([
     fetchCategoriesWithCounts(),
-    fetchRecentBuyerEnquiries(user.id, 3),
+    // Only fetch enquiries if the user has an authId (DB relation key)
+    user?.authId ? fetchRecentBuyerEnquiries(user.authId, 3) : Promise.resolve([]),
   ]);
+
+  const isAnonymous = !user;
 
   const totalOffers = categories.reduce((sum, c) => sum + c.listingCount, 0);
 
@@ -67,8 +66,11 @@ export default async function BuyerCategoryHubPage() {
           </p>
           <PageHeader
             className="border-0 pb-0"
-            title={`Welcome back, ${buyerName.split(" ")[0]}`}
-            description={`${companyName} — compare depot-direct wholesale offers, then send a purchase request. Contacts stay masked until the supplier unlocks.`}
+            title={isAnonymous ? "Compare wholesale construction prices" : `Welcome back, ${buyerName}`}
+            description={isAnonymous
+              ? "Browse depot-direct wholesale offers from verified yards. No account needed to see prices — sign up free when you're ready to buy."
+              : `${companyName} — compare depot-direct wholesale offers, then send a purchase request. Contacts stay masked until the supplier unlocks.`
+            }
           />
           <form
             action="/buyer/category/all"
@@ -151,7 +153,7 @@ export default async function BuyerCategoryHubPage() {
         </div>
       </section>
 
-      {recentEnquiries.length > 0 && (
+      {!isAnonymous && recentEnquiries.length > 0 && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">

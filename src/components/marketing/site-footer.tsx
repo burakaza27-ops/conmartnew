@@ -7,7 +7,7 @@ import { Logo } from "@/components/brand/logo";
 import { useLanguage } from "@/lib/i18n/language-context";
 
 export function SiteFooter() {
-  const { t, locale } = useLanguage();
+  const { t } = useLanguage();
   const adminPhone = process.env.NEXT_PUBLIC_ADMIN_PHONE ?? "+251 91 100 0000";
 
   return (
@@ -43,7 +43,7 @@ export function SiteFooter() {
             </li>
             <li>
               <Link href="/about" className="transition-colors hover:text-foreground">
-                {t("nav_about", "About ConMart")}
+                {t("nav_about", "About ECON")}
               </Link>
             </li>
           </ul>
@@ -51,7 +51,7 @@ export function SiteFooter() {
 
         <div className="space-y-3">
           <h2 className="text-xs font-semibold tracking-wider text-foreground uppercase">
-            {locale === "am" ? "አቅራቢዎች" : "Suppliers"}
+            {t("footer_suppliers_heading", "Suppliers")}
           </h2>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li>
@@ -89,7 +89,7 @@ export function SiteFooter() {
 
       <div className="border-t border-border/70">
         <p className="mx-auto max-w-6xl px-4 py-4 text-2xs text-muted-foreground sm:px-6">
-          © {new Date().getFullYear()} ConMart Ethiopia. {t("footer_tagline")}
+          © {new Date().getFullYear()} ECON Ethiopia. {t("footer_tagline")}
         </p>
       </div>
     </footer>
