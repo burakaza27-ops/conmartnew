@@ -314,6 +314,27 @@ export const translations: Record<Locale, Record<string, string>> = {
     seller_no_tiers: "No volume price tiers configured for this listing",
 
     // -------------------------------------------------------------------------
+    // Referral Program
+    // -------------------------------------------------------------------------
+    referral_card_title: "Refer & Earn Free Subscription",
+    referral_card_desc: "Invite suppliers to ECON. When they register and list materials, you earn free Direct Chat months.",
+    referral_your_link: "Your referral link",
+    referral_copy: "Copy",
+    referral_copied: "Copied!",
+    referral_qualified: "qualified",
+    referral_months_earned: "month(s) earned",
+    referral_refs: "refs",
+    referral_mo: "mo",
+    referral_qualified_label: "Qualified",
+    referral_pending_label: "Pending",
+    referral_pending_hint: "Pending referrals qualify once the supplier lists at least one material.",
+    referral_recent: "Recent referrals",
+    referral_status_qualified: "Qualified",
+    referral_status_pending: "Pending",
+    referral_invite_banner_title: "You've been invited!",
+    referral_invite_banner_desc: "Register as a supplier and list your materials to help your referrer earn free subscription time.",
+
+    // -------------------------------------------------------------------------
     // Product Detail & Depot Materials
     // -------------------------------------------------------------------------
     detail_back_to_catalog: "Back to {category} Catalog",
@@ -1029,6 +1050,27 @@ export const translations: Record<Locale, Record<string, string>> = {
     seller_status_active: "ይሰራል",
     seller_status_inactive: "ቦዝኗል",
     seller_no_tiers: "ለዚህ ዕቃ የተዘጋጀ የዋጋ እርከን የለም",
+
+    // -------------------------------------------------------------------------
+    // Referral Program
+    // -------------------------------------------------------------------------
+    referral_card_title: "ጓደኛ ጋብዝ & ነፃ ደንበኝነት አግኝ",
+    referral_card_desc: "አቅራቢዎችን ወደ ኢኮን ይጋብዙ። ሲመዘገቡ እና ዕቃዎችን ሲዘረዝሩ ነፃ የቀጥታ ቻት ወራት ያገኛሉ።",
+    referral_your_link: "የእርስዎ የማጣቀሻ ሊንክ",
+    referral_copy: "ቅዳ",
+    referral_copied: "ተቀድቷል!",
+    referral_qualified: "ብቁ",
+    referral_months_earned: "ወር(ዎች) ተገኝቷል",
+    referral_refs: "ሪፈራሎች",
+    referral_mo: "ወር",
+    referral_qualified_label: "ብቁ",
+    referral_pending_label: "በመጠባበቅ",
+    referral_pending_hint: "አቅራቢው ቢያንስ አንድ ዕቃ ሲመዘገብ ሪፈራሉ ብቁ ይሆናል።",
+    referral_recent: "የቅርብ ጊዜ ሪፈራሎች",
+    referral_status_qualified: "ብቁ",
+    referral_status_pending: "በመጠባበቅ",
+    referral_invite_banner_title: "ተጋብዘዋል!",
+    referral_invite_banner_desc: "እንደ አቅራቢ ይመዝገቡ እና ዕቃዎችዎን ይዘርዝሩ — ጋባዡ ነፃ ደንበኝነት ያገኛሉ።",
 
     // -------------------------------------------------------------------------
     // Product Detail & Depot Materials

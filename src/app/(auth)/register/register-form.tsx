@@ -1,18 +1,19 @@
 // =============================================================================
-// ConMart — Register Form (Client Component)
+// ECON — Register Form (Client Component)
 // =============================================================================
 // Registration with role selection: BUYER, SELLER, or FIELD_AGENT (local agent).
 // Agents must pick a coverage area so job-board routing works immediately.
+// Supports referral codes via ?ref=CODE URL parameter for supplier referrals.
 // =============================================================================
 
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { UserPlus, Building2, ShoppingCart, MapPin } from "lucide-react";
+import { UserPlus, Building2, ShoppingCart, MapPin, Gift } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,10 +49,14 @@ function groupedZones(zones: RegistrationZoneOption[], query: string) {
 
 export function RegisterForm({ zones }: RegisterFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { t } = useLanguage();
   const [isPending, startTransition] = useTransition();
   const [serverError, setServerError] = useState<string | null>(null);
   const [zoneQuery, setZoneQuery] = useState("");
+
+  // Extract referral code from ?ref= URL parameter
+  const referralCode = searchParams.get("ref") ?? "";
 
   const {
     register,
@@ -68,8 +73,9 @@ export function RegisterForm({ zones }: RegisterFormProps) {
       name: "",
       phone: "",
       companyName: "",
-      role: "BUYER",
+      role: referralCode ? "SELLER" : "BUYER",
       zoneId: "",
+      referralCode: referralCode || "",
     },
   });
 
@@ -102,6 +108,9 @@ export function RegisterForm({ zones }: RegisterFormProps) {
       if (data.role === "FIELD_AGENT" && data.zoneId) {
         formData.set("zoneId", data.zoneId);
       }
+      if (data.referralCode) {
+        formData.set("referralCode", data.referralCode);
+      }
 
       const result = await signUp(formData);
 
@@ -131,8 +140,31 @@ export function RegisterForm({ zones }: RegisterFormProps) {
         <p className="text-sm text-muted-foreground">{t("auth_register_subtitle")}</p>
       </div>
 
+      {/* Referral banner */}
+      {referralCode && (
+        <div className="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3">
+          <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+            <Gift className="size-4 text-primary" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-foreground">
+              {t("referral_invite_banner_title", "You've been invited!")}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {t(
+                "referral_invite_banner_desc",
+                "Register as a supplier and list your materials to help your referrer earn free subscription time."
+              )}
+            </p>
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <FormAlert>{serverError}</FormAlert>
+
+        {/* Hidden referral code field */}
+        <input type="hidden" {...register("referralCode")} />
 
         <div className="space-y-2">
           <Label>{t("auth_role_label")}</Label>
@@ -347,3 +379,4 @@ export function RegisterForm({ zones }: RegisterFormProps) {
     </div>
   );
 }
+

@@ -13,6 +13,7 @@ import { revalidatePath } from "next/cache";
 import { authorize } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import { ProductUnit } from "@prisma/client";
+import { qualifyReferralIfApplicable } from "@/lib/marketplace/referral";
 
 export interface CreatePriceTierInput {
   minQty: number;
@@ -176,6 +177,13 @@ export async function createSellerListing(input: CreateListingInput) {
     }
     revalidatePath("/", "layout");
 
+    // If this seller was referred, check if their listing qualifies them
+    try {
+      await qualifyReferralIfApplicable(dbUser.id);
+    } catch (err) {
+      console.error("[createSellerListing:referral]", err);
+    }
+
     return { success: true, listingId: result.listing.id };
   } catch (error) {
     console.error("Error creating listing:", error);
@@ -214,6 +222,15 @@ export async function toggleListingStatus(listingId: string, active: boolean) {
       },
     });
 
+    // If activated, trigger referral qualification if applicable
+    if (active) {
+      try {
+        await qualifyReferralIfApplicable(listing.sellerId);
+      } catch (err) {
+        console.error("[toggleListingStatus:referral]", err);
+      }
+    }
+
     revalidatePath("/seller/dashboard");
     revalidatePath("/seller/listings");
     revalidatePath("/buyer");
@@ -227,6 +244,7 @@ export async function toggleListingStatus(listingId: string, active: boolean) {
     }
     revalidatePath(`/buyer/catalog/${listingId}`);
     revalidatePath("/", "layout");
+
 
     return { success: true };
   } catch (error) {

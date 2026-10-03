@@ -114,6 +114,7 @@ export const registerSchema = z.object({
     error: "Please select your account type",
   }),
   zoneId: z.string().optional(),
+  referralCode: z.string().max(20, "Invalid referral code").optional(),
 })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",

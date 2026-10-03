@@ -47,6 +47,7 @@ import {
   mapSignUpAuthError,
   mapPasswordUpdateError,
 } from "@/lib/errors";
+import { createReferralRecord } from "@/lib/marketplace/referral";
 import type { ActionResult } from "@/lib/types";
 
 /**
@@ -140,6 +141,7 @@ export async function signUp(
     companyName: formData.get("companyName"),
     role: formData.get("role"),
     zoneId: formData.get("zoneId") || undefined,
+    referralCode: formData.get("referralCode") || undefined,
   });
 
   if (!parsed.success) {
@@ -152,6 +154,7 @@ export async function signUp(
   const { email, password, name, companyName, role } = parsed.data;
   const phone = normalizeEthiopianPhone(parsed.data.phone);
   const zoneId = role === "FIELD_AGENT" ? parsed.data.zoneId : undefined;
+  const referralCode = role === "SELLER" ? parsed.data.referralCode : undefined;
 
   const clientId = await getClientIdentifier();
   const emailKey = email.toLowerCase();
@@ -285,6 +288,24 @@ export async function signUp(
   }
 
   revalidatePath("/", "layout");
+
+  // Link to referrer if a valid referral code was provided (seller only)
+  if (referralCode && role === "SELLER") {
+    try {
+      const newUser = await db.user.findUnique({
+        where: { authId: authId },
+        select: { id: true },
+      });
+      if (newUser) {
+        await createReferralRecord(newUser.id, referralCode);
+      }
+    } catch (err) {
+      // Non-blocking: registration still succeeds if referral linking encounters an issue
+      console.error("[signUp:referral]", err);
+    }
+  }
+
+
   if (!authData.session) {
     return { success: true, data: { redirectUrl: "/login?registered=1" } };
   }

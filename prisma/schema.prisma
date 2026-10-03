@@ -261,6 +261,8 @@ model User {
   agentChatRooms   ChatRoom[]      @relation("AgentChatRooms")
   chatMessages     ChatMessage[]
   notifications    AppNotification[]
+  sentReferrals    Referral[]      @relation("ReferrerUser")
+  receivedReferral Referral?       @relation("ReferredUser")
 
   @@map("users")
 }
@@ -283,6 +285,8 @@ model SellerProfile {
   failedDealsCount       Int                      @default(0) @map("failed_deals_count")
   subscriptionStatus     SubscriptionStatus       @default(FREE) @map("subscription_status")
   subscriptionExpiresAt  DateTime?                @map("subscription_expires_at")
+  referralCode           String?                  @unique @map("referral_code")
+  referralMilestone      Int                      @default(0) @map("referral_milestone")
   createdAt              DateTime                 @default(now()) @map("created_at")
   updatedAt              DateTime                 @updatedAt @map("updated_at")
 
@@ -693,6 +697,7 @@ enum NotificationType {
   DEAL_STATUS_CHANGED   // buyer/seller: deal ticket moved to a new state
   MESSAGE_RECEIVED      // either party: new chat message in a room
   DEAL_FAILURE_REFUND   // seller: credit returned after a failed deal
+  REFERRAL_MILESTONE    // seller: reached a referral milestone (3/6/10)
 
   @@map("notification_type")
 }
@@ -712,4 +717,27 @@ model AppNotification {
   /// Primary query: all unread notifications for a user, newest first
   @@index([userId, readAt, createdAt(sort: Desc)])
   @@map("app_notifications")
+}
+
+// =============================================================================
+// SUPPLIER REFERRAL SYSTEM
+// =============================================================================
+// Tracks supplier-to-supplier referrals. A referral "qualifies" only when the
+// referred supplier verifies their phone and creates at least one active
+// listing. Milestone rewards: 3 → 1 month, 6 → 2 months, 10 → 3 months free
+// Direct Chat subscription.
+// =============================================================================
+
+model Referral {
+  id           String   @id @default(cuid())
+  referrerId   String   @map("referrer_id")
+  referrer     User     @relation("ReferrerUser", fields: [referrerId], references: [id], onDelete: Cascade)
+  referredId   String   @unique @map("referred_id")
+  referred     User     @relation("ReferredUser", fields: [referredId], references: [id], onDelete: Cascade)
+  qualified    Boolean  @default(false)
+  qualifiedAt  DateTime? @map("qualified_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([referrerId, qualified])
+  @@map("referrals")
 }

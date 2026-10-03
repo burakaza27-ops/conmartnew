@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Seller Dashboard (Server Component)
+// ECON — Seller Dashboard (Server Component)
 // =============================================================================
 // Authenticates seller/admin, loads inventory from database, and delegates
 // rendering to the bilingual SellerDashboardView client component.
@@ -11,6 +11,7 @@ import { fetchSellerListings } from "@/lib/data/admin";
 import { db } from "@/lib/db";
 import { SellerDashboardView } from "./seller-dashboard-view";
 import { resolveSubscription } from "@/lib/marketplace/subscription";
+import { getReferralDashboardAction } from "@/app/actions/referral";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +39,11 @@ export default async function SellerDashboardPage() {
     redirect("/unauthorized");
   }
 
-  const listings = await fetchSellerListings(user.id);
+  const [listings, referralResult] = await Promise.all([
+    fetchSellerListings(user.id),
+    getReferralDashboardAction(),
+  ]);
+
   const effectiveStatus = resolveSubscription(dbUser.sellerProfile);
 
   return (
@@ -50,6 +55,8 @@ export default async function SellerDashboardPage() {
         expiresAt: dbUser.sellerProfile?.subscriptionExpiresAt?.toISOString() ?? null,
         directChatEnabled: effectiveStatus === "ACTIVE",
       }}
+      referral={referralResult.success ? referralResult.data : null}
     />
   );
 }
+
