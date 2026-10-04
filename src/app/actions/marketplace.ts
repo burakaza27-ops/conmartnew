@@ -277,36 +277,54 @@ export async function getInboxAction() {
   }
 
   const user = auth.user;
-  const rooms = await db.chatRoom.findMany({
-    where:
-      user.role === "ADMIN"
-        ? {}
-        : {
-            OR: [
-              { buyerId: user.id },
-              { sellerId: user.id },
-              { agentId: user.id },
-            ],
-          },
-    include: {
-      messages: {
-        orderBy: { createdAt: "desc" },
-        take: 1,
-        select: { body: true, createdAt: true, senderId: true },
+  const [rooms, unreadNotifs] = await Promise.all([
+    db.chatRoom.findMany({
+      where:
+        user.role === "ADMIN"
+          ? {}
+          : {
+              OR: [
+                { buyerId: user.id },
+                { sellerId: user.id },
+                { agentId: user.id },
+              ],
+            },
+      include: {
+        messages: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: { body: true, createdAt: true, senderId: true },
+        },
+        dealTicket: {
+          select: { id: true, referenceCode: true, status: true },
+        },
+        listing: {
+          select: { product: { select: { title: true } } },
+        },
+        buyer: { select: { name: true, companyName: true } },
+        seller: { select: { name: true, companyName: true } },
+        agent: { select: { name: true, companyName: true } },
       },
-      dealTicket: {
-        select: { id: true, referenceCode: true, status: true },
+      orderBy: { updatedAt: "desc" },
+      take: 80,
+    }),
+    db.appNotification.findMany({
+      where: {
+        userId: user.id,
+        type: "MESSAGE_RECEIVED",
+        readAt: null,
       },
-      listing: {
-        select: { product: { select: { title: true } } },
-      },
-      buyer: { select: { name: true, companyName: true } },
-      seller: { select: { name: true, companyName: true } },
-      agent: { select: { name: true, companyName: true } },
-    },
-    orderBy: { updatedAt: "desc" },
-    take: 80,
-  });
+      select: { meta: true },
+    }),
+  ]);
+
+  const unreadCountByRoom: Record<string, number> = {};
+  for (const n of unreadNotifs) {
+    const meta = n.meta as { roomId?: string } | null;
+    if (meta?.roomId) {
+      unreadCountByRoom[meta.roomId] = (unreadCountByRoom[meta.roomId] ?? 0) + 1;
+    }
+  }
 
   return {
     success: true as const,
@@ -322,6 +340,7 @@ export async function getInboxAction() {
         counterpartName: counterpartName(room, user.id, user.role),
         lastMessage: room.messages[0]?.body ?? null,
         lastMessageAt: room.messages[0]?.createdAt.toISOString() ?? room.updatedAt.toISOString(),
+        unreadCount: unreadCountByRoom[room.id] ?? 0,
       })),
   };
 }
@@ -330,6 +349,29 @@ export async function getChatRoomAction(roomId: string) {
   const auth = await authorize(["BUYER", "SELLER", "FIELD_AGENT", "ADMIN"]);
   if (!auth.ok) {
     return { success: false as const, error: auth.error };
+  }
+
+  // Clear unread message notifications for this room when viewed
+  try {
+    const unreadForRoom = await db.appNotification.findMany({
+      where: {
+        userId: auth.user.id,
+        type: "MESSAGE_RECEIVED",
+        readAt: null,
+      },
+      select: { id: true, meta: true },
+    });
+    const idsToMark = unreadForRoom
+      .filter((n) => (n.meta as { roomId?: string } | null)?.roomId === roomId)
+      .map((n) => n.id);
+    if (idsToMark.length > 0) {
+      await db.appNotification.updateMany({
+        where: { id: { in: idsToMark } },
+        data: { readAt: new Date() },
+      });
+    }
+  } catch {
+    // Non-blocking
   }
 
   const room = await db.chatRoom.findUnique({
@@ -372,6 +414,7 @@ export async function getChatRoomAction(roomId: string) {
       id: room.id,
       type: room.type,
       viewerId: auth.user.id,
+      viewerName: auth.user.name,
       counterpartName: counterpartName(room, auth.user.id, auth.user.role),
       listingTitle: room.listing?.product.title ?? null,
       ticket: room.dealTicket

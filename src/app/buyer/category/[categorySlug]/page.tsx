@@ -21,6 +21,7 @@ interface CategoryPageProps {
     location?: string;
     brand?: string;
     sort?: string;
+    page?: string;
   }>;
 }
 
@@ -35,14 +36,15 @@ export default async function FocusedCategoryCatalogPage({
   const locationFilter = sParams.location;
   const brandFilter = sParams.brand;
   const sortBy = sParams.sort || "newest";
+  const page = Math.max(1, parseInt(sParams.page || "1", 10) || 1);
 
   const isAll = categorySlug === "all";
 
   // Fetch data in parallel
-  const [allCategories, categoryDetail, listings] = await Promise.all([
+  const [allCategories, categoryDetail, catalogResult] = await Promise.all([
     fetchCategoriesWithCounts(),
     isAll ? null : fetchCategoryBySlug(categorySlug),
-    fetchCatalogListings(categorySlug, searchQuery, locationFilter, brandFilter, sortBy),
+    fetchCatalogListings(categorySlug, searchQuery, locationFilter, brandFilter, sortBy, page),
   ]);
 
   if (!isAll && !categoryDetail) {
@@ -52,7 +54,7 @@ export default async function FocusedCategoryCatalogPage({
   const availableBrands = isAll
     ? Array.from(
         new Set(
-          listings
+          catalogResult.listings
             .map((l) => l.product.specs?.brand)
             .filter((b): b is string => Boolean(b))
         )
@@ -64,7 +66,10 @@ export default async function FocusedCategoryCatalogPage({
       allCategories={allCategories}
       categorySlug={categorySlug}
       categoryDetail={categoryDetail}
-      listings={listings}
+      listings={catalogResult.listings}
+      totalCount={catalogResult.totalCount}
+      totalPages={catalogResult.totalPages}
+      currentPage={catalogResult.page}
       availableBrands={availableBrands}
       searchQuery={searchQuery}
       locationFilter={locationFilter}

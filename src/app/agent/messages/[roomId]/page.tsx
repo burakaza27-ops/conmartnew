@@ -20,6 +20,8 @@ export default async function AgentChatRoomPage({
     <ChatThread
       roomId={result.data.id}
       type={result.data.type}
+      currentUserId={result.data.viewerId}
+      currentUserName={result.data.viewerName}
       counterpartName={result.data.counterpartName}
       listingTitle={result.data.listingTitle}
       messages={result.data.messages}

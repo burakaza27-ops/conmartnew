@@ -8,6 +8,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Package,
   MapPin,
@@ -16,7 +17,10 @@ import {
   Calculator,
   ShieldCheck,
   ChevronRight,
+  ChevronLeft,
   Layers,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +54,9 @@ interface CategoryViewProps {
     description: string | null;
   } | null;
   listings: CatalogListing[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
   availableBrands: string[];
   searchQuery?: string;
   locationFilter?: string;
@@ -62,6 +69,9 @@ export function CategoryView({
   categorySlug,
   categoryDetail,
   listings,
+  totalCount,
+  totalPages,
+  currentPage,
   availableBrands,
   searchQuery,
   locationFilter,
@@ -156,10 +166,10 @@ export function CategoryView({
               {activeCategoryTitle}
             </h1>
             <Badge variant="outline" className="text-xs font-semibold">
-              {listings.length}{" "}
+              {totalCount}{" "}
               {locale === "am"
                 ? t("catalog_offers_count")
-                : listings.length === 1
+                : totalCount === 1
                 ? t("catalog_offer_single")
                 : t("catalog_offers_count")}
             </Badge>
@@ -214,6 +224,15 @@ export function CategoryView({
             <ListingCard key={listing.id} listing={listing} />
           ))}
         </div>
+      )}
+
+      {/* 6. PAGINATION */}
+      {totalPages > 1 && (
+        <CatalogPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          categorySlug={categorySlug}
+        />
       )}
     </div>
   );
@@ -356,5 +375,140 @@ function ListingCard({ listing }: { listing: CatalogListing }) {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * Pagination controls — preserves all current query params (search, sort,
+ * location, brand) while navigating pages.
+ */
+function CatalogPagination({
+  currentPage,
+  totalPages,
+  categorySlug,
+}: {
+  currentPage: number;
+  totalPages: number;
+  categorySlug: string;
+}) {
+  const { t } = useLanguage();
+  const searchParams = useSearchParams();
+
+  function pageHref(page: number) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (page <= 1) {
+      params.delete("page");
+    } else {
+      params.set("page", String(page));
+    }
+    const qs = params.toString();
+    return `/buyer/category/${categorySlug}${qs ? `?${qs}` : ""}`;
+  }
+
+  // Generate visible page numbers (show max 7 pages with ellipsis-like gaps)
+  function getVisiblePages(): (number | "ellipsis")[] {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const pages: (number | "ellipsis")[] = [1];
+    const start = Math.max(2, currentPage - 1);
+    const end = Math.min(totalPages - 1, currentPage + 1);
+    if (start > 2) pages.push("ellipsis");
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (end < totalPages - 1) pages.push("ellipsis");
+    pages.push(totalPages);
+    return pages;
+  }
+
+  const visiblePages = getVisiblePages();
+  const hasPrev = currentPage > 1;
+  const hasNext = currentPage < totalPages;
+
+  const btnBase =
+    "inline-flex items-center justify-center rounded-lg border border-border text-sm font-medium transition-all duration-200";
+  const btnSize = "h-9 min-w-[36px] px-2.5";
+  const btnActive = "bg-primary text-primary-foreground border-primary shadow-sm";
+  const btnDefault =
+    "bg-card text-muted-foreground hover:bg-muted hover:text-foreground hover:border-primary/40";
+  const btnDisabled = "opacity-40 pointer-events-none";
+
+  return (
+    <nav
+      aria-label={t("catalog_pagination_label", "Catalog pagination")}
+      className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2"
+    >
+      <p className="text-xs text-muted-foreground order-2 sm:order-1">
+        {t("catalog_page_info", `Page ${currentPage} of ${totalPages}`)}
+      </p>
+
+      <div className="flex items-center gap-1.5 order-1 sm:order-2">
+        {/* First */}
+        <Link
+          href={pageHref(1)}
+          aria-label={t("catalog_page_first", "First page")}
+          aria-disabled={!hasPrev}
+          className={cn(btnBase, btnSize, hasPrev ? btnDefault : btnDisabled)}
+        >
+          <ChevronsLeft className="size-4" />
+        </Link>
+
+        {/* Previous */}
+        <Link
+          href={pageHref(currentPage - 1)}
+          aria-label={t("catalog_page_prev", "Previous page")}
+          aria-disabled={!hasPrev}
+          className={cn(btnBase, btnSize, hasPrev ? btnDefault : btnDisabled)}
+        >
+          <ChevronLeft className="size-4" />
+        </Link>
+
+        {/* Page numbers */}
+        {visiblePages.map((p, idx) =>
+          p === "ellipsis" ? (
+            <span
+              key={`ellipsis-${idx}`}
+              className="inline-flex items-center justify-center h-9 min-w-[36px] text-xs text-muted-foreground select-none"
+              aria-hidden
+            >
+              …
+            </span>
+          ) : (
+            <Link
+              key={p}
+              href={pageHref(p)}
+              aria-label={`Page ${p}`}
+              aria-current={p === currentPage ? "page" : undefined}
+              className={cn(
+                btnBase,
+                btnSize,
+                p === currentPage ? btnActive : btnDefault
+              )}
+            >
+              {p}
+            </Link>
+          )
+        )}
+
+        {/* Next */}
+        <Link
+          href={pageHref(currentPage + 1)}
+          aria-label={t("catalog_page_next", "Next page")}
+          aria-disabled={!hasNext}
+          className={cn(btnBase, btnSize, hasNext ? btnDefault : btnDisabled)}
+        >
+          <ChevronRight className="size-4" />
+        </Link>
+
+        {/* Last */}
+        <Link
+          href={pageHref(totalPages)}
+          aria-label={t("catalog_page_last", "Last page")}
+          aria-disabled={!hasNext}
+          className={cn(btnBase, btnSize, hasNext ? btnDefault : btnDisabled)}
+        >
+          <ChevronsRight className="size-4" />
+        </Link>
+      </div>
+    </nav>
   );
 }

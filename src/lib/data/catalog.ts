@@ -123,17 +123,37 @@ export interface CategoryDetailWithBrands {
 // FETCHERS
 // =============================================================================
 
+/** Default number of catalog listings per page */
+export const CATALOG_PAGE_SIZE = 24;
+
+/** Paginated result wrapper for catalog listings */
+export interface PaginatedCatalogResult {
+  listings: CatalogListing[];
+  totalCount: number;
+  totalPages: number;
+  page: number;
+  pageSize: number;
+}
+
 /**
- * Fetches active listings for the buyer catalog with rich filtering & sorting.
+ * Fetches active listings for the buyer catalog with rich filtering, sorting,
+ * and **page-based pagination**.
+ *
+ * Uses `take` / `skip` so the database only returns one page of results at a
+ * time. A parallel `count()` query supplies the total for pagination controls.
  */
 export async function fetchCatalogListings(
   categorySlug?: string,
   searchQuery?: string,
   locationFilter?: string,
   brandFilter?: string,
-  sortBy: string = "newest"
-): Promise<CatalogListing[]> {
+  sortBy: string = "newest",
+  page: number = 1,
+  pageSize: number = CATALOG_PAGE_SIZE
+): Promise<PaginatedCatalogResult> {
   const now = new Date();
+  const safePage = Math.max(1, Math.floor(page));
+  const safePageSize = Math.min(Math.max(1, Math.floor(pageSize)), 100);
 
   const whereClause: Record<string, unknown> = {
     active: true,
@@ -169,43 +189,49 @@ export async function fetchCatalogListings(
     ];
   }
 
-  const listings = await db.listing.findMany({
-    where: whereClause,
-    include: {
-      product: {
-        include: {
-          category: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              iconName: true,
+  // Run count + page fetch in parallel for speed
+  const [totalCount, listings] = await Promise.all([
+    db.listing.count({ where: whereClause as never }),
+    db.listing.findMany({
+      where: whereClause,
+      include: {
+        product: {
+          include: {
+            category: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                iconName: true,
+              },
             },
           },
         },
-      },
-      seller: {
-        select: {
-          id: true,
-          name: true,
-          companyName: true,
-          sellerProfile: {
-            select: {
-              subscriptionStatus: true,
-              subscriptionExpiresAt: true,
+        seller: {
+          select: {
+            id: true,
+            name: true,
+            companyName: true,
+            sellerProfile: {
+              select: {
+                subscriptionStatus: true,
+                subscriptionExpiresAt: true,
+              },
             },
           },
         },
-      },
-      priceTiers: {
-        where: {
-          validUntil: { gt: now },
+        priceTiers: {
+          where: {
+            validUntil: { gt: now },
+          },
+          orderBy: { unitPrice: "asc" },
         },
-        orderBy: { unitPrice: "asc" },
       },
-    },
-    orderBy: { id: "desc" },
-  });
+      orderBy: { id: "desc" },
+      take: safePageSize,
+      skip: (safePage - 1) * safePageSize,
+    }),
+  ]);
 
   let mapped: CatalogListing[] = listings.map((listing) => ({
     id: listing.id,
@@ -246,7 +272,15 @@ export async function fetchCatalogListings(
     mapped.sort((a, b) => (b.lowestPrice ?? 0) - (a.lowestPrice ?? 0));
   }
 
-  return mapped;
+  const totalPages = Math.max(1, Math.ceil(totalCount / safePageSize));
+
+  return {
+    listings: mapped,
+    totalCount,
+    totalPages,
+    page: safePage,
+    pageSize: safePageSize,
+  };
 }
 
 /**

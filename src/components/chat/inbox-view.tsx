@@ -18,6 +18,7 @@ export interface InboxRoomItem {
   counterpartName: string;
   lastMessage: string | null;
   lastMessageAt: string;
+  unreadCount?: number;
 }
 
 interface InboxViewProps {
@@ -55,41 +56,56 @@ export function InboxView({ rooms, basePath }: InboxViewProps) {
         />
       ) : (
         <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
-          {rooms.map((room) => (
-            <li key={room.id}>
-              <Link
-                href={`${basePath}/${room.id}`}
-                className="flex flex-col gap-1 px-4 py-3.5 transition-colors hover:bg-muted/40 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="min-w-0 space-y-1">
-                  <p className="text-sm font-semibold text-foreground">
-                    {room.counterpartName}
-                  </p>
-                  <p className="text-2xs font-medium text-muted-foreground">
-                    {roomLabel(room.type, t)}
-                    {room.listingTitle ? ` · ${room.listingTitle}` : ""}
-                    {room.ticketReference ? ` · ${room.ticketReference}` : ""}
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {room.lastMessage ?? t("chat_no_messages", "No messages yet")}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {room.ticketStatus ? (
-                    <StatusBadge domain="dealTicket" status={room.ticketStatus} locale={locale} size="sm" />
-                  ) : (
-                    <StatusBadge domain="subscription" status="ACTIVE" locale={locale} size="sm" />
-                  )}
-                  <span className="text-2xs text-muted-foreground">
-                    {new Date(room.lastMessageAt).toLocaleString(
-                      locale === "am" ? "am-ET" : "en-US",
-                      { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }
+          {rooms.map((room) => {
+            const hasUnread = Boolean(room.unreadCount && room.unreadCount > 0);
+            return (
+              <li key={room.id}>
+                <Link
+                  href={`${basePath}/${room.id}`}
+                  className={`flex flex-col gap-1 px-4 py-3.5 transition-colors sm:flex-row sm:items-center sm:justify-between ${
+                    hasUnread ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/40"
+                  }`}
+                >
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex items-center gap-2">
+                      {hasUnread && (
+                        <span className="h-2 w-2 rounded-full bg-primary animate-pulse shrink-0" />
+                      )}
+                      <p className={`text-sm ${hasUnread ? "font-bold text-foreground" : "font-semibold text-foreground"}`}>
+                        {room.counterpartName}
+                      </p>
+                      {hasUnread && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-3xs font-bold bg-primary text-primary-foreground">
+                          {room.unreadCount} new
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-2xs font-medium text-muted-foreground">
+                      {roomLabel(room.type, t)}
+                      {room.listingTitle ? ` · ${room.listingTitle}` : ""}
+                      {room.ticketReference ? ` · ${room.ticketReference}` : ""}
+                    </p>
+                    <p className={`truncate text-xs ${hasUnread ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
+                      {room.lastMessage ?? t("chat_no_messages", "No messages yet")}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {room.ticketStatus ? (
+                      <StatusBadge domain="dealTicket" status={room.ticketStatus} locale={locale} size="sm" />
+                    ) : (
+                      <StatusBadge domain="subscription" status="ACTIVE" locale={locale} size="sm" />
                     )}
-                  </span>
-                </div>
-              </Link>
-            </li>
-          ))}
+                    <span className="text-2xs text-muted-foreground whitespace-nowrap">
+                      {new Date(room.lastMessageAt).toLocaleString(
+                        locale === "am" ? "am-ET" : "en-US",
+                        { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }
+                      )}
+                    </span>
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

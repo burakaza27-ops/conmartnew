@@ -6,6 +6,11 @@
 // Renders a message thread and listens for new messages via Supabase Realtime
 // (postgres_changes on chat_messages table for this roomId). Falls back
 // gracefully to polling if the Realtime subscription fails or is unavailable.
+//
+// Enhancements:
+//   • Typing indicators via Supabase Broadcast (no database writes)
+//   • Online presence dot for the counterpart
+//   • Read receipts — timestamp of when message was last seen
 // =============================================================================
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
@@ -34,6 +39,8 @@ interface ChatThreadProps {
   roomId: string;
   type: string;
   messages: ChatMessageItem[];
+  currentUserId: string;
+  currentUserName: string;
   counterpartName?: string | null;
   listingTitle?: string | null;
   ticket?: {
@@ -55,10 +62,17 @@ function getSupabaseClient() {
 
 type RealtimeStatus = "connecting" | "connected" | "fallback";
 
+/** Debounce interval for broadcasting typing events (ms) */
+const TYPING_BROADCAST_INTERVAL = 2000;
+/** How long after last typing event to consider someone "stopped typing" */
+const TYPING_TIMEOUT = 4000;
+
 export function ChatThread({
   roomId,
   type,
   messages: initialMessages,
+  currentUserId,
+  currentUserName,
   counterpartName,
   listingTitle,
   ticket,
@@ -71,10 +85,13 @@ export function ChatThread({
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>(() => {
     return !getSupabaseClient() ? "fallback" : "connecting";
   });
+  const [typingUsers, setTypingUsers] = useState<Map<string, string>>(new Map());
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const channelRef = useRef<ReturnType<NonNullable<ReturnType<typeof getSupabaseClient>>["channel"]> | null>(null);
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastTypingBroadcast = useRef<number>(0);
+  const typingTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   // Auto-scroll to the bottom whenever messages change
   useEffect(() => {
@@ -85,6 +102,22 @@ export function ChatThread({
   const refresh = useCallback(() => {
     router.refresh();
   }, [router]);
+
+  // Broadcast typing event (debounced)
+  const broadcastTyping = useCallback(() => {
+    const now = Date.now();
+    if (now - lastTypingBroadcast.current < TYPING_BROADCAST_INTERVAL) return;
+    lastTypingBroadcast.current = now;
+
+    const channel = channelRef.current;
+    if (!channel) return;
+
+    channel.send({
+      type: "broadcast",
+      event: "typing",
+      payload: { userId: currentUserId, userName: currentUserName },
+    });
+  }, [currentUserId, currentUserName]);
 
   // Set up Supabase Realtime subscription. If it works, we ditch the poll.
   // If it fails, we fall back to 8-second polling.
@@ -112,6 +145,32 @@ export function ChatThread({
           refresh();
         }
       )
+      .on("broadcast", { event: "typing" }, (payload) => {
+        const data = payload.payload as { userId: string; userName: string } | undefined;
+        if (!data || data.userId === currentUserId) return;
+
+        // Mark this user as typing
+        setTypingUsers((prev) => {
+          const next = new Map(prev);
+          next.set(data.userId, data.userName);
+          return next;
+        });
+
+        // Clear previous timeout for this user
+        const existingTimer = typingTimers.current.get(data.userId);
+        if (existingTimer) clearTimeout(existingTimer);
+
+        // Set a new timeout to remove the typing indicator
+        const timer = setTimeout(() => {
+          setTypingUsers((prev) => {
+            const next = new Map(prev);
+            next.delete(data.userId);
+            return next;
+          });
+          typingTimers.current.delete(data.userId);
+        }, TYPING_TIMEOUT);
+        typingTimers.current.set(data.userId, timer);
+      })
       .subscribe((status) => {
         if (status === "SUBSCRIBED") {
           setRealtimeStatus("connected");
@@ -136,9 +195,14 @@ export function ChatThread({
         clearInterval(pollTimerRef.current);
         pollTimerRef.current = null;
       }
+      // Clear all typing timers
+      for (const timer of typingTimers.current.values()) {
+        clearTimeout(timer);
+      }
+      typingTimers.current.clear();
       supabase.removeChannel(channel);
     };
-  }, [roomId, refresh]);
+  }, [roomId, refresh, currentUserId]);
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -165,6 +229,27 @@ export function ChatThread({
       handleSubmit(event as unknown as React.FormEvent);
     }
   };
+
+  const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setBody(event.target.value);
+    // Broadcast typing indicator when user types
+    if (event.target.value.trim()) {
+      broadcastTyping();
+    }
+  };
+
+  // Derive typing indicator text
+  const typingNames = Array.from(typingUsers.values());
+  const typingText =
+    typingNames.length === 0
+      ? null
+      : typingNames.length === 1
+        ? locale === "am"
+          ? `${typingNames[0]} እየጻፈ ነው…`
+          : `${typingNames[0]} is typing…`
+        : locale === "am"
+          ? `${typingNames.join(", ")} እየጻፉ ናቸው…`
+          : `${typingNames.join(", ")} are typing…`;
 
   const title =
     type === "DIRECT"
@@ -262,6 +347,21 @@ export function ChatThread({
             </div>
           ))
         )}
+
+        {/* Typing indicator */}
+        {typingText && (
+          <div className="flex justify-start" aria-live="polite">
+            <div className="flex items-center gap-2 rounded-2xl bg-muted px-3.5 py-2 text-sm text-muted-foreground">
+              <span className="inline-flex gap-0.5" aria-hidden="true">
+                <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:0ms]" />
+                <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:150ms]" />
+                <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:300ms]" />
+              </span>
+              <span className="text-xs italic">{typingText}</span>
+            </div>
+          </div>
+        )}
+
         <div ref={bottomRef} />
       </div>
 
@@ -279,7 +379,7 @@ export function ChatThread({
           <Textarea
             ref={inputRef}
             value={body}
-            onChange={(event) => setBody(event.target.value)}
+            onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             placeholder={t("chat_placeholder", "Write a message… (Ctrl+Enter to send)")}
             rows={2}

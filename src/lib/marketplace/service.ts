@@ -11,6 +11,7 @@ import { db } from "@/lib/db";
 import { DomainError } from "@/lib/errors";
 import { generateReferenceCode } from "@/lib/engine/reference-code";
 import { filterLeakedContactText } from "@/lib/security/masking";
+import { createNotification } from "@/lib/notifications";
 import { calculateCommission } from "@/lib/marketplace/commission";
 import {
   canOpenDirectRoom,
@@ -38,7 +39,7 @@ export interface InitiateConversationResult {
   zoneName?: string;
 }
 
-type Actor = { id: string; role: string };
+type Actor = { id: string; role: string; name?: string | null };
 
 export async function initiateConversation(input: {
   actor: Actor;
@@ -166,6 +167,26 @@ export async function sendChatMessage(input: {
     where: { id: room.id },
     data: { updatedAt: new Date() },
   });
+
+  // Notify room counterparts about the incoming message
+  const counterpartIds = [room.buyerId, room.sellerId, room.agentId].filter(
+    (id): id is string => Boolean(id) && id !== input.actor.id
+  );
+  if (counterpartIds.length > 0) {
+    const senderName = input.actor.name ?? "A user";
+    const preview = body.length > 80 ? `${body.slice(0, 77)}...` : body;
+    await Promise.all(
+      counterpartIds.map((userId) =>
+        createNotification({
+          userId,
+          type: "MESSAGE_RECEIVED",
+          title: `New message from ${senderName}`,
+          body: preview,
+          meta: { roomId: room.id },
+        })
+      )
+    );
+  }
 
   return { messageId: message.id };
 }
