@@ -22,6 +22,15 @@ describe("calculateCommission", () => {
     expect(() => calculateCommission({ orderTotal: -10 })).toThrow(/positive/i);
   });
 
+  it("rejects invalid totalFeePercent", () => {
+    expect(() => calculateCommission({ orderTotal: 1_000, totalFeePercent: -5 })).toThrow(
+      /between 0 and 100/
+    );
+    expect(() => calculateCommission({ orderTotal: 1_000, totalFeePercent: 105 })).toThrow(
+      /between 0 and 100/
+    );
+  });
+
   it("rejects share percentages that do not add to 100", () => {
     expect(() =>
       calculateCommission({

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { roundCurrency } from "@/lib/money";
+import { formatAmount, formatCurrency, roundCurrency } from "@/lib/money";
 
 describe("roundCurrency", () => {
   it("leaves an amount that is already exact alone", () => {
@@ -36,5 +36,36 @@ describe("roundCurrency", () => {
     // Exercises the `scaleToCents` fallback for values like 1e22 whose text
     // contains `e` and cannot take a second exponent in the decimal shift.
     expect(roundCurrency(1e22)).toBe(1e22);
+  });
+});
+
+describe("formatCurrency", () => {
+  it("formats ETB currency in English locale", () => {
+    const formatted = formatCurrency(1280.5);
+    expect(formatted).toContain("1,280.50");
+  });
+
+  it("formats ETB currency in Amharic locale", () => {
+    const formatted = formatCurrency(1280.5, "am-ET");
+    expect(formatted).toBeDefined();
+    expect(formatted).toContain("1,280.50");
+  });
+
+  it("reuses formatter cache across multiple invocations", () => {
+    const first = formatCurrency(500);
+    const second = formatCurrency(500);
+    expect(first).toBe(second);
+  });
+});
+
+describe("formatAmount", () => {
+  it("formats amount with comma grouping without currency symbol", () => {
+    const formatted = formatAmount(1280.5);
+    expect(formatted).toContain("1,281");
+  });
+
+  it("formats amount with Amharic locale", () => {
+    const formatted = formatAmount(50000, "am-ET");
+    expect(formatted).toContain("50,000");
   });
 });

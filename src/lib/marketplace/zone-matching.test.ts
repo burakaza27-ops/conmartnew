@@ -105,9 +105,32 @@ describe("resolveCoverageZone", () => {
     expect(match?.zoneId).toBe(`zone-${NATIONWIDE_FALLBACK_SLUG}`);
   });
 
+  it("returns null when location is empty and point is not provided", () => {
+    expect(matchZone("", zones, null)).toBeNull();
+  });
+
   it("still prefers a named city over the nationwide fallback", () => {
     expect(resolveCoverageZone("Mekelle steel depot", zones)?.zoneId).toBe(
       "zone-mekelle"
     );
+  });
+
+  it("falls back to priority 0 or first zone when ethiopia slug is absent", () => {
+    const customZones: ZoneCandidate[] = [
+      { id: "zone-priority-0", name: "General Priority 0", slug: "custom-p0", priority: 0, aliases: [] },
+      { id: "zone-priority-1", name: "Custom 1", slug: "custom-1", priority: 1, aliases: [] },
+    ];
+    expect(resolveCoverageZone("Random unmapped location", customZones)?.zoneId).toBe(
+      "zone-priority-0"
+    );
+
+    const noP0Zones: ZoneCandidate[] = [
+      { id: "zone-first", name: "Only Zone", slug: "only-1", priority: 2, aliases: [] },
+    ];
+    expect(resolveCoverageZone("Random unmapped location", noP0Zones)?.zoneId).toBe(
+      "zone-first"
+    );
+
+    expect(resolveCoverageZone("Random unmapped location", [])).toBeNull();
   });
 });

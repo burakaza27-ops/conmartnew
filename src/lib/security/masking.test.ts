@@ -231,4 +231,26 @@ describe("sanitizeEnquiryForViewer", () => {
 
     expect(result.isUnlocked).toBe(false);
   });
+
+  it("handles enquiry with missing listing gracefully", () => {
+    const enq = buildEnquiry({ unlocked: true });
+    enq.listing = null as never;
+    const result = sanitizeEnquiryForViewer({
+      enquiry: enq,
+      viewerUserId: SELLER_ID,
+      viewerRole: "SELLER",
+    });
+    expect(result.seller.location).toBe("Addis Ababa");
+  });
+
+  it("handles maskListingForPublic edge cases", () => {
+    expect(maskListingForPublic(null as never)).toBeNull();
+    const noSellerListing = { id: "list-1", location: "Bole" };
+    expect(maskListingForPublic(noSellerListing)).toEqual(noSellerListing);
+  });
+
+  it("coarsenLocation falls back to default if segment exceeds 40 characters", () => {
+    const longLoc = "A".repeat(45) + ", Secondary Detail";
+    expect(coarsenLocation(longLoc)).toBe("Addis Ababa");
+  });
 });

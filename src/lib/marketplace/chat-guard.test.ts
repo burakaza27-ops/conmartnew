@@ -224,4 +224,36 @@ describe("canSendInRoom", () => {
       })
     ).toEqual({ allowed: true });
   });
+
+  it("denies CROSS_PARTY_LEAK if a BUYER_AGENT room has a sellerId", () => {
+    const corruptBuyerAgent = {
+      type: "BUYER_AGENT",
+      buyerId: "buyer-1",
+      sellerId: "seller-1",
+      agentId: "agent-1",
+    };
+    expect(
+      canSendInRoom({
+        room: corruptBuyerAgent,
+        senderId: "buyer-1",
+        senderRole: "BUYER",
+      })
+    ).toEqual({ allowed: false, reason: "CROSS_PARTY_LEAK" });
+  });
+
+  it("denies CROSS_PARTY_LEAK if a SELLER_AGENT room has a buyerId", () => {
+    const corruptSellerAgent = {
+      type: "SELLER_AGENT",
+      buyerId: "buyer-1",
+      sellerId: "seller-1",
+      agentId: "agent-1",
+    };
+    expect(
+      canSendInRoom({
+        room: corruptSellerAgent,
+        senderId: "seller-1",
+        senderRole: "SELLER",
+      })
+    ).toEqual({ allowed: false, reason: "CROSS_PARTY_LEAK" });
+  });
 });
