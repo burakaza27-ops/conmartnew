@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.econ.marketplace",
+      "sha256_cert_fingerprints": [
+        "53:A8:EB:40:AE:EE:D2:28:D0:9C:C3:21:F3:D6:D1:C8:F2:FC:2E:CE:23:D1:E3:68:09:CB:FC:03:0F:46:C9:66"
+      ]
+    }
+  }
+]

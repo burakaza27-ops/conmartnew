@@ -77,12 +77,15 @@ export async function GET(
   }
 
   // -------------------------------------------------------------------------
-  // 4. Verify ownership (buyer or admin) — defence in depth
+  // 4. Verify ownership (buyer, seller, or admin) — defence in depth
   // -------------------------------------------------------------------------
   const isOwner = order.buyer.id === user.id;
+  const isSeller =
+    order.seller.id === user.id ||
+    (order.items && order.items.some((item) => item.seller?.id === user.id));
   const isAdmin = user.role === "ADMIN";
 
-  if (!isOwner && !isAdmin) {
+  if (!isOwner && !isSeller && !isAdmin) {
     return NextResponse.json(
       { error: "Access denied." },
       { status: 403 }

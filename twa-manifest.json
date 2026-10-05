@@ -1,0 +1,58 @@
+{
+  "packageId": "com.econ.marketplace",
+  "host": "conmart-ethiopia.com",
+  "name": "ECON — B2B Construction Marketplace",
+  "launcherName": "ECON",
+  "display": "standalone",
+  "themeColor": "#272722",
+  "themeColorDark": "#272722",
+  "navigationColor": "#181816",
+  "navigationColorDark": "#181816",
+  "navigationDividerColor": "#272722",
+  "navigationDividerColorDark": "#272722",
+  "backgroundColor": "#181816",
+  "enableNotifications": true,
+  "startUrl": "/?source=playstore",
+  "iconUrl": "https://conmart-ethiopia.com/icons/icon-512x512.png",
+  "maskableIconUrl": "https://conmart-ethiopia.com/icons/icon-maskable-512x512.png",
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [
+    {
+      "name": "Browse Materials",
+      "shortName": "Materials",
+      "url": "/buyer/category/all?source=twa_shortcut",
+      "chosenIcon": "public/icons/icon-192x192.png"
+    },
+    {
+      "name": "My Enquiries",
+      "shortName": "Enquiries",
+      "url": "/buyer/enquiries?source=twa_shortcut",
+      "chosenIcon": "public/icons/icon-192x192.png"
+    },
+    {
+      "name": "My Orders & Deals",
+      "shortName": "Orders",
+      "url": "/buyer/orders?source=twa_shortcut",
+      "chosenIcon": "public/icons/icon-192x192.png"
+    }
+  ],
+  "webManifestUrl": "https://conmart-ethiopia.com/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {
+    "locationDelegation": {
+      "enabled": true
+    }
+  },
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "fullScopeUrl": "https://conmart-ethiopia.com/",
+  "signingKey": {
+    "path": "android.keystore",
+    "alias": "econ-playstore"
+  }
+}
+

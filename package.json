@@ -11,6 +11,7 @@
     "test": "node ./node_modules/vitest/vitest.mjs run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "check:pwa": "node scripts/check-playstore-readiness.js",
     "verify": "npm run typecheck && npm run lint && npm run test",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",

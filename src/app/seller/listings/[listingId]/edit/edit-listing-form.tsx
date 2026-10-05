@@ -138,6 +138,16 @@ export function EditListingForm({
         throw new Error("At least one price tier is required.");
       }
 
+      // Check tier bounds and pricing
+      for (const tier of priceTiers) {
+        if (!tier.minQty || tier.minQty <= 0 || !tier.maxQty || tier.maxQty <= 0 || !tier.unitPrice || tier.unitPrice <= 0) {
+          throw new Error("Tier quantities and wholesale prices must be greater than zero.");
+        }
+        if (tier.minQty > tier.maxQty) {
+          throw new Error(`Minimum quantity (${tier.minQty}) cannot exceed maximum quantity (${tier.maxQty}) in any tier.`);
+        }
+      }
+
       // Check for overlapping tiers
       const sorted = [...priceTiers].sort((a, b) => a.minQty - b.minQty);
       for (let i = 1; i < sorted.length; i++) {

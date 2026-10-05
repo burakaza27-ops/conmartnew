@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json.schemastore.org/web-manifest-combined.json",
+  "id": "/?source=pwa",
+  "name": "ECON — B2B Construction Marketplace",
+  "short_name": "ECON",
+  "description": "Ethiopia's B2B marketplace for depot-direct construction materials. Compare wholesale prices, post purchase requests, and connect with verified suppliers in Addis Ababa and beyond.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "window-controls-overlay",
+    "minimal-ui"
+  ],
+  "orientation": "portrait-primary",
+  "theme_color": "#272722",
+  "background_color": "#181816",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": [
+    "business",
+    "shopping",
+    "productivity"
+  ],
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Browse Marketplace",
+      "short_name": "Materials",
+      "description": "Compare wholesale construction materials and live depot prices",
+      "url": "/buyer/marketplace?source=pwa_shortcut",
+      "icons": [
+        {
+          "src": "/icons/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Post Purchase Request (RFQ)",
+      "short_name": "Post RFQ",
+      "description": "Send volume purchase request to verified Ethiopian suppliers",
+      "url": "/buyer/requests/new?source=pwa_shortcut",
+      "icons": [
+        {
+          "src": "/icons/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "My Orders & Deals",
+      "short_name": "Orders",
+      "description": "Track ongoing deals, proforma invoices, and supplier deliveries",
+      "url": "/buyer/orders?source=pwa_shortcut",
+      "icons": [
+        {
+          "src": "/icons/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Supplier Portal",
+      "short_name": "Supplier",
+      "description": "Manage catalog, respond to quote requests, and view site matches",
+      "url": "/supplier?source=pwa_shortcut",
+      "icons": [
+        {
+          "src": "/icons/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false,
+  "related_applications": []
+}

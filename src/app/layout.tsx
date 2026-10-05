@@ -26,8 +26,25 @@ const geistMono = Geist_Mono({
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/lib/i18n/language-context";
 import { ToastProvider } from "@/components/ui/toast";
+import { PwaRegister } from "@/components/pwa-register";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://conmart-ethiopia.com"),
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "ECON",
+  },
+  icons: {
+    icon: [
+      { url: "/icons/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
   title: {
     default: "ECON — B2B Construction Marketplace Ethiopia",
     template: "%s | ECON",
@@ -140,6 +157,7 @@ export default async function RootLayout({
           <LanguageProvider>
             <ToastProvider>{children}</ToastProvider>
           </LanguageProvider>
+          <PwaRegister />
         </ThemeProvider>
       </body>
     </html>
