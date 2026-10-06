@@ -9,6 +9,7 @@ import {
   Handshake,
   Briefcase,
   Settings,
+  Store,
 } from "lucide-react";
 
 import { MobileTabLink, SidebarNavLink } from "@/components/layout/nav-link";
@@ -34,6 +35,7 @@ export function BuyerSidebarNav({ assistMode = false }: BuyerNavProps) {
     : [
         { href: "/buyer", label: t("nav_categories", "Categories"), icon: LayoutGrid, exact: true },
         { href: "/buyer/category/all", label: t("nav_all_materials", "All materials"), icon: Package },
+        { href: "/buyer/stores", label: t("nav_stores", "Stores"), icon: Store },
         { href: "/buyer/enquiries", label: t("buyer_enquiries_title", "My enquiries"), icon: SendHorizontal },
         { href: "/buyer/messages", label: t("chat_inbox_title", "Messages"), icon: MessageCircle },
         { href: "/buyer/deals", label: t("deals_nav", "Agent deals"), icon: Handshake },
@@ -66,6 +68,7 @@ export function BuyerMobileBottomNav({
     : [
         { href: "/buyer", label: t("nav_categories", "Home"), icon: LayoutGrid, exact: true },
         { href: "/buyer/category/all", label: t("nav_all_materials", "Materials"), icon: Package },
+        { href: "/buyer/stores", label: t("nav_stores", "Stores"), icon: Store },
         { href: "/buyer/enquiries", label: t("buyer_enquiries_title", "Enquiries"), icon: SendHorizontal },
         { href: "/buyer/messages", label: t("chat_inbox_title", "Chat"), icon: MessageCircle },
       ];

@@ -797,6 +797,300 @@ export interface ProductWithOffers {
   offers: CompetingOffer[];
 }
 
+// =============================================================================
+// PRODUCT-GROUPED CATALOG (deduplicated by product, not listing)
+// =============================================================================
+
+/** One row in the product-grouped catalog grid */
+export interface ProductCatalogRow {
+  productId: string;
+  title: string;
+  unit: ProductUnit;
+  imageUrl: string | null;
+  specs: Record<string, string>;
+  category: {
+    id: string;
+    name: string;
+    slug: string;
+    iconName: string;
+  };
+  /** Number of active suppliers offering this product */
+  supplierCount: number;
+  /** Lowest price across all supplier listings */
+  lowestPrice: number | null;
+  /** Highest price across all supplier listings */
+  highestPrice: number | null;
+}
+
+/**
+ * Fetches products grouped & deduplicated for the catalog grid.
+ * Each product appears once; clicking it leads to the competing-offers page
+ * showing all suppliers sorted by price.
+ */
+export async function fetchProductsCatalog(
+  categorySlug?: string,
+  searchQuery?: string,
+  brandFilter?: string,
+  sortBy: string = "supplier_count"
+): Promise<ProductCatalogRow[]> {
+  const now = new Date();
+
+  const whereClause: Record<string, unknown> = {
+    listings: {
+      some: {
+        active: true,
+        seller: {
+          OR: [
+            { sellerProfile: null },
+            { sellerProfile: { verificationStatus: { not: "SUSPENDED" } } },
+          ],
+        },
+      },
+    },
+  };
+
+  if (categorySlug && categorySlug !== "all") {
+    whereClause.category = { slug: categorySlug };
+  }
+
+  if (searchQuery && searchQuery.trim()) {
+    const q = searchQuery.trim();
+    whereClause.title = { contains: q, mode: "insensitive" };
+  }
+
+  const products = await db.product.findMany({
+    where: whereClause,
+    include: {
+      category: {
+        select: { id: true, name: true, slug: true, iconName: true },
+      },
+      listings: {
+        where: {
+          active: true,
+          seller: {
+            OR: [
+              { sellerProfile: null },
+              { sellerProfile: { verificationStatus: { not: "SUSPENDED" } } },
+            ],
+          },
+        },
+        include: {
+          priceTiers: {
+            where: { validUntil: { gt: now } },
+            orderBy: { unitPrice: "asc" },
+          },
+        },
+      },
+    },
+  });
+
+  let rows: ProductCatalogRow[] = products
+    .filter((p) => p.listings.length > 0)
+    .map((p) => {
+      const allPrices = p.listings.flatMap((l) =>
+        l.priceTiers.map((t) => Number(t.unitPrice))
+      );
+      const lowestPrice = allPrices.length > 0 ? Math.min(...allPrices) : null;
+      const highestPrice = allPrices.length > 0 ? Math.max(...allPrices) : null;
+
+      return {
+        productId: p.id,
+        title: p.title,
+        unit: p.unit as ProductUnit,
+        imageUrl: p.imageUrl || null,
+        specs: (p.specs as Record<string, string>) || {},
+        category: p.category,
+        supplierCount: p.listings.length,
+        lowestPrice,
+        highestPrice,
+      };
+    });
+
+  // Brand filter (applied after loading since brand is in specs JSON)
+  if (brandFilter && brandFilter !== "all") {
+    const target = brandFilter.toLowerCase();
+    rows = rows.filter(
+      (r) =>
+        r.specs?.brand?.toLowerCase().includes(target) ||
+        r.title.toLowerCase().includes(target)
+    );
+  }
+
+  // Sort
+  if (sortBy === "price_asc") {
+    rows.sort((a, b) => (a.lowestPrice ?? Infinity) - (b.lowestPrice ?? Infinity));
+  } else if (sortBy === "price_desc") {
+    rows.sort((a, b) => (b.lowestPrice ?? 0) - (a.lowestPrice ?? 0));
+  } else {
+    // Default: most suppliers first (gives buyers most choice at top)
+    rows.sort((a, b) => b.supplierCount - a.supplierCount);
+  }
+
+  return rows;
+}
+
+// =============================================================================
+// SELLER STORE (public profile)
+// =============================================================================
+
+export interface SellerStoreListing {
+  listingId: string;
+  productId: string;
+  productTitle: string;
+  productUnit: ProductUnit;
+  imageUrl: string | null;
+  location: string;
+  lowestPrice: number | null;
+  tierCount: number;
+  categoryName: string;
+  categorySlug: string;
+  stockState: string;
+}
+
+export interface SellerStoreProfile {
+  sellerId: string;
+  companyName: string;
+  sellerType: string;
+  verificationStatus: string;
+  vatRegistered: boolean;
+  completedDealsCount: number;
+  responseTimeAvgMinutes: number;
+  subscriptionStatus: string;
+  directChatEnabled: boolean;
+  listings: SellerStoreListing[];
+}
+
+/**
+ * Fetches a seller's public store profile — company name, verification badge,
+ * and all their active product listings. Company name is intentionally public
+ * (this is the seller's chosen storefront). Contact details (phone) remain
+ * server-side only until the introduction fee is paid.
+ */
+export async function fetchSellerStore(
+  sellerId: string
+): Promise<SellerStoreProfile | null> {
+  const now = new Date();
+
+  const seller = await db.user.findUnique({
+    where: { id: sellerId, role: "SELLER" },
+    select: {
+      id: true,
+      companyName: true,
+      sellerProfile: {
+        select: {
+          sellerType: true,
+          verificationStatus: true,
+          vatRegistered: true,
+          completedDealsCount: true,
+          responseTimeAvgMinutes: true,
+          subscriptionStatus: true,
+          subscriptionExpiresAt: true,
+        },
+      },
+      sellerListings: {
+        where: { active: true },
+        include: {
+          product: {
+            include: {
+              category: {
+                select: { name: true, slug: true },
+              },
+            },
+          },
+          priceTiers: {
+            where: { validUntil: { gt: now } },
+            orderBy: { unitPrice: "asc" },
+          },
+        },
+        orderBy: { id: "desc" },
+      },
+    },
+  });
+
+  if (!seller) return null;
+
+  const profile = seller.sellerProfile;
+
+  return {
+    sellerId: seller.id,
+    companyName: seller.companyName ?? "Verified Supplier",
+    sellerType: profile?.sellerType ?? "RETAILER",
+    verificationStatus: profile?.verificationStatus ?? "UNVERIFIED",
+    vatRegistered: profile?.vatRegistered ?? false,
+    completedDealsCount: profile?.completedDealsCount ?? 0,
+    responseTimeAvgMinutes: profile?.responseTimeAvgMinutes ?? 60,
+    subscriptionStatus: profile?.subscriptionStatus ?? "FREE",
+    directChatEnabled: isDirectChatEntitled(profile, now),
+    listings: seller.sellerListings.map((l) => ({
+      listingId: l.id,
+      productId: l.product.id,
+      productTitle: l.product.title,
+      productUnit: l.product.unit as ProductUnit,
+      imageUrl: l.imageUrl || l.product.imageUrl || null,
+      location: coarsenLocation(l.location),
+      lowestPrice:
+        l.priceTiers.length > 0 ? Number(l.priceTiers[0].unitPrice) : null,
+      tierCount: l.priceTiers.length,
+      categoryName: l.product.category.name,
+      categorySlug: l.product.category.slug,
+      stockState: l.stockState,
+    })),
+  };
+}
+
+/**
+ * Fetches a paginated list of active seller stores for the stores browse page.
+ */
+export interface SellerStoreCard {
+  sellerId: string;
+  companyName: string;
+  sellerType: string;
+  verificationStatus: string;
+  subscriptionStatus: string;
+  activeListingCount: number;
+  location: string | null;
+}
+
+export async function fetchSellerStores(): Promise<SellerStoreCard[]> {
+  const sellers = await db.user.findMany({
+    where: {
+      role: "SELLER",
+      OR: [
+        { sellerProfile: null },
+        { sellerProfile: { verificationStatus: { not: "SUSPENDED" } } },
+      ],
+      sellerListings: { some: { active: true } },
+    },
+    select: {
+      id: true,
+      companyName: true,
+      sellerProfile: {
+        select: {
+          sellerType: true,
+          verificationStatus: true,
+          subscriptionStatus: true,
+        },
+      },
+      sellerListings: {
+        where: { active: true },
+        select: { location: true },
+      },
+    },
+  });
+
+  return sellers.map((s) => ({
+    sellerId: s.id,
+    companyName: s.companyName ?? "Verified Supplier",
+    sellerType: s.sellerProfile?.sellerType ?? "RETAILER",
+    verificationStatus: s.sellerProfile?.verificationStatus ?? "UNVERIFIED",
+    subscriptionStatus: s.sellerProfile?.subscriptionStatus ?? "FREE",
+    activeListingCount: s.sellerListings.length,
+    location: s.sellerListings[0]?.location
+      ? coarsenLocation(s.sellerListings[0].location)
+      : null,
+  }));
+}
+
 /**
  * Fetches a product and all competing seller depot offers side-by-side.
  */

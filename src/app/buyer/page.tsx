@@ -5,16 +5,9 @@ import {
   ArrowRight,
   ShieldCheck,
   Building2,
-  Container,
-  Columns3,
-  Mountain,
-  LayoutGrid,
-  Home,
-  Pipette,
-  TreePine,
-  Zap,
   Coins,
   SendHorizontal,
+  Store,
 } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,36 +20,47 @@ import {
 } from "@/lib/data/catalog";
 import { cn } from "@/lib/utils";
 
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  Container,
-  Columns3,
-  Mountain,
-  LayoutGrid,
-  Home,
-  Pipette,
-  TreePine,
-  Zap,
+// Curated fallback images per category slug
+const CATEGORY_IMAGES: Record<string, string> = {
+  cement:
+    "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=600&q=75",
+  steel:
+    "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?auto=format&fit=crop&w=600&q=75",
+  aggregates:
+    "https://images.unsplash.com/photo-1620733723572-11c53f73a416?auto=format&fit=crop&w=600&q=75",
+  finishing:
+    "https://images.unsplash.com/photo-1581858726788-75bc0f6a952d?auto=format&fit=crop&w=600&q=75",
+  timber:
+    "https://images.unsplash.com/photo-1542621334-a254cf47733d?auto=format&fit=crop&w=600&q=75",
+  electrical:
+    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=600&q=75",
+  plumbing:
+    "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=600&q=75",
+  "safety-gear":
+    "https://images.unsplash.com/photo-1530099486328-e021101a494a?auto=format&fit=crop&w=600&q=75",
 };
+const CATEGORY_FALLBACK =
+  "https://images.unsplash.com/photo-1590069261209-f8e9b8642343?auto=format&fit=crop&w=600&q=75";
 
 export default async function BuyerCategoryHubPage() {
   const user = await getSessionUser();
 
-  // Personalized data only for authenticated users
   const buyerName = user?.name?.split(" ")[0] ?? "Contractor";
   const companyName = user?.companyName ?? "your company";
 
   const [categories, recentEnquiries] = await Promise.all([
     fetchCategoriesWithCounts(),
-    // Only fetch enquiries if the user has an authId (DB relation key)
     user?.authId ? fetchRecentBuyerEnquiries(user.authId, 3) : Promise.resolve([]),
   ]);
 
   const isAnonymous = !user;
-
   const totalOffers = categories.reduce((sum, c) => sum + c.listingCount, 0);
 
   return (
     <div className="space-y-10">
+      {/* ============================================================
+          HERO BANNER
+      ============================================================ */}
       <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 sm:p-8">
         <div className="pointer-events-none absolute inset-0 cm-glow opacity-70" />
         <div className="relative max-w-2xl space-y-4">
@@ -66,10 +70,15 @@ export default async function BuyerCategoryHubPage() {
           </p>
           <PageHeader
             className="border-0 pb-0"
-            title={isAnonymous ? "Compare wholesale construction prices" : `Welcome back, ${buyerName}`}
-            description={isAnonymous
-              ? "Browse depot-direct wholesale offers from verified yards. No account needed to see prices — sign up free when you're ready to buy."
-              : `${companyName} — compare depot-direct wholesale offers, then send a purchase request. Contacts stay masked until the supplier unlocks.`
+            title={
+              isAnonymous
+                ? "Compare wholesale construction prices"
+                : `Welcome back, ${buyerName}`
+            }
+            description={
+              isAnonymous
+                ? "Browse depot-direct wholesale offers from verified yards. No account needed to see prices — sign up free when you're ready to buy."
+                : `${companyName} — compare depot-direct wholesale offers, then send a purchase request. Contacts stay masked until the supplier unlocks.`
             }
           />
           <form
@@ -98,13 +107,20 @@ export default async function BuyerCategoryHubPage() {
             </button>
           </form>
           <div className="flex flex-wrap gap-2 text-xs">
-            <QuickChip href="/buyer/category/cement?brand=Dangote">Dangote</QuickChip>
+            <QuickChip href="/buyer/category/cement">Cement</QuickChip>
             <QuickChip href="/buyer/category/steel">Rebar Ø16</QuickChip>
             <QuickChip href="/buyer/category/aggregates">River sand</QuickChip>
+            <QuickChip href="/buyer/stores">
+              <Store className="size-3 mr-0.5" />
+              All Stores
+            </QuickChip>
           </div>
         </div>
       </div>
 
+      {/* ============================================================
+          BROWSE BY CATEGORY — IMAGE CARDS
+      ============================================================ */}
       <section className="space-y-4">
         <div className="flex items-end justify-between gap-3">
           <div>
@@ -124,35 +140,67 @@ export default async function BuyerCategoryHubPage() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {categories.length === 0 ? (
             <p className="col-span-full rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">
-              Categories are being prepared. Refresh this page in a moment.
+              Categories are being prepared. Refresh in a moment.
             </p>
           ) : (
             categories.map((cat) => {
-            const IconComponent = ICON_MAP[cat.iconName] || Package;
-            return (
-              <Link
-                key={cat.id}
-                href={`/buyer/category/${cat.slug}`}
-                className="group flex min-h-[7.5rem] flex-col justify-between rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/50 hover:bg-elevated"
-              >
-                <span className="flex size-9 items-center justify-center rounded-lg bg-primary/12 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                  <IconComponent className="size-4" />
-                </span>
-                <div>
-                  <h3 className="text-sm font-semibold text-foreground">
-                    {cat.name}
-                  </h3>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {cat.listingCount} {cat.listingCount === 1 ? "depot" : "depots"}
-                  </p>
-                </div>
-              </Link>
-            );
-          })
+              const image =
+                cat.imageUrl ||
+                CATEGORY_IMAGES[cat.slug] ||
+                CATEGORY_FALLBACK;
+              return (
+                <Link
+                  key={cat.id}
+                  href={`/buyer/category/${cat.slug}`}
+                  className="group relative flex flex-col justify-end overflow-hidden rounded-2xl border border-border aspect-[4/3] shadow-xs hover:shadow-md hover:border-primary/40 transition-all duration-200"
+                >
+                  {/* Background image */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={image}
+                    alt={cat.name}
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  {/* Gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent" />
+                  {/* Text */}
+                  <div className="relative p-3">
+                    <h3 className="text-sm font-bold text-white leading-tight">
+                      {cat.name}
+                    </h3>
+                    <p className="text-[11px] text-white/70 mt-0.5">
+                      {cat.listingCount}{" "}
+                      {cat.listingCount === 1 ? "depot" : "depots"}
+                    </p>
+                  </div>
+                </Link>
+              );
+            })
           )}
+
+          {/* Stores tile */}
+          <Link
+            href="/buyer/stores"
+            className="group relative flex flex-col justify-end overflow-hidden rounded-2xl border border-dashed border-primary/40 bg-primary/5 aspect-[4/3] shadow-xs hover:shadow-md hover:border-primary transition-all duration-200"
+          >
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Store className="h-12 w-12 text-primary/30 group-hover:text-primary/50 transition-colors" />
+            </div>
+            <div className="relative p-3">
+              <h3 className="text-sm font-bold text-foreground leading-tight">
+                All Stores
+              </h3>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Browse by supplier
+              </p>
+            </div>
+          </Link>
         </div>
       </section>
 
+      {/* ============================================================
+          RECENT ENQUIRIES (authenticated only)
+      ============================================================ */}
       {!isAnonymous && recentEnquiries.length > 0 && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
@@ -192,8 +240,13 @@ export default async function BuyerCategoryHubPage() {
         </section>
       )}
 
+      {/* ============================================================
+          HOW IT WORKS
+      ============================================================ */}
       <section className="rounded-2xl border border-border bg-card p-6">
-        <h2 className="text-center text-lg font-semibold">How introductions work</h2>
+        <h2 className="text-center text-lg font-semibold">
+          How introductions work
+        </h2>
         <p className="mx-auto mt-1 max-w-lg text-center text-sm text-muted-foreground">
           You never pay to see a listing. The supplier pays to see you.
         </p>
@@ -219,11 +272,17 @@ export default async function BuyerCategoryHubPage() {
   );
 }
 
-function QuickChip({ href, children }: { href: string; children: React.ReactNode }) {
+function QuickChip({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
   return (
     <Link
       href={href}
-      className="rounded-full border border-border bg-background px-2.5 py-1 text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+      className="inline-flex items-center rounded-full border border-border bg-background px-2.5 py-1 text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
     >
       {children}
     </Link>

@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && node --max-old-space-size=4096 ./node_modules/next/dist/bin/next build",
+    "build": "prisma generate && node scripts/build.js",
     "start": "next start",
     "lint": "node scripts/lint.js",
     "typecheck": "next typegen && node scripts/typecheck-chunked.js",
