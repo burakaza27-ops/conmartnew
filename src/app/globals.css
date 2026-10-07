@@ -457,3 +457,22 @@ table th {
 .print-only {
   display: none;
 }
+
+/* =============================================================================
+   Amharic / Ethiopic Typography Enhancements
+   =============================================================================
+   Ethiopic Fidel characters have taller glyphs and intricate accents.
+   Slightly increased line-height and font fallback ensures crisp legibility
+   on budget mobile devices and in outdoor sunlight.
+   ============================================================================= */
+:lang(am),
+[lang="am"],
+[data-locale="am"] {
+  font-family: var(--font-geist-sans), "Noto Sans Ethiopic", "Nyala", "Abyssinica SIL", "Segoe UI Ethiopic", sans-serif;
+  letter-spacing: 0.01em;
+}
+
+/* Safe area bottom padding helper for sticky mobile action bars */
+.pb-safe-action {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}

@@ -91,7 +91,70 @@ export function DepotMaterialsTable({
       </CardHeader>
 
       <CardContent className="p-0">
-        <div className="overflow-x-auto">
+        {/* Mobile View: Stacked Touch-Friendly Cards (No horizontal panning) */}
+        <div className="sm:hidden divide-y divide-border/40">
+          {listings.map((item) => {
+            const unitLabel = getLocalizedUnit(item.product.unit, locale);
+            const itemCategory = getCategoryTitle(
+              item.product.category.slug,
+              item.product.category.name,
+              locale
+            );
+            return (
+              <div key={item.id} className="p-3.5 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-border/60 bg-muted">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={
+                        item.imageUrl ||
+                        item.product.imageUrl ||
+                        getProductFallback(item.product.category.slug)
+                      }
+                      alt={item.product.title}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <Link
+                      href={`/buyer/catalog/${item.id}`}
+                      className="font-bold text-xs text-foreground hover:text-primary transition-colors line-clamp-1"
+                    >
+                      {item.product.title}
+                    </Link>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <Badge variant="outline" className="text-[9px] px-1.5 py-0">
+                        {itemCategory}
+                      </Badge>
+                      {item.lowestPrice ? (
+                        <span className="font-mono font-bold text-xs text-foreground">
+                          {formatETB(item.lowestPrice, locale)}
+                          <span className="text-[10px] font-normal text-muted-foreground ml-0.5">
+                            /{unitLabel}
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground italic">
+                          {t("depot_price_on_request")}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <Link href={`/buyer/catalog/${item.id}`} className="shrink-0">
+                  <Button size="sm" variant="outline" className="h-8 px-2.5 text-xs font-semibold gap-1">
+                    {t("depot_btn_view", "View")}
+                    <ArrowRight className="h-3 w-3" />
+                  </Button>
+                </Link>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Desktop View: Multi-column Table */}
+        <div className="hidden sm:block overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/20">

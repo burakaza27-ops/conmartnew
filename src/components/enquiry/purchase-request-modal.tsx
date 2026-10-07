@@ -18,6 +18,7 @@ import {
   SendHorizontal,
   HardHat,
   ShieldCheck,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ import { useLanguage } from "@/lib/i18n/language-context";
 import { formatPrice, getLocalizedUnit } from "@/lib/i18n/translations";
 import { submitPurchaseEnquiryAction } from "@/app/actions/enquiries";
 import { DeliveryPreference } from "@prisma/client";
+import { cn } from "@/lib/utils";
 
 interface PurchaseRequestModalProps {
   isOpen: boolean;
@@ -210,32 +212,83 @@ export function PurchaseRequestModal({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Quantity and Unit */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="req-qty" className="text-xs font-semibold">
-                  {t("buyer_enquiry_qty")} ({getLocalizedUnit(unit, locale)})
-                </Label>
-                <Input
-                  id="req-qty"
-                  type="number"
-                  min="1"
-                  step="any"
-                  value={qty}
-                  onChange={(e) => setQty(e.target.value)}
-                  className="font-mono"
-                  required
-                />
+            {/* Speed & Security Reassurance Banner */}
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 flex items-start gap-2.5 text-xs text-emerald-900 dark:text-emerald-200">
+              <Zap className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+              <div className="space-y-0.5">
+                <span className="font-semibold block text-emerald-800 dark:text-emerald-300">
+                  {locale === "am" ? "⚡ ፈጣን ምላሽ (15–30 ደቂቃ)" : "⚡ Fast Confirmation (15–30 mins)"}
+                </span>
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                  {locale === "am"
+                    ? "አቅራቢው ክምችትና ትክክለኛ ዋጋ እንዳረጋገጠ የስልክ ቁጥርና የመጋዘን አድራሻ ወዲያውኑ ይገለጻል።"
+                    : "Direct supplier phone & depot yard address unlock immediately upon request acceptance."}
+                </p>
               </div>
+            </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">
-                  {t("modal_base_price_label")}
-                </Label>
-                <div className="flex h-9 w-full items-center rounded-md border bg-muted/40 px-3 text-xs font-mono font-semibold text-foreground">
-                  {basePrice ? formatPrice(basePrice, locale) : t("modal_live_market_rate")}
+            {/* Quantity and Unit */}
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="req-qty" className="text-xs font-semibold">
+                    {t("buyer_enquiry_qty")} ({getLocalizedUnit(unit, locale)})
+                  </Label>
+                  <Input
+                    id="req-qty"
+                    type="number"
+                    min="1"
+                    step="any"
+                    value={qty}
+                    onChange={(e) => setQty(e.target.value)}
+                    className="font-mono text-sm font-semibold"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">
+                    {t("modal_base_price_label")}
+                  </Label>
+                  <div className="flex h-9 w-full items-center rounded-md border bg-muted/40 px-3 text-xs font-mono font-semibold text-foreground">
+                    {basePrice ? formatPrice(basePrice, locale) : t("modal_live_market_rate")}
+                  </div>
                 </div>
               </div>
+
+              {/* Quick Quantity Presets */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                <span className="text-[11px] font-medium text-muted-foreground mr-1">
+                  {locale === "am" ? "ፈጣን ምርጫ፦" : "Quick:"}
+                </span>
+                {[50, 100, 250, 500, 1000].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setQty(String(preset))}
+                    className={cn(
+                      "px-2 py-0.5 rounded-md text-[11px] font-mono border transition-all active:scale-95",
+                      qty === String(preset)
+                        ? "bg-primary text-primary-foreground border-primary font-bold shadow-2xs"
+                        : "bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground border-border"
+                    )}
+                  >
+                    +{preset}
+                  </button>
+                ))}
+              </div>
+
+              {/* Live Subtotal Calculation */}
+              {basePrice && parseFloat(qty) > 0 && (
+                <div className="rounded-lg bg-primary/5 border border-primary/20 px-3 py-2 flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground font-medium">
+                    {locale === "am" ? "የዕቃ ግምታዊ ድምር፦" : "Estimated Material Subtotal:"}
+                  </span>
+                  <span className="font-mono font-bold text-foreground text-sm">
+                    {formatPrice(parseFloat(qty) * basePrice, locale)}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Delivery Option Toggle */}

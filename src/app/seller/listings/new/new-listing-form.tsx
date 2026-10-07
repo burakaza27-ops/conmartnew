@@ -412,6 +412,28 @@ export function NewListingForm({
                   className="h-9 text-xs"
                   required
                 />
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[10px] font-medium text-muted-foreground mr-0.5">
+                    {locale === "am" ? "የተለመዱ ዞኖች፦" : "Popular zones:"}
+                  </span>
+                  {[
+                    "Kaliti Industrial Zone",
+                    "Akaki Depot Yard",
+                    "Gotera Warehouse",
+                    "CMC / Ayat Corridor",
+                    "Legetafo Depot",
+                    "Sebeta Industrial Hub",
+                  ].map((hub) => (
+                    <button
+                      key={hub}
+                      type="button"
+                      onClick={() => setLocation(`Addis Ababa, ${hub}`)}
+                      className="px-2 py-0.5 rounded-md text-[10px] border border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-all"
+                    >
+                      {hub}
+                    </button>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>

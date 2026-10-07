@@ -79,7 +79,7 @@ export function ListingDetailView({
     : [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24 md:pb-6">
       {/* --- Back Navigation --- */}
       <Link
         href={`/buyer/category/${listing.product.category.slug}`}
@@ -345,6 +345,42 @@ export function ListingDetailView({
         unit={listing.product.unit}
         basePrice={activeTiers[0]?.unitPrice}
       />
+
+      {/* Sticky Bottom Mobile Conversion Bar */}
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur-md px-4 py-3 md:hidden shadow-lg pb-safe-action">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-[10px] uppercase font-semibold text-muted-foreground">
+              {locale === "am" ? "የጅምላ ዋጋ" : "Wholesale Rate"}
+            </div>
+            <div className="font-mono text-base font-extrabold text-foreground leading-tight">
+              {activeTiers[0]?.unitPrice !== undefined
+                ? formatETB(activeTiers[0].unitPrice, locale)
+                : t("depot_price_on_request")}
+              <span className="text-[11px] font-normal text-muted-foreground ml-0.5">
+                /{unitLabel}
+              </span>
+            </div>
+          </div>
+
+          <AuthGateButton
+            isAuthenticated={isAuthenticated}
+            redirectTo={`/buyer/catalog/${listing.id}`}
+            fallbackLabel={t("buyer_request_enquiry_btn")}
+            fallbackIcon={<SendHorizontal className="h-4 w-4" />}
+            fallbackSize="default"
+            fallbackClassName="gap-1.5 font-bold shadow-md bg-primary text-primary-foreground text-xs"
+          >
+            <Button
+              onClick={() => setIsEnquiryOpen(true)}
+              className="gap-1.5 font-bold shadow-md bg-primary text-primary-foreground text-xs h-9 px-3.5"
+            >
+              <SendHorizontal className="h-3.5 w-3.5" />
+              {t("buyer_request_enquiry_btn")}
+            </Button>
+          </AuthGateButton>
+        </div>
+      </div>
     </div>
   );
 }

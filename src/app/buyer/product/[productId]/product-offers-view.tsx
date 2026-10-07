@@ -64,7 +64,7 @@ export function ProductOffersView({ product, isAuthenticated = false }: ProductO
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-24 md:pb-8">
       {/* Product Hero Header */}
       <div className="rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-background p-6 sm:p-8 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -201,14 +201,27 @@ export function ProductOffersView({ product, isAuthenticated = false }: ProductO
                             {offer.vatRegistered ? t("offers_vat_included") : t("offers_standard_price")}
                           </span>
                           <span>•</span>
-                          <span>{t("offers_moq_label")} <strong className="text-foreground">{offer.moq} {unitLabel}</strong></span>
+                          <span title={locale === "am" ? "አነስተኛ የትዕዛዝ መጠን" : "Minimum Order Quantity"}>
+                            {t("offers_moq_label")} <strong className="text-foreground">{offer.moq} {unitLabel}</strong>
+                            <span className="text-[10px] text-muted-foreground opacity-75 ml-1">
+                              ({locale === "am" ? "አነስተኛ ትዕዛዝ" : "Min. Order"})
+                            </span>
+                          </span>
                         </div>
                       </div>
 
                       {/* Pricing and Actions */}
-                      <div className="flex flex-col sm:items-end gap-1.5 shrink-0">
-                        <div className="text-xs text-muted-foreground uppercase font-semibold">
-                          {t("offers_ex_works_wholesale")}
+                      <div className="flex flex-col sm:items-end gap-1 shrink-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-muted-foreground uppercase font-semibold">
+                            {t("offers_ex_works_wholesale")}
+                          </span>
+                          <span
+                            className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground font-medium"
+                            title={locale === "am" ? "በራስዎ ትራንስፖርት ከመጋዘን የሚጫን" : "Pickup from seller depot with your own transport"}
+                          >
+                            {locale === "am" ? "መጋዘን ጫኝ" : "Depot pickup"}
+                          </span>
                         </div>
                         <div className="font-mono text-2xl font-extrabold text-foreground">
                           {offer.lowestPrice !== null
@@ -324,6 +337,44 @@ export function ProductOffersView({ product, isAuthenticated = false }: ProductO
           unit={product.unit}
           basePrice={selectedListingForEnquiry.lowestPrice ?? undefined}
         />
+      )}
+
+      {/* Sticky Bottom Mobile Conversion Bar */}
+      {product.offers.length > 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur-md px-4 py-3 md:hidden shadow-lg pb-safe-action">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-[10px] uppercase font-semibold text-muted-foreground">
+                {locale === "am" ? "ምርጥ ዋጋ ከመጋዘን" : "Best Available Rate"}
+              </div>
+              <div className="font-mono text-base font-extrabold text-foreground leading-tight">
+                {product.offers[0].lowestPrice !== null
+                  ? formatPrice(product.offers[0].lowestPrice, locale)
+                  : "On Inquiry"}
+                <span className="text-[11px] font-normal text-muted-foreground ml-0.5">
+                  /{unitLabel}
+                </span>
+              </div>
+            </div>
+
+            <AuthGateButton
+              isAuthenticated={isAuthenticated}
+              redirectTo={`/buyer/product/${product.id}`}
+              fallbackLabel={t("offers_btn_send_enquiry")}
+              fallbackIcon={<SendHorizontal className="h-4 w-4" />}
+              fallbackSize="default"
+              fallbackClassName="gap-1.5 font-bold shadow-md bg-primary text-primary-foreground text-xs"
+            >
+              <Button
+                onClick={() => setSelectedListingForEnquiry(product.offers[0])}
+                className="gap-1.5 font-bold shadow-md bg-primary text-primary-foreground text-xs h-9 px-3.5"
+              >
+                <SendHorizontal className="h-3.5 w-3.5" />
+                {t("offers_btn_send_enquiry")}
+              </Button>
+            </AuthGateButton>
+          </div>
+        </div>
       )}
     </div>
   );
