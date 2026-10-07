@@ -22,6 +22,7 @@ import {
 import { ListingStatusButton } from "./listing-status-button";
 import { PriceTierTable } from "./price-tier-table";
 import type { SellerListingItem } from "./types";
+import { getProductFallback } from "@/lib/data/category-images";
 
 interface SellerListingCardProps {
   listing: SellerListingItem;
@@ -40,7 +41,7 @@ export function SellerListingCard({ listing }: SellerListingCardProps) {
 
   const displayImage =
     listing.imageUrl ||
-    "https://images.unsplash.com/photo-1590069261209-f8e9b8642343?auto=format&fit=crop&w=800&q=80";
+    getProductFallback(listing.categoryName);
 
   return (
     <Card className="overflow-hidden border-border/60 bg-card">

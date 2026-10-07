@@ -20,27 +20,7 @@ import {
 } from "@/lib/data/catalog";
 import { cn } from "@/lib/utils";
 
-// Curated fallback images per category slug
-const CATEGORY_IMAGES: Record<string, string> = {
-  cement:
-    "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=600&q=75",
-  steel:
-    "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?auto=format&fit=crop&w=600&q=75",
-  aggregates:
-    "https://images.unsplash.com/photo-1620733723572-11c53f73a416?auto=format&fit=crop&w=600&q=75",
-  finishing:
-    "https://images.unsplash.com/photo-1581858726788-75bc0f6a952d?auto=format&fit=crop&w=600&q=75",
-  timber:
-    "https://images.unsplash.com/photo-1542621334-a254cf47733d?auto=format&fit=crop&w=600&q=75",
-  electrical:
-    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=600&q=75",
-  plumbing:
-    "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=600&q=75",
-  "safety-gear":
-    "https://images.unsplash.com/photo-1530099486328-e021101a494a?auto=format&fit=crop&w=600&q=75",
-};
-const CATEGORY_FALLBACK =
-  "https://images.unsplash.com/photo-1590069261209-f8e9b8642343?auto=format&fit=crop&w=600&q=75";
+import { getCategoryImage } from "@/lib/data/category-images";
 
 export default async function BuyerCategoryHubPage() {
   const user = await getSessionUser();
@@ -146,8 +126,7 @@ export default async function BuyerCategoryHubPage() {
             categories.map((cat) => {
               const image =
                 cat.imageUrl ||
-                CATEGORY_IMAGES[cat.slug] ||
-                CATEGORY_FALLBACK;
+                getCategoryImage(cat.slug, 600);
               return (
                 <Link
                   key={cat.id}

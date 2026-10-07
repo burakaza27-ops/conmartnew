@@ -23,6 +23,7 @@ import { formatETB } from "@/lib/types";
 import { useLanguage } from "@/lib/i18n/language-context";
 import { getLocalizedUnit, type Locale } from "@/lib/i18n/translations";
 import type { SellerStoreProfile } from "@/lib/data/catalog";
+import { getProductFallback } from "@/lib/data/category-images";
 
 const SELLER_TYPE_LABELS: Record<string, string> = {
   FACTORY: "Factory Direct",
@@ -31,9 +32,6 @@ const SELLER_TYPE_LABELS: Record<string, string> = {
   RETAILER: "Retailer",
   RENTAL: "Rental",
 };
-
-const PRODUCT_FALLBACK =
-  "https://images.unsplash.com/photo-1590069261209-f8e9b8642343?auto=format&fit=crop&w=800&q=75";
 
 interface SellerStoreViewProps {
   store: SellerStoreProfile;
@@ -220,7 +218,7 @@ function StoreProductCard({
   locale: Locale;
 }) {
   const unitLabel = getLocalizedUnit(listing.productUnit, locale);
-  const image = listing.imageUrl || PRODUCT_FALLBACK;
+  const image = listing.imageUrl || getProductFallback(listing.categorySlug);
   const inStock = listing.stockState === "IN_STOCK";
 
   return (

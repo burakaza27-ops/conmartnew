@@ -33,6 +33,7 @@ import {
   getCategoryDescription,
   getLocalizedLocation,
 } from "@/lib/i18n/translations";
+import { getCategoryImage } from "@/lib/data/category-images";
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Container,
@@ -190,21 +191,15 @@ export function CatalogFilters({
               >
                 {/* Category Cover Image with Scrim */}
                 <div className="relative h-24 w-full overflow-hidden bg-muted">
-                  {cat.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={cat.imageUrl}
-                      alt={localizedCatName}
-                      className={cn(
-                        "h-full w-full object-cover transition-transform duration-500",
-                        isSelected ? "scale-105" : "group-hover:scale-110"
-                      )}
-                    />
-                  ) : (
-                    <div className="h-full w-full bg-gradient-to-br from-primary/20 to-muted flex items-center justify-center">
-                      <Icon className="h-8 w-8 text-muted-foreground/40" />
-                    </div>
-                  )}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={cat.imageUrl || getCategoryImage(cat.slug, 600)}
+                    alt={localizedCatName}
+                    className={cn(
+                      "h-full w-full object-cover transition-transform duration-500",
+                      isSelected ? "scale-105" : "group-hover:scale-110"
+                    )}
+                  />
 
                   {/* Gradient overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />

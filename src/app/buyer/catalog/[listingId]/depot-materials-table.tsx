@@ -33,6 +33,7 @@ import {
   getLocalizedLocation,
 } from "@/lib/i18n/translations";
 import type { CatalogListing } from "@/lib/data/catalog";
+import { getProductFallback } from "@/lib/data/category-images";
 
 interface DepotMaterialsTableProps {
   depotName: string;
@@ -114,18 +115,16 @@ export function DepotMaterialsTable({
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md border border-border/60 bg-muted">
-                          {item.imageUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={item.imageUrl}
-                              alt={item.product.title}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                              <Package className="h-4 w-4" />
-                            </div>
-                          )}
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={
+                              item.imageUrl ||
+                              item.product.imageUrl ||
+                              getProductFallback(item.product.category.slug)
+                            }
+                            alt={item.product.title}
+                            className="h-full w-full object-cover"
+                          />
                         </div>
                         <div>
                           <Link

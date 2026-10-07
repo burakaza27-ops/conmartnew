@@ -33,28 +33,7 @@ import {
 import type { ProductCatalogRow } from "@/lib/data/catalog";
 import { CategoryToolbar } from "./category-toolbar";
 
-// Curated category cover images (fallback for categories without DB images)
-const CATEGORY_IMAGES: Record<string, string> = {
-  cement:
-    "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=75",
-  steel:
-    "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?auto=format&fit=crop&w=800&q=75",
-  aggregates:
-    "https://images.unsplash.com/photo-1620733723572-11c53f73a416?auto=format&fit=crop&w=800&q=75",
-  finishing:
-    "https://images.unsplash.com/photo-1581858726788-75bc0f6a952d?auto=format&fit=crop&w=800&q=75",
-  timber:
-    "https://images.unsplash.com/photo-1542621334-a254cf47733d?auto=format&fit=crop&w=800&q=75",
-  electrical:
-    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=75",
-  plumbing:
-    "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=800&q=75",
-  "safety-gear":
-    "https://images.unsplash.com/photo-1530099486328-e021101a494a?auto=format&fit=crop&w=800&q=75",
-};
-
-const PRODUCT_FALLBACK =
-  "https://images.unsplash.com/photo-1590069261209-f8e9b8642343?auto=format&fit=crop&w=800&q=75";
+import { getProductFallback } from "@/lib/data/category-images";
 
 interface CategoryViewProps {
   allCategories: {
@@ -381,9 +360,7 @@ function ProductCard({
 
   const image =
     product.imageUrl ||
-    CATEGORY_IMAGES[product.category.slug] ||
-    CATEGORY_IMAGES[categorySlug] ||
-    PRODUCT_FALLBACK;
+    getProductFallback(product.category.slug || categorySlug);
 
   return (
     <Link

@@ -40,6 +40,7 @@ import {
   getLocalizedLocation,
   formatPrice,
 } from "@/lib/i18n/translations";
+import { getProductFallback } from "@/lib/data/category-images";
 
 interface CategoryOption {
   id: string;
@@ -550,7 +551,7 @@ export function NewListingForm({
                   src={
                     imageUrl ||
                     selectedCategory?.imageUrl ||
-                    "https://images.unsplash.com/photo-1590069261209-f8e9b8642343?auto=format&fit=crop&w=800&q=80"
+                    getProductFallback(selectedCategory?.slug)
                   }
                   alt="Preview"
                   className="h-full w-full object-cover"

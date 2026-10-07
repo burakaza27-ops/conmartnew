@@ -39,6 +39,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { StartChatButton } from "@/components/chat/start-chat-button";
 import { AuthGateButton } from "@/components/auth/auth-gate-modal";
 import type { CatalogListing, ListingDetail } from "@/lib/data/catalog";
+import { getCategoryImage } from "@/lib/data/category-images";
 
 interface ListingDetailViewProps {
   listing: ListingDetail;
@@ -71,7 +72,7 @@ export function ListingDetailView({
   const displayImage =
     listing.imageUrl ||
     listing.product.imageUrl ||
-    "https://images.unsplash.com/photo-1590069261209-f8e9b8642343?auto=format&fit=crop&w=1200&q=80";
+    getCategoryImage(listing.product.category.slug, 1200);
 
   const specsEntries = listing.product.specs
     ? Object.entries(listing.product.specs)
