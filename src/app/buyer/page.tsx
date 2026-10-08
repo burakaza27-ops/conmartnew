@@ -44,10 +44,21 @@ export default async function BuyerCategoryHubPage() {
       <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 sm:p-8">
         <div className="pointer-events-none absolute inset-0 cm-glow opacity-70" />
         <div className="relative max-w-2xl space-y-4">
-          <p className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-            <ShieldCheck className="size-3.5" />
-            Direct introduction · Addis Ababa
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+              <ShieldCheck className="size-3.5" />
+              Direct introduction · Addis Ababa
+            </p>
+            {isAnonymous && (
+              <Link
+                href="/landing"
+                className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Learn how ConMart works
+                <ArrowRight className="size-3" />
+              </Link>
+            )}
+          </div>
           <PageHeader
             className="border-0 pb-0"
             title={

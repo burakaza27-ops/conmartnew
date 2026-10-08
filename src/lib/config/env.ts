@@ -18,55 +18,85 @@ const percentage = z.coerce
   .min(0, "must be between 0 and 100")
   .max(100, "must be between 0 and 100");
 
-const serverEnvSchema = z.object({
-  DATABASE_URL: z.string().min(1, "is required"),
-  DATABASE_POOLER_URL: z.string().min(1).optional(),
-  /** PEM-encoded CA certificate, for a provider that does not use a public CA. */
-  DATABASE_CA_CERT: z.string().min(1).optional(),
-  DATABASE_SSL_NO_VERIFY: z.enum(["true", "false"]).default("false"),
+const serverEnvSchema = z
+  .object({
+    DATABASE_URL: z.string().min(1, "is required"),
+    DATABASE_POOLER_URL: z.string().min(1).optional(),
+    /** PEM-encoded CA certificate, for a provider that does not use a public CA. */
+    DATABASE_CA_CERT: z.string().min(1).optional(),
+    DATABASE_SSL_NO_VERIFY: z.enum(["true", "false"]).default("false"),
 
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url("must be a valid URL"),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1, "is required"),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
+    NEXT_PUBLIC_SUPABASE_URL: z.string().url("must be a valid URL"),
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1, "is required"),
+    SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
 
-  /** Optional public origin for password-reset emails when Host cannot be read. */
-  NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
+    /** Optional public origin for password-reset emails when Host cannot be read. */
+    NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
 
-  SUPABASE_STORAGE_BUCKET: z.string().min(1).default("products"),
+    SUPABASE_STORAGE_BUCKET: z.string().min(1).default("products"),
 
-  PLATFORM_FEE_PERCENT: percentage.default(0),
-  VAT_RATE_PERCENT: percentage.default(15),
-  DEAL_FAILURE_REFUND_PERCENT: percentage.default(80),
+    PLATFORM_FEE_PERCENT: percentage.default(0),
+    VAT_RATE_PERCENT: percentage.default(15),
+    DEAL_FAILURE_REFUND_PERCENT: percentage.default(80),
 
-  UPSTASH_REDIS_REST_URL: z.string().url().optional(),
-  UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
+    UPSTASH_REDIS_REST_URL: z.string().url().optional().or(z.literal("")),
+    UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional().or(z.literal("")),
 
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-});
+    NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  })
+  .superRefine((data, ctx) => {
+    if (data.NODE_ENV !== "production") {
+      return;
+    }
+    if (!data.UPSTASH_REDIS_REST_URL) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["UPSTASH_REDIS_REST_URL"],
+        message: "is required in production so rate limits are global",
+      });
+    }
+    if (!data.UPSTASH_REDIS_REST_TOKEN) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["UPSTASH_REDIS_REST_TOKEN"],
+        message: "is required in production so rate limits are global",
+      });
+    }
+  });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
 
-function loadServerEnv(): ServerEnv {
-  const parsed = serverEnvSchema.safeParse(process.env);
-
+/** Parse a raw env map. Exported for unit tests. */
+export function parseServerEnv(
+  source: Record<string, string | undefined>
+): { success: true; data: ServerEnv } | { success: false; error: string } {
+  const parsed = serverEnvSchema.safeParse(source);
   if (!parsed.success) {
     const details = parsed.error.issues
       .map((issue) => `  - ${issue.path.join(".")} ${issue.message}`)
       .join("\n");
-
-    throw new Error(
-      `Invalid server environment configuration:\n${details}\n\n` +
-        "Copy .env.example to .env.local and fill in the missing values."
-    );
+    return {
+      success: false,
+      error:
+        `Invalid server environment configuration:\n${details}\n\n` +
+        "Copy .env.example to .env.local and fill in the missing values.",
+    };
   }
+  return { success: true, data: parsed.data };
+}
 
+function loadServerEnv(): ServerEnv {
+  const parsed = parseServerEnv(process.env);
+  if (!parsed.success) {
+    throw new Error(parsed.error);
+  }
   return parsed.data;
 }
 
 // `SKIP_ENV_VALIDATION` exists for Docker image builds and static analysis,
 // where the runtime secrets are deliberately absent.
 export const env: ServerEnv =
-  process.env.SKIP_ENV_VALIDATION === "true"
+  process.env.SKIP_ENV_VALIDATION === "true" || process.env.NODE_ENV === "test"
     ? (process.env as unknown as ServerEnv)
     : loadServerEnv();
 

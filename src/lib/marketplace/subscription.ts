@@ -7,8 +7,12 @@
 // keep the privilege by leaving the status column untouched.
 // =============================================================================
 
-export const SUBSCRIPTION_STATUSES = ["FREE", "ACTIVE"] as const;
-export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
+import {
+  SUBSCRIPTION_STATUSES,
+  type SubscriptionStatus,
+} from "@/lib/types";
+
+export { SUBSCRIPTION_STATUSES, type SubscriptionStatus };
 
 export interface SubscriptionRecord {
   subscriptionStatus: SubscriptionStatus | string;

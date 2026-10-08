@@ -22,12 +22,24 @@ export function SiteHeader() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <Logo />
 
-        <nav className="hidden items-center gap-7 text-sm font-medium md:flex" aria-label="Main navigation">
+        <nav className="hidden items-center gap-6 text-sm font-medium md:flex" aria-label="Main navigation">
+          <Link
+            href="/buyer"
+            className="text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Categories
+          </Link>
           <Link
             href="/buyer/category/all"
             className="text-muted-foreground transition-colors hover:text-foreground"
           >
             Materials
+          </Link>
+          <Link
+            href="/landing"
+            className="text-muted-foreground transition-colors hover:text-foreground"
+          >
+            How it works
           </Link>
           <Link
             href="/about"

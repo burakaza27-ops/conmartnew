@@ -124,10 +124,10 @@ export async function signIn(
 }
 
 /**
- * Registers a buyer, supplier, or local-agent account.
+ * Registers a buyer or supplier account.
  *
- * Sellers start UNVERIFIED with an empty wallet. Agents must pick a coverage
- * area before any Auth user is created, so a bad zone never orphans a login.
+ * Sellers start UNVERIFIED with an empty wallet. ADMIN and FIELD_AGENT are
+ * never created here — even a forged FormData role is rejected by Zod.
  */
 export async function signUp(
   formData: FormData
@@ -140,7 +140,6 @@ export async function signUp(
     phone: formData.get("phone"),
     companyName: formData.get("companyName"),
     role: formData.get("role"),
-    zoneId: formData.get("zoneId") || undefined,
     referralCode: formData.get("referralCode") || undefined,
   });
 
@@ -153,7 +152,6 @@ export async function signUp(
 
   const { email, password, name, companyName, role } = parsed.data;
   const phone = normalizeEthiopianPhone(parsed.data.phone);
-  const zoneId = role === "FIELD_AGENT" ? parsed.data.zoneId : undefined;
   const referralCode = role === "SELLER" ? parsed.data.referralCode : undefined;
 
   const clientId = await getClientIdentifier();
@@ -166,25 +164,6 @@ export async function signUp(
   if (!byEmail.allowed || !byIp.allowed) {
     const retryAfter = Math.max(byEmail.retryAfterSeconds, byIp.retryAfterSeconds);
     return { success: false, error: rateLimitMessage(retryAfter) };
-  }
-
-  if (role === "FIELD_AGENT") {
-    if (!zoneId) {
-      return {
-        success: false,
-        error: "Select the coverage area you will work as a local agent.",
-      };
-    }
-    const zone = await db.zone.findUnique({
-      where: { id: zoneId },
-      select: { id: true },
-    });
-    if (!zone) {
-      return {
-        success: false,
-        error: "The selected coverage area is no longer available. Refresh the page and choose again.",
-      };
-    }
   }
 
   const supabase = await createSupabaseServerClient();
@@ -252,16 +231,6 @@ export async function signUp(
               },
               wallet: {
                 create: { cashBalance: 0, creditBalance: 0 },
-              },
-            }
-          : {}),
-        ...(role === "FIELD_AGENT" && zoneId
-          ? {
-              agentProfile: {
-                create: {
-                  zoneId,
-                  isActive: true,
-                },
               },
             }
           : {}),

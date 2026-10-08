@@ -77,10 +77,12 @@ would let a man-in-the-middle read every query.
 
 ### Rate limiting
 
-Backed by Upstash Redis when configured, and by a per-process map otherwise.
-The in-memory path only sees traffic reaching one serverless instance and
-cannot enforce a global budget, so `UPSTASH_REDIS_REST_URL` and
-`UPSTASH_REDIS_REST_TOKEN` are required in production.
+Backed by Upstash Redis in production, and by an in-memory fallback in local development.
+In production (`NODE_ENV=production`), rate limiting is **fail-closed**: if Upstash credentials are missing or the service is unreachable, mutating endpoints refuse requests with HTTP 503 rather than silently allowing unmetered traffic. In development, it falls back to an in-process map with console warnings.
+
+### Secret & Key Hygiene
+
+`scripts/check-secret-hygiene.js` is run as part of `npm run verify` and CI. It scans the working tree for uncommitted keystores (`*.keystore`, `*.jks`), private keys (`*.pem`), committed `.env` secrets, and hardcoded credential patterns to guarantee secrets cannot be committed.
 
 ### Error messages
 

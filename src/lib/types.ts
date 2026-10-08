@@ -200,7 +200,7 @@ export interface ProformaCalculationError {
 // API RESPONSE TYPES
 // =============================================================================
 
-/** Discriminated union for type-safe API responses */
-export type ActionResult<T> =
+/** Discriminated union for type-safe server actions and API responses */
+export type ActionResult<T = void> =
   | { success: true; data: T }
-  | { success: false; error: string };
+  | { success: false; error: string; code?: string };

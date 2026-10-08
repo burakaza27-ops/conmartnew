@@ -1,8 +1,8 @@
 // =============================================================================
 // ConMart — Role Grant CLI
 // =============================================================================
-// ADMIN cannot be chosen at sign-up. FIELD_AGENT can self-register, but this
-// script still promotes an existing account when operations needs to.
+// ADMIN and FIELD_AGENT cannot be chosen at sign-up. Promote an existing
+// buyer or supplier account with this script.
 //
 // Usage:
 //   npx tsx scripts/grant-role.ts <email> <BUYER|SELLER|ADMIN|FIELD_AGENT> [zone-slug]

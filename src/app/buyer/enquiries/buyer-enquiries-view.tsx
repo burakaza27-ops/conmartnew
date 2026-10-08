@@ -51,7 +51,7 @@ export interface BuyerEnquiryItem {
   createdAt: string;
   productTitle: string;
   categoryName: string;
-  listingLocation: string;
+  listingLocation: string | null;
   isUnlocked: boolean;
   directChatEnabled: boolean;
   dealTicket: {
@@ -64,6 +64,7 @@ export interface BuyerEnquiryItem {
     name?: string;
     companyName?: string | null;
     phone?: string;
+    location?: string | null;
   };
   unlockRecord: {
     unlockedAt: string;

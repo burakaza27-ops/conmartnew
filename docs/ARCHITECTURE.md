@@ -41,9 +41,12 @@ returns already-masked data. A component cannot leak what it was never given.
 | `lib/engine/pricing.ts` | Proforma line items | Pure; the buyer's preview and the server's invoice call the same function |
 | `lib/wallet/accounting.ts` | Wallet arithmetic | Pure; the rules that move money are unit-testable without Postgres |
 | `lib/wallet/wallet-service.ts` | Wallet transactions | Owns the database transactions and concurrency guards |
+| `lib/marketplace/enquiry-service.ts` | Enquiry lifecycle & unlocks | Owns transaction orchestrations and unlock validation |
+| `lib/data/buyer-history.ts` | Buyer history queries | Bounded query module for buyer activity |
 | `lib/auth/session.ts` | Authorization | One place to audit; memoized per request |
 | `lib/config/env.ts` | Environment | Server-only, so a non-public variable cannot silently read as `undefined` in the browser |
 | `lib/security/masking.ts` | Contact masking | Pure and heavily tested; the paywall depends on it |
+| `lib/security/rate-limit.ts` | Rate limiting | Fail-closed Upstash Redis limiter for DDoS and spam protection |
 
 The pure modules exist because their impure neighbours import `server-only` and
 a database client. Splitting the arithmetic out is what makes it testable, and

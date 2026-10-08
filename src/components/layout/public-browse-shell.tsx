@@ -12,7 +12,7 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ArrowRight, Package, LayoutGrid, LogIn } from "lucide-react";
+import { ArrowRight, Package, LayoutGrid, LogIn, Info } from "lucide-react";
 
 import { Logo } from "@/components/brand/logo";
 import { LanguageToggle } from "@/components/language-toggle";
@@ -25,8 +25,9 @@ interface PublicBrowseShellProps {
 }
 
 const PUBLIC_NAV_LINKS = [
-  { href: "/buyer/category/all", label: "All materials", icon: Package },
   { href: "/buyer", label: "Categories", icon: LayoutGrid },
+  { href: "/buyer/category/all", label: "All materials", icon: Package },
+  { href: "/landing", label: "How it works", icon: Info },
 ];
 
 export function PublicBrowseShell({ children }: PublicBrowseShellProps) {

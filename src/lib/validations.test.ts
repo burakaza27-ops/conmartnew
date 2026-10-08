@@ -43,24 +43,9 @@ describe("registerSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("accepts a field agent registration when a zone is selected", () => {
-    expect(
-      registerSchema.safeParse(
-        validRegistration({ role: "FIELD_AGENT", zoneId: "zone-koye-feche" })
-      ).success
-    ).toBe(true);
-  });
-
-  it("requires a zone when registering as a field agent", () => {
+  it("refuses to let a visitor register themselves as a field agent", () => {
     const result = registerSchema.safeParse(
-      validRegistration({ role: "FIELD_AGENT" })
-    );
-    expect(result.success).toBe(false);
-  });
-
-  it("rejects a blank coverage area for a field agent", () => {
-    const result = registerSchema.safeParse(
-      validRegistration({ role: "FIELD_AGENT", zoneId: "   " })
+      validRegistration({ role: "FIELD_AGENT", zoneId: "zone-koye-feche" })
     );
     expect(result.success).toBe(false);
   });

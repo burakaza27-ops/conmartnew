@@ -41,14 +41,11 @@ import {
   transitionDealTicket,
   type InitiateConversationResult,
 } from "@/lib/marketplace/service";
-
-type ActionResponse<T> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+import type { ActionResult } from "@/lib/types";
 
 export async function initiateConversationAction(
   input: InitiateConversationInput
-): Promise<ActionResponse<InitiateConversationResult>> {
+): Promise<ActionResult<InitiateConversationResult>> {
   const auth = await authorize(["BUYER", "SELLER", "FIELD_AGENT", "ADMIN"]);
   if (!auth.ok) {
     return { success: false, error: auth.error };
@@ -100,7 +97,7 @@ export async function initiateConversationAction(
 
 export async function sendChatMessageAction(
   input: SendChatMessageInput
-): Promise<ActionResponse<{ messageId: string }>> {
+): Promise<ActionResult<{ messageId: string }>> {
   const auth = await authorize(["BUYER", "SELLER", "FIELD_AGENT", "ADMIN"]);
   if (!auth.ok) {
     return { success: false, error: auth.error };
@@ -139,7 +136,7 @@ export async function sendChatMessageAction(
 
 export async function claimDealTicketAction(
   input: ClaimDealTicketInput
-): Promise<ActionResponse<{ ticketId: string; buyerRoomId: string; sellerRoomId: string }>> {
+): Promise<ActionResult<{ ticketId: string; buyerRoomId: string; sellerRoomId: string }>> {
   const auth = await authorize(["FIELD_AGENT", "ADMIN"]);
   if (!auth.ok) {
     return { success: false, error: auth.error };
@@ -167,7 +164,7 @@ export async function claimDealTicketAction(
 
 export async function transitionDealTicketAction(
   input: TransitionDealTicketInput
-): Promise<ActionResponse<null>> {
+): Promise<ActionResult<null>> {
   const auth = await authorize(["FIELD_AGENT", "ADMIN"]);
   if (!auth.ok) {
     return { success: false, error: auth.error };
@@ -199,7 +196,7 @@ export async function transitionDealTicketAction(
 
 export async function completeDealTicketAction(
   input: CompleteDealTicketInput
-): Promise<ActionResponse<{ platformAmount: number; agentAmount: number }>> {
+): Promise<ActionResult<{ platformAmount: number; agentAmount: number }>> {
   const auth = await authorize(["FIELD_AGENT", "ADMIN"]);
   if (!auth.ok) {
     return { success: false, error: auth.error };
@@ -231,7 +228,7 @@ export async function completeDealTicketAction(
 
 export async function setSellerSubscriptionAction(
   input: SetSellerSubscriptionInput
-): Promise<ActionResponse<null>> {
+): Promise<ActionResult<null>> {
   const auth = await authorize(["ADMIN"]);
   if (!auth.ok) {
     return { success: false, error: auth.error };

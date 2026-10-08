@@ -29,10 +29,12 @@ import {
   RefreshCw,
   ChevronRight,
   X,
+  Plus,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/lib/i18n/language-context";
@@ -324,12 +326,32 @@ export function SellerEnquiriesView({
 
       {/* Enquiry Cards List */}
       {filteredEnquiries.length === 0 ? (
-        <div className="py-16 text-center">
-          <Inbox className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-40" />
-          <h3 className="text-base font-semibold text-foreground">{t("enquiries_empty")}</h3>
-          <p className="text-xs text-muted-foreground mt-1">
-            New purchase enquiries from contractors across Addis Ababa will appear here.
+        <div className="rounded-2xl border border-dashed border-border bg-card/40 p-12 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-4">
+            <Inbox className="h-7 w-7" />
+          </div>
+          <h3 className="text-base font-bold text-foreground">{t("enquiries_empty")}</h3>
+          <p className="mx-auto mt-1 max-w-sm text-xs text-muted-foreground">
+            {locale === "am"
+              ? "ከኮንትራክተሮች የሚመጡ አዳዲስ የግዢ ጥያቄዎች እዚህ ይታያሉ። ተጨማሪ እቃዎችን በመዘርዘር ጥያቄዎችን ያግኙ።"
+              : "New purchase enquiries from contractors across Addis Ababa will appear here. Ensure your inventory is up to date to receive more leads."}
           </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="/seller/listings/new"
+              className={cn(buttonVariants({ size: "sm" }), "gap-1.5 font-semibold shadow-xs")}
+            >
+              <Plus className="h-4 w-4" />
+              {locale === "am" ? "አዲስ እቃ ይዘርዝሩ" : "Add New Listing"}
+            </Link>
+            <Link
+              href="/seller/wallet"
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-1.5 font-semibold")}
+            >
+              <Coins className="h-4 w-4 text-primary" />
+              {locale === "am" ? "ዋሌት ይሙሉ" : "Top up Wallet"}
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="grid gap-4">

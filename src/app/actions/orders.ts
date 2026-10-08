@@ -1,15 +1,10 @@
 // =============================================================================
-// ConMart — Order Server Actions
+// ConMart — Order Server Actions (LEGACY QUOTES PIPELINE)
 // =============================================================================
-// Server Actions for Proforma generation and order status management.
-//
-// generateProforma(): Buyer-facing — validates, calculates, and persists a
-//   new Proforma Invoice order.
-//
-// updateOrderStatus(): Admin-only — advances the order through the
-//   forward-only status state machine.
-//
-// getOrderByReference(): Fetches order details by PRF-XXXX code.
+// NOTICE: Legacy direct-checkout and proforma invoice path.
+// Active and new commercial workflows go through Purchase Enquiries
+// (src/app/actions/enquiries.ts and src/lib/marketplace/enquiry-service.ts).
+// Maintained for backward compatibility and historical proforma lookups.
 // =============================================================================
 
 "use server";

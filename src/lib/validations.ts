@@ -14,11 +14,11 @@ import { z } from "zod";
 /**
  * Roles a visitor may choose for themselves at sign-up.
  *
- * ADMIN is deliberately excluded — a public form that mints admin accounts is
- * the same as no access control. FIELD_AGENT is allowed because local agents
- * self-register against a specific zone; operations can deactivate them later.
+ * ADMIN and FIELD_AGENT are excluded — a public form that mints privileged
+ * accounts is the same as no access control. Promote those roles with
+ * `scripts/grant-role.ts`.
  */
-export const SELF_REGISTERABLE_ROLES = ["BUYER", "SELLER", "FIELD_AGENT"] as const;
+export const SELF_REGISTERABLE_ROLES = ["BUYER", "SELLER"] as const;
 export type SelfRegisterableRole = (typeof SELF_REGISTERABLE_ROLES)[number];
 
 /** Ethiopian mobile number in international format, e.g. +251 91 234 5678. */
@@ -113,20 +113,12 @@ export const registerSchema = z.object({
   role: z.enum(SELF_REGISTERABLE_ROLES, {
     error: "Please select your account type",
   }),
-  zoneId: z.string().optional(),
   referralCode: z.string().max(20, "Invalid referral code").optional(),
 })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
-  })
-  .refine(
-    (data) => data.role !== "FIELD_AGENT" || Boolean(data.zoneId?.trim()),
-    {
-      message: "Select the location zone you will cover as a local agent",
-      path: ["zoneId"],
-    }
-  );
+  });
 export type RegisterFormData = z.infer<typeof registerSchema>;
 
 /** Signed-in user editing name, phone, and company. Email is not editable. */

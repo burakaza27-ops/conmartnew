@@ -12,13 +12,10 @@ import { authorize } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import { toSafeErrorMessage } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
-
-type ActionResponse<T> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+import type { ActionResult } from "@/lib/types";
 
 /** Returns the caller's unread notification count. Used to seed the bell badge. */
-export async function getUnreadCountAction(): Promise<ActionResponse<number>> {
+export async function getUnreadCountAction(): Promise<ActionResult<number>> {
   const auth = await authorize(["BUYER", "SELLER", "FIELD_AGENT", "ADMIN"]);
   if (!auth.ok) return { success: false, error: auth.error };
 
@@ -37,7 +34,7 @@ export async function getUnreadCountAction(): Promise<ActionResponse<number>> {
 
 /** Fetches the most recent notifications for the authenticated user (capped to 100). */
 export async function getNotificationsAction(limit = 30): Promise<
-  ActionResponse<
+  ActionResult<
     {
       id: string;
       type: string;
@@ -80,7 +77,7 @@ export async function getNotificationsAction(limit = 30): Promise<
 
 /** Marks all unread notifications as read. Called when visiting the notifications page. */
 export async function markAllNotificationsReadAction(): Promise<
-  ActionResponse<{ count: number }>
+  ActionResult<{ count: number }>
 > {
   const auth = await authorize(["BUYER", "SELLER", "FIELD_AGENT", "ADMIN"]);
   if (!auth.ok) return { success: false, error: auth.error };
@@ -103,7 +100,7 @@ export async function markAllNotificationsReadAction(): Promise<
 /** Marks a single notification as read. */
 export async function markNotificationReadAction(
   notificationId: string
-): Promise<ActionResponse<void>> {
+): Promise<ActionResult<void>> {
   const auth = await authorize(["BUYER", "SELLER", "FIELD_AGENT", "ADMIN"]);
   if (!auth.ok) return { success: false, error: auth.error };
 

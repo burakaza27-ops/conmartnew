@@ -4,7 +4,7 @@ import path from "path";
 const root = process.cwd();
 
 console.log("=================================================");
-console.log("  ECON — Google Play Store & PWA Readiness Audit ");
+console.log("  ConMart — PWA & Android TWA Readiness Audit   ");
 console.log("=================================================");
 
 let hasErrors = false;
@@ -24,14 +24,31 @@ function check(label, fn) {
   }
 }
 
+function verifyRouteExists(urlPath) {
+  const cleanPath = urlPath.split("?")[0].replace(/^\//, "");
+  const targetPage = path.join(root, "src/app", cleanPath, "page.tsx");
+  if (!fs.existsSync(targetPage)) {
+    throw new Error(`Target route file does not exist: src/app/${cleanPath}/page.tsx`);
+  }
+}
+
 // 1. Web App Manifest
 check("Web App Manifest (public/manifest.json)", () => {
   const file = path.join(root, "public/manifest.json");
   if (!fs.existsSync(file)) return false;
   const json = JSON.parse(fs.readFileSync(file, "utf8"));
+  if (json.short_name !== "ConMart") {
+    throw new Error(`Expected short_name to be "ConMart", got "${json.short_name}"`);
+  }
+  if (!json.name || !json.name.includes("ConMart")) {
+    throw new Error(`Expected name to include "ConMart", got "${json.name}"`);
+  }
+  if (Array.isArray(json.shortcuts)) {
+    for (const sc of json.shortcuts) {
+      verifyRouteExists(sc.url);
+    }
+  }
   return (
-    json.name &&
-    json.short_name &&
     json.start_url &&
     json.display === "standalone" &&
     Array.isArray(json.icons) &&
@@ -90,7 +107,18 @@ check("Bubblewrap TWA Manifest (twa-manifest.json)", () => {
   const file = path.join(root, "twa-manifest.json");
   if (!fs.existsSync(file)) return false;
   const json = JSON.parse(fs.readFileSync(file, "utf8"));
-  return json.packageId && json.host && json.name;
+  if (!json.name || !json.name.includes("ConMart")) {
+    throw new Error(`Expected twa-manifest name to include "ConMart", got "${json.name}"`);
+  }
+  if (json.launcherName !== "ConMart") {
+    throw new Error(`Expected launcherName to be "ConMart", got "${json.launcherName}"`);
+  }
+  if (Array.isArray(json.shortcuts)) {
+    for (const sc of json.shortcuts) {
+      verifyRouteExists(sc.url);
+    }
+  }
+  return json.packageId && json.host;
 });
 
 console.log("-------------------------------------------------");
@@ -98,7 +126,8 @@ if (hasErrors) {
   console.log("Status: ❌ SOME CHECKS FAILED. See details above.");
   process.exit(1);
 } else {
-  console.log("Status: ✅ 100% READY FOR GOOGLE PLAY STORE (TWA/PWA)!");
+  console.log("Status: ✅ Static assets & configuration OK for PWA / Bubblewrap TWA.");
+  console.log("Note: Play Console manual submission, keystore signing, and domain verification (.well-known) still required.");
   console.log("Documentation: docs/playstore-publishing-guide.md");
 }
 console.log("=================================================");

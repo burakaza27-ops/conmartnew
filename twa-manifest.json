@@ -1,8 +1,8 @@
 {
   "packageId": "com.econ.marketplace",
   "host": "conmart-ethiopia.com",
-  "name": "ECON — B2B Construction Marketplace",
-  "launcherName": "ECON",
+  "name": "ConMart — B2B Construction Marketplace",
+  "launcherName": "ConMart",
   "display": "standalone",
   "themeColor": "#272722",
   "themeColorDark": "#272722",
@@ -21,7 +21,7 @@
     {
       "name": "Browse Materials",
       "shortName": "Materials",
-      "url": "/buyer/category/all?source=twa_shortcut",
+      "url": "/buyer?source=twa_shortcut",
       "chosenIcon": "public/icons/icon-192x192.png"
     },
     {

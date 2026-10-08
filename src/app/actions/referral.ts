@@ -20,10 +20,7 @@ import {
   computeEarnedMonths,
   REFERRAL_MILESTONES,
 } from "@/lib/marketplace/referral";
-
-type ActionResponse<T> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+import type { ActionResult } from "@/lib/types";
 
 export interface ReferralDashboardData {
   referralCode: string;
@@ -49,7 +46,7 @@ export interface ReferralDashboardData {
  * Lazily creates the referral code on first access.
  */
 export async function getReferralDashboardAction(): Promise<
-  ActionResponse<ReferralDashboardData>
+  ActionResult<ReferralDashboardData>
 > {
   const auth = await authorize(["SELLER", "ADMIN"]);
   if (!auth.ok) {

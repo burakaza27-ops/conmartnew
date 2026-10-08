@@ -41,7 +41,7 @@ export interface DisputeItem {
   buyerName: string;
   buyerPhone: string;
   sellerName: string;
-  sellerCompany: string;
+  sellerCompany: string | null;
   sellerPhone: string;
   feeAmount: number;
 }
