@@ -6,6 +6,7 @@
 // =============================================================================
 
 import { z } from "zod";
+import { ProductUnit } from "@prisma/client";
 
 // =============================================================================
 // SHARED FIELD SCHEMAS
@@ -168,8 +169,11 @@ export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 // PRICE TIER SCHEMAS
 // =============================================================================
 
-/** Price tier form validation (Seller dashboard) */
-export const priceTierSchema = z.object({
+/**
+ * Wallet/dashboard tier with an absolute expiry date.
+ * Used by admin screens that edit existing tiers.
+ */
+export const walletPriceTierSchema = z.object({
   minQty: z
     .number()
     .int("Minimum quantity must be a whole number")
@@ -193,7 +197,7 @@ export const priceTierSchema = z.object({
   message: "Maximum quantity must be greater than or equal to minimum quantity",
   path: ["maxQty"],
 });
-export type PriceTierFormData = z.infer<typeof priceTierSchema>;
+export type WalletPriceTierFormData = z.infer<typeof walletPriceTierSchema>;
 
 // =============================================================================
 // PROFORMA / ORDER SCHEMAS
@@ -274,6 +278,51 @@ export const topUpRequestSchema = z.object({
   slipUrl: z.string().url("Deposit slip must be a valid URL").optional(),
 });
 export type TopUpRequestData = z.infer<typeof topUpRequestSchema>;
+
+// =============================================================================
+// LISTING SCHEMAS
+// =============================================================================
+
+/** Listing creation tier using a relative validity window (days from now). */
+export const priceTierSchema = z
+  .object({
+    minQty: z.number().int().positive("Minimum quantity must be greater than 0"),
+    maxQty: z.number().int().positive("Maximum quantity must be greater than 0"),
+    unitPrice: z.number().positive("Unit price must be greater than 0"),
+    /** Default 180 is supplied by react-hook-form defaultValues, not Zod, to keep types strict. */
+    validDays: z.number().int().positive(),
+  })
+  .refine((tier) => tier.maxQty >= tier.minQty, {
+    message: "Max quantity must be greater than or equal to min quantity",
+    path: ["maxQty"],
+  });
+export type PriceTierFormData = z.infer<typeof priceTierSchema>;
+
+export const createListingSchema = z.object({
+  categoryId: z.string().min(1, "Please select a product category"),
+  title: z
+    .string()
+    .trim()
+    .min(3, "Title must be at least 3 characters")
+    .max(120, "Title cannot exceed 120 characters"),
+  unit: z.nativeEnum(ProductUnit),
+  location: z
+    .string()
+    .trim()
+    .min(2, "Please enter your warehouse or yard location")
+    .max(150),
+  imageUrl: z.string().url("Must be a valid image URL").optional().or(z.literal("")),
+  brand: z.string().trim().max(80).optional(),
+  grade: z.string().trim().max(80).optional(),
+  standard: z.string().trim().max(80).optional(),
+  origin: z.string().trim().max(80).optional(),
+  existingProductId: z.string().optional(),
+  priceTiers: z
+    .array(priceTierSchema)
+    .min(1, "Please configure at least one volume pricing tier"),
+});
+export type CreateListingFormData = z.infer<typeof createListingSchema>;
+
 
 // =============================================================================
 // DISPUTE SCHEMAS

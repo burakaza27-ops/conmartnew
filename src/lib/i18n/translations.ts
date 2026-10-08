@@ -1603,3 +1603,108 @@ export function formatPrice(amount: number, locale: Locale = "en"): string {
   });
   return locale === "am" ? `${formatted} ብር` : `ETB ${formatted}`;
 }
+
+// =============================================================================
+// ZOD VALIDATION ERROR TRANSLATIONS
+// =============================================================================
+// Maps exact English Zod error messages → Amharic equivalents.
+// Usage: translateZodError(message, locale)
+// =============================================================================
+
+const zodErrorMap: Record<string, string> = {
+  // ── Shared field messages ──
+  "Phone number is required": "ስልክ ቁጥር ያስፈልጋል",
+  "Enter a valid Ethiopian phone number (e.g., +251 91 234 5678)":
+    "ትክክለኛ የኢትዮጵያ ስልክ ቁጥር ያስገቡ (ምሳሌ: +251 91 234 5678)",
+  "Password must be at least 8 characters": "የይለፍ ቃሉ ቢያንስ 8 ፊደሎች ሊኖሩት ይገባል",
+  "Password must contain at least one uppercase letter":
+    "የይለፍ ቃሉ ቢያንስ አንድ ትልቅ ፊደል ሊኖረው ይገባል",
+  "Password must contain at least one lowercase letter":
+    "የይለፍ ቃሉ ቢያንስ አንድ ትንሽ ፊደል ሊኖረው ይገባል",
+  "Password must contain at least one number":
+    "የይለፍ ቃሉ ቢያንስ አንድ ቁጥር ሊኖረው ይገባል",
+  "Name must be at least 2 characters": "ስሙ ቢያንስ 2 ፊደሎች ሊኖሩት ይገባል",
+  "Name must be less than 100 characters": "ስሙ ከ100 ፊደሎች ማለፍ የለበትም",
+  "Company name must be at least 2 characters":
+    "የኩባንያ ስም ቢያንስ 2 ፊደሎች ሊኖሩት ይገባል",
+  "Company name must be less than 200 characters":
+    "የኩባንያ ስም ከ200 ፊደሎች ማለፍ የለበትም",
+  "Email is required": "ኢሜይል ያስፈልጋል",
+  "Please enter a valid email address": "ትክክለኛ ኢሜይል አድራሻ ያስገቡ",
+  "Quantity must be a whole number": "መጠኑ ሙሉ ቁጥር መሆን አለበት",
+  "Quantity must be greater than zero": "መጠኑ ከዜሮ በላይ መሆን አለበት",
+  "Quantity exceeds the maximum supported order size":
+    "መጠኑ ከፍተኛ ገደቡን አልፏል",
+  "Amount must be greater than zero": "መጠኑ ከዜሮ በላይ መሆን አለበት",
+  "Amount exceeds the maximum supported transaction size":
+    "መጠኑ ከፍተኛ ገደቡን አልፏል",
+  "Amount can have at most 2 decimal places":
+    "መጠኑ ከ2 ዓምዶች ያልበለጠ ትክክለኛ ቁጥር መሆን አለበት",
+  // ── Auth messages ──
+  "Please confirm your password": "የይለፍ ቃሉን ያረጋግጡ",
+  "Passwords do not match": "የይለፍ ቃላቱ አይዛመዱም",
+  "Please select your account type": "የመለያ ዓይነትዎን ይምረጡ",
+  "Invalid referral code": "ልዩ ሪፈራል ኮድ ልክ አይደለም",
+  "Current password is required": "የአሁኑ የይለፍ ቃል ያስፈልጋል",
+  "Please confirm your new password": "አዲሱን የይለፍ ቃል ያረጋግጡ",
+  "New password must be different from your current password":
+    "አዲሱ የይለፍ ቃል ከአሁኑ ሊለይ ይገባል",
+  // ── Listing form messages ──
+  "Please select a product category": "የምርት ምድብ ይምረጡ",
+  "Title must be at least 3 characters": "ርዕሱ ቢያንስ 3 ፊደሎች ሊኖሩት ይገባል",
+  "Title cannot exceed 120 characters": "ርዕሱ ከ120 ፊደሎች ማለፍ የለበትም",
+  "Please enter your warehouse or yard location":
+    "የጋራዥ ወይም የስራ ቦታ አድራሻ ያስገቡ",
+  "Must be a valid image URL": "ትክክለኛ የምስል URL መሆን አለበት",
+  "Minimum quantity must be greater than 0": "ቢያንስ መጠን ከ0 በላይ መሆን አለበት",
+  "Maximum quantity must be greater than 0": "ከፍተኛ መጠን ከ0 በላይ መሆን አለበት",
+  "Unit price must be greater than 0": "የአንዱ ዋጋ ከ0 በላይ መሆን አለበት",
+  "Max quantity must be greater than or equal to min quantity":
+    "ከፍተኛ መጠን ቢያንስ ከዝቅተኛ መጠን ጋር እኩል ወይም ከፍ ሊሆን ይገባል",
+  "Please configure at least one volume pricing tier":
+    "ቢያንስ አንድ የዋጋ ደረጃ ያቀናብሩ",
+  // ── Wallet messages ──
+  "Minimum deposit is ETB 50.00": "ዝቅተኛ ተቀማጭ ETB 50.00 ነው",
+  "Enter the bank or Telebirr transaction reference":
+    "የባንክ ወይም Telebirr ማጣቀሻ ያስገቡ",
+  "Reference must be less than 64 characters":
+    "ማጣቀሻ ከ64 ፊደሎች ያነሰ መሆን አለበት",
+  "Deposit slip must be a valid URL": "የተቀማጭ ደረሰኝ ትክክለኛ URL መሆን አለበት",
+  // ── Enquiry messages ──
+  "Listing is required": "ዝርዝሩ ያስፈልጋል",
+  "Please provide a delivery or collection address":
+    "የደረሰ ወይም የሚሰበሰብ አድራሻ ያስግቡ",
+  "Address must be less than 500 characters":
+    "አድራሻ ከ500 ፊደሎች ያነሰ መሆን አለበት",
+  "Access notes must be less than 1000 characters":
+    "ማስታወሻ ከ1000 ፊደሎች ያነሰ መሆን አለበት",
+  "Enter a valid date": "ትክክለኛ ቀን ያስገቡ",
+  // ── Dispute messages ──
+  "Enquiry is required": "ጥያቄው ያስፈልጋል",
+  "Describe the issue in at least 20 characters":
+    "ችግሩን ቢያንስ 20 ፊደሎች ሁኑ ይግለጹ",
+  "Description must be less than 2000 characters":
+    "ማብራሪያ ከ2000 ፊደሎች ያነሰ መሆን አለበት",
+  "Evidence must be a valid URL": "ማስረጃ ትክክለኛ URL መሆን አለበት",
+  "At most 10 evidence files can be attached":
+    "ቢበዛ 10 የማስረጃ ፋይሎች ሊያያዙ ይችላሉ",
+  "Resolution notes must be at least 10 characters":
+    "የፍቺ ማስታወሻ ቢያንስ 10 ፊደሎች ሊኖሩት ይገባል",
+  "Resolution notes must be less than 2000 characters":
+    "የፍቺ ማስታወሻ ከ2000 ፊደሎች ያነሰ መሆን አለበት",
+  "Reason must be less than 1000 characters":
+    "ምክንያቱ ከ1000 ፊደሎች ያነሰ መሆን አለበት",
+};
+
+/**
+ * Translates a Zod validation error message to the given locale.
+ * Falls back to the original English message for unknown keys.
+ *
+ * @example
+ * translateZodError("Phone number is required", "am")
+ * // → "ስልክ ቁጥር ያስፈልጋል"
+ */
+export function translateZodError(message: string, locale: Locale): string {
+  if (locale === "en" || !message) return message;
+  return zodErrorMap[message] ?? message;
+}
