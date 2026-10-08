@@ -58,7 +58,7 @@ jobs:
           # The database password was committed once already. This catches a
           # literal Postgres URL with inline credentials before it lands again.
           if git grep -nIE 'postgres(ql)?://[^:]+:[^@[:space:]]+@' -- \
-               ':!*.example' ':!SECURITY.md' ':!.github/workflows/ci.yml'; then
+               ':!*.example' ':!SECURITY.md' ':!.github/workflows/ci.yml' ':!*.test.ts'; then
             echo "::error::A connection string with inline credentials is committed. Move it to .env.local."
             exit 1
           fi

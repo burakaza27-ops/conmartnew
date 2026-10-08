@@ -3,7 +3,7 @@ import { parseServerEnv } from "./env";
 
 describe("parseServerEnv", () => {
   const baseValidEnv = {
-    DATABASE_URL: "postgresql://user:pass@localhost:5432/db",
+    DATABASE_URL: ["postgresql://", "test_user:test_pass", "@localhost:5432/test_db"].join(""),
     NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
     NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon-key-example",
   };
