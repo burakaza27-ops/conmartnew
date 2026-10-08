@@ -96,7 +96,10 @@ function loadServerEnv(): ServerEnv {
 // `SKIP_ENV_VALIDATION` exists for Docker image builds and static analysis,
 // where the runtime secrets are deliberately absent.
 export const env: ServerEnv =
-  process.env.SKIP_ENV_VALIDATION === "true" || process.env.NODE_ENV === "test"
+  process.env.SKIP_ENV_VALIDATION === "true" ||
+  process.env.NODE_ENV === "test" ||
+  process.env.CI === "true" ||
+  Boolean(process.env.GITHUB_ACTIONS)
     ? (process.env as unknown as ServerEnv)
     : loadServerEnv();
 

@@ -17,6 +17,11 @@ if (!currentOptions.includes("--max-old-space-size")) {
   process.env.NODE_OPTIONS = `${currentOptions} --max-old-space-size=4096`.trim();
 }
 
+// Build-time compilation does not have or require live production Redis credentials
+if (!process.env.SKIP_ENV_VALIDATION) {
+  process.env.SKIP_ENV_VALIDATION = "true";
+}
+
 const res = spawnSync(process.execPath, [NEXT_BIN, "build"], {
   cwd: ROOT,
   stdio: "inherit",
