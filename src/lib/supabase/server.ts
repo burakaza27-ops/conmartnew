@@ -19,10 +19,14 @@ import { cache } from "react";
  */
 export async function createSupabaseServerClient() {
   const cookieStore = await cookies();
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || "https://placeholder.supabase.co";
+  const supabaseAnonKey =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() || "placeholder-anon-key";
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         getAll() {
@@ -53,15 +57,20 @@ export async function createSupabaseServerClient() {
  * duplicate HTTP round-trips to Supabase.
  */
 export const getAuthenticatedUser = cache(async () => {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+  try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
-  if (error || !user) {
+    if (error || !user) {
+      return null;
+    }
+
+    return user;
+  } catch (error) {
+    console.error("Failed to authenticate user via Supabase:", error);
     return null;
   }
-
-  return user;
 });

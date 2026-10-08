@@ -39,35 +39,40 @@ export interface SessionUser {
  * render share one Supabase round-trip and one database query.
  */
 export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
-  const authUser = await getAuthenticatedUser();
-  if (!authUser) {
+  try {
+    const authUser = await getAuthenticatedUser();
+    if (!authUser) {
+      return null;
+    }
+
+    const user = await db.user.findUnique({
+      where: { authId: authUser.id },
+      select: {
+        id: true,
+        role: true,
+        name: true,
+        phone: true,
+        companyName: true,
+      },
+    });
+
+    if (!user) {
+      return null;
+    }
+
+    return {
+      id: user.id,
+      authId: authUser.id,
+      role: user.role,
+      name: user.name,
+      phone: user.phone,
+      companyName: user.companyName,
+      email: authUser.email ?? null,
+    };
+  } catch (error) {
+    console.error("Failed to resolve session user, treating as anonymous:", error);
     return null;
   }
-
-  const user = await db.user.findUnique({
-    where: { authId: authUser.id },
-    select: {
-      id: true,
-      role: true,
-      name: true,
-      phone: true,
-      companyName: true,
-    },
-  });
-
-  if (!user) {
-    return null;
-  }
-
-  return {
-    id: user.id,
-    authId: authUser.id,
-    role: user.role,
-    name: user.name,
-    phone: user.phone,
-    companyName: user.companyName,
-    email: authUser.email ?? null,
-  };
 });
 
 /**

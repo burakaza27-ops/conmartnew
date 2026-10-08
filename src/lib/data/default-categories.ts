@@ -148,27 +148,31 @@ export const DEFAULT_CATEGORIES = [
  * the first successful insert.
  */
 export async function ensureDefaultCategories(): Promise<void> {
-  const existing = await db.category.count();
-  if (existing > 0) {
-    return;
-  }
+  try {
+    const existing = await db.category.count();
+    if (existing > 0) {
+      return;
+    }
 
-  await Promise.all(
-    DEFAULT_CATEGORIES.map((category) =>
-      db.category.upsert({
-        where: { slug: category.slug },
-        update: {},
-        create: {
-          name: category.name,
-          slug: category.slug,
-          iconName: category.iconName,
-          imageUrl: category.imageUrl,
-          description: category.description,
-          isActive: true,
-          unlockFee: category.unlockFee,
-          sortOrder: category.sortOrder,
-        },
-      })
-    )
-  );
+    await Promise.all(
+      DEFAULT_CATEGORIES.map((category) =>
+        db.category.upsert({
+          where: { slug: category.slug },
+          update: {},
+          create: {
+            name: category.name,
+            slug: category.slug,
+            iconName: category.iconName,
+            imageUrl: category.imageUrl,
+            description: category.description,
+            isActive: true,
+            unlockFee: category.unlockFee,
+            sortOrder: category.sortOrder,
+          },
+        })
+      )
+    );
+  } catch (error) {
+    console.error("Non-fatal: ensureDefaultCategories database check failed:", error);
+  }
 }

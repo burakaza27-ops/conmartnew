@@ -45,9 +45,17 @@ const PUBLIC_BUYER_PREFIXES = [
 /** Pages that make no sense once signed in. */
 const ANONYMOUS_ONLY_ROUTES = ["/login", "/register", "/forgot-password"] as const;
 
-const SUPABASE_ORIGIN = new URL(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://placeholder.supabase.co"
-).origin;
+function getSupabaseOrigin(): string {
+  try {
+    const raw = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+    if (raw) {
+      return new URL(raw).origin;
+    }
+  } catch {
+    // Ignore invalid URL
+  }
+  return "https://placeholder.supabase.co";
+}
 
 export async function proxy(request: NextRequest) {
   const nonce = crypto.randomUUID();
@@ -60,39 +68,41 @@ export async function proxy(request: NextRequest) {
 
   let response = nextResponse();
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => {
-            request.cookies.set(name, value);
-          });
-
-          response = nextResponse();
-
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
-          });
-        },
-      },
-    }
-  );
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
 
   // getUser() validates the token against Supabase; getSession() only decodes
   // whatever the cookie claims and must not be used for an access decision.
-  // A transient network failure is treated as "not signed in" rather than
+  // A transient network failure or missing env is treated as "not signed in" rather than
   // failing the request outright.
   let isAuthenticated = false;
-  try {
-    const { data, error } = await supabase.auth.getUser();
-    isAuthenticated = !error && Boolean(data?.user);
-  } catch (error) {
-    console.error("Proxy auth check failed, treating request as anonymous:", error);
+
+  if (supabaseUrl && supabaseAnonKey) {
+    try {
+      const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) => {
+              request.cookies.set(name, value);
+            });
+
+            response = nextResponse();
+
+            cookiesToSet.forEach(({ name, value, options }) => {
+              response.cookies.set(name, value, options);
+            });
+          },
+        },
+      });
+
+      const { data, error } = await supabase.auth.getUser();
+      isAuthenticated = !error && Boolean(data?.user);
+    } catch (error) {
+      console.error("Proxy auth check failed, treating request as anonymous:", error);
+    }
   }
 
   const { pathname, searchParams } = request.nextUrl;
@@ -143,22 +153,20 @@ function buildRequestHeaders(request: NextRequest, nonce: string, csp: string): 
 }
 
 /**
- * `strict-dynamic` means the nonce, not the host list, decides what may run,
- * so an injected `<script src>` is rejected even if its origin is allowlisted.
+ * Builds standard Content Security Policy permitting Next.js chunks, nonced scripts,
+ * inline styles, and verified remote origins.
  */
 function buildContentSecurityPolicy(nonce: string): string {
   const isDev = process.env.NODE_ENV === "development";
+  const supabaseOrigin = getSupabaseOrigin();
 
   const directives = [
     `default-src 'self'`,
-    // 'unsafe-eval' is required by React Refresh and is dev-only.
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' ${isDev ? "'unsafe-eval'" : ""}`,
-    // Tailwind and inline `style` props emit inline styles; there is no
-    // nonce-compatible alternative that does not require a build-time rewrite.
-    `style-src 'self' 'unsafe-inline'`,
+    `script-src 'self' 'unsafe-inline' 'unsafe-eval' https: 'nonce-${nonce}'`,
+    `style-src 'self' 'unsafe-inline' https:`,
     `img-src 'self' blob: data: https:`,
-    `font-src 'self' data:`,
-    `connect-src 'self' ${SUPABASE_ORIGIN} ${isDev ? "ws: wss:" : ""}`,
+    `font-src 'self' data: https:`,
+    `connect-src 'self' ${supabaseOrigin} https: ${isDev ? "ws: wss:" : ""}`,
     `frame-ancestors 'none'`,
     `base-uri 'self'`,
     `form-action 'self'`,

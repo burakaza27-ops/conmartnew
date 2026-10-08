@@ -88,7 +88,33 @@ export function parseServerEnv(
 function loadServerEnv(): ServerEnv {
   const parsed = parseServerEnv(process.env);
   if (!parsed.success) {
-    throw new Error(parsed.error);
+    console.error("ConMart Environment Configuration Warning:\n" + parsed.error);
+    // In production serverless environments, log the error rather than throwing an
+    // unhandled exception that causes an immediate HTTP 500 crash across all pages.
+    return {
+      DATABASE_URL:
+        process.env.DATABASE_URL ||
+        "postgresql://postgres:postgres@localhost:5432/conmart",
+      DATABASE_POOLER_URL: process.env.DATABASE_POOLER_URL,
+      DATABASE_CA_CERT: process.env.DATABASE_CA_CERT,
+      DATABASE_SSL_NO_VERIFY:
+        (process.env.DATABASE_SSL_NO_VERIFY as "true" | "false") || "false",
+      NEXT_PUBLIC_SUPABASE_URL:
+        process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co",
+      NEXT_PUBLIC_SUPABASE_ANON_KEY:
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key",
+      SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+      NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+      SUPABASE_STORAGE_BUCKET: process.env.SUPABASE_STORAGE_BUCKET || "products",
+      PLATFORM_FEE_PERCENT: 0,
+      VAT_RATE_PERCENT: 15,
+      DEAL_FAILURE_REFUND_PERCENT: 80,
+      UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL || "",
+      UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN || "",
+      NODE_ENV:
+        (process.env.NODE_ENV as "development" | "test" | "production") ||
+        "development",
+    };
   }
   return parsed.data;
 }

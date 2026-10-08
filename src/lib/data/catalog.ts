@@ -10,7 +10,7 @@ import type { ProductUnit } from "@/lib/types";
 import { coarsenLocation, getMaskedSellerLabel } from "@/lib/security/masking";
 import { isDirectChatEntitled } from "@/lib/marketplace/subscription";
 import { unstable_cache } from "next/cache";
-import { ensureDefaultCategories } from "@/lib/data/default-categories";
+import { ensureDefaultCategories, DEFAULT_CATEGORIES } from "@/lib/data/default-categories";
 
 /**
  * Buyer-facing pseudonym for a supplier. Every catalog surface uses this so a
@@ -393,38 +393,51 @@ const fetchCachedCategoriesWithCounts = unstable_cache(
 );
 
 export async function fetchCategoriesWithCounts(): Promise<CategoryWithCount[]> {
-  await ensureDefaultCategories();
-  const cached = await fetchCachedCategoriesWithCounts();
-  if (cached.length > 0) {
-    return cached;
-  }
+  try {
+    await ensureDefaultCategories();
+    const cached = await fetchCachedCategoriesWithCounts();
+    if (cached.length > 0) {
+      return cached;
+    }
 
-  const categories = await db.category.findMany({
-    include: {
-      products: {
-        include: {
-          listings: {
-            where: { active: true },
-            select: { id: true },
+    const categories = await db.category.findMany({
+      include: {
+        products: {
+          include: {
+            listings: {
+              where: { active: true },
+              select: { id: true },
+            },
           },
         },
       },
-    },
-    orderBy: { name: "asc" },
-  });
+      orderBy: { name: "asc" },
+    });
 
-  return categories.map((cat) => ({
-    id: cat.id,
-    name: cat.name,
-    slug: cat.slug,
-    iconName: cat.iconName,
-    imageUrl: cat.imageUrl || null,
-    description: cat.description || null,
-    listingCount: cat.products.reduce(
-      (total, product) => total + product.listings.length,
-      0
-    ),
-  }));
+    return categories.map((cat) => ({
+      id: cat.id,
+      name: cat.name,
+      slug: cat.slug,
+      iconName: cat.iconName,
+      imageUrl: cat.imageUrl || null,
+      description: cat.description || null,
+      listingCount: cat.products.reduce(
+        (total, product) => total + product.listings.length,
+        0
+      ),
+    }));
+  } catch (error) {
+    console.error("fetchCategoriesWithCounts fallback triggered:", error);
+    return DEFAULT_CATEGORIES.map((cat) => ({
+      id: `default-${cat.slug}`,
+      name: cat.name,
+      slug: cat.slug,
+      iconName: cat.iconName,
+      imageUrl: cat.imageUrl || null,
+      description: cat.description || null,
+      listingCount: 0,
+    }));
+  }
 }
 
 /**
