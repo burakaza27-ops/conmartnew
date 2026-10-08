@@ -119,20 +119,20 @@ async function limitWithUpstash(
 // -----------------------------------------------------------------------------
 
 /**
- * When Upstash is configured but unreachable: production denies the request
- * (fail closed). Development still fails open so local work is not blocked.
+ * When Upstash is configured but unreachable: fallback to in-memory limiter to
+ * maintain uptime while still mitigating brute-force abuse.
  */
 export function allowOnRateLimitBackendFailure(
   nodeEnv: string | undefined = process.env.NODE_ENV
 ): boolean {
-  return nodeEnv !== "production";
+  return true;
 }
 
 /**
  * Consumes one unit from the budget identified by `key`.
  *
- * Production requires Upstash (see env.ts). If that backend errors, the
- * request is denied. Development may use the in-memory map and fail open.
+ * Backed by Upstash Redis if configured, and falls back to in-memory fixed-window
+ * rate limiting to prevent hard lockouts during serverless deployments or outages.
  */
 export async function rateLimit(
   key: string,
@@ -141,30 +141,14 @@ export async function rateLimit(
   const namespacedKey = `conmart:ratelimit:${key}`;
 
   if (!hasDistributedRateLimiter()) {
-    if (process.env.NODE_ENV === "production") {
-      console.error("Rate limiter missing in production; denying request.");
-      return {
-        allowed: false,
-        remaining: 0,
-        retryAfterSeconds: options.windowSeconds,
-      };
-    }
     return limitInMemory(namespacedKey, options);
   }
 
   try {
     return await limitWithUpstash(namespacedKey, options);
   } catch (error) {
-    if (allowOnRateLimitBackendFailure()) {
-      console.error("Rate limit backend unavailable, allowing request:", error);
-      return { allowed: true, remaining: options.limit, retryAfterSeconds: 0 };
-    }
-    console.error("Rate limit backend unavailable, denying request:", error);
-    return {
-      allowed: false,
-      remaining: 0,
-      retryAfterSeconds: options.windowSeconds,
-    };
+    console.warn("Rate limit distributed backend unavailable, using in-memory fallback:", error);
+    return limitInMemory(namespacedKey, options);
   }
 }
 

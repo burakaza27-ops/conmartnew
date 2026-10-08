@@ -166,7 +166,7 @@ function buildContentSecurityPolicy(nonce: string): string {
     `style-src 'self' 'unsafe-inline' https:`,
     `img-src 'self' blob: data: https:`,
     `font-src 'self' data: https:`,
-    `connect-src 'self' ${supabaseOrigin} https: ${isDev ? "ws: wss:" : ""}`,
+    `connect-src 'self' ${supabaseOrigin} ${supabaseOrigin.replace(/^http/, 'ws')} https: wss: ws:`,
     `frame-ancestors 'none'`,
     `base-uri 'self'`,
     `form-action 'self'`,

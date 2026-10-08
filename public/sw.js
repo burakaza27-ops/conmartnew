@@ -2,7 +2,7 @@
 // ECON — Progressive Web App Service Worker (PWA & Google Play TWA)
 // =============================================================================
 
-const CACHE_NAME = "econ-pwa-v1";
+const CACHE_NAME = "econ-pwa-v2";
 const OFFLINE_URL = "/offline";
 
 // Essential assets cached upfront for instant offline loading
@@ -59,7 +59,11 @@ self.addEventListener("fetch", (event) => {
   }
 
   // Ignore Next.js development hot module reloading and API mutations
-  if (url.pathname.startsWith("/_next/webpack-hmr") || url.pathname.startsWith("/api/")) {
+  if (
+    url.pathname.startsWith("/_next/webpack-hmr") ||
+    url.pathname.startsWith("/api/") ||
+    url.pathname.startsWith("/auth/")
+  ) {
     return;
   }
 
@@ -87,8 +91,9 @@ self.addEventListener("fetch", (event) => {
             return offlineFallback;
           }
           return new Response(
-            "<html><body><h1>Offline</h1><p>Please check your internet connection.</p></body></html>",
+            "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Offline</title></head><body><h1>Offline</h1><p>Please check your internet connection.</p></body></html>",
             {
+              status: 200,
               headers: { "Content-Type": "text/html" },
             }
           );
@@ -121,20 +126,28 @@ self.addEventListener("fetch", (event) => {
           return cachedResponse;
         }
 
-        return fetch(request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const responseClone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
-          }
-          return networkResponse;
-        });
+        return fetch(request)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200) {
+              const responseClone = networkResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
+            }
+            return networkResponse;
+          })
+          .catch(() => {
+            return new Response("", { status: 404, statusText: "Not Found" });
+          });
       })
     );
     return;
   }
 
-  // Default: Network with silent cache fallback
+  // Default: Network with silent cache fallback, guaranteeing a valid Response
   event.respondWith(
-    fetch(request).catch(() => caches.match(request))
+    fetch(request).catch(async () => {
+      const cached = await caches.match(request);
+      if (cached) return cached;
+      return new Response("", { status: 408, statusText: "Request Timeout" });
+    })
   );
 });
