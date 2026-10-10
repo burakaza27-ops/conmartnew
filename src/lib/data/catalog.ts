@@ -132,6 +132,39 @@ export interface CategoryDetailWithBrands {
 // FETCHERS
 // =============================================================================
 
+/**
+ * Wraps a DB call with retry logic + a safe fallback value.
+ * Retries once on transient connection/timeout errors before returning the
+ * fallback, so a single cold-start pool hiccup never triggers the error
+ * boundary.
+ */
+async function withDbFallback<T>(
+  label: string,
+  fn: () => Promise<T>,
+  fallback: T
+): Promise<T> {
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      return await fn();
+    } catch (err: unknown) {
+      const isTransient =
+        err instanceof Error &&
+        /(timeout|ECONNRESET|ECONNREFUSED|P1001|P1017|P2024)/i.test(
+          err.message
+        );
+      if (attempt === 1 && isTransient) {
+        // One automatic retry after a short pause
+        await new Promise((r) => setTimeout(r, 300));
+        continue;
+      }
+      console.error(`[catalog] ${label} failed (attempt ${attempt}):`, err);
+      return fallback;
+    }
+  }
+  // Should never reach here, but TypeScript needs a return
+  return fallback;
+}
+
 /** Default number of catalog listings per page */
 export const CATALOG_PAGE_SIZE = 24;
 
@@ -152,6 +185,22 @@ export interface PaginatedCatalogResult {
  * time. A parallel `count()` query supplies the total for pagination controls.
  */
 export async function fetchCatalogListings(
+  categorySlug?: string,
+  searchQuery?: string,
+  locationFilter?: string,
+  brandFilter?: string,
+  sortBy: string = "newest",
+  page: number = 1,
+  pageSize: number = CATALOG_PAGE_SIZE
+): Promise<PaginatedCatalogResult> {
+  return withDbFallback(
+    "fetchCatalogListings",
+    () => _fetchCatalogListings(categorySlug, searchQuery, locationFilter, brandFilter, sortBy, page, pageSize),
+    { listings: [], totalCount: 0, totalPages: 1, page: 1, pageSize: CATALOG_PAGE_SIZE }
+  );
+}
+
+async function _fetchCatalogListings(
   categorySlug?: string,
   searchQuery?: string,
   locationFilter?: string,
@@ -297,6 +346,16 @@ export async function fetchCatalogListings(
  * Fetches full listing details including all price tiers.
  */
 export async function fetchListingDetail(
+  listingId: string
+): Promise<ListingDetail | null> {
+  return withDbFallback(
+    `fetchListingDetail(${listingId})`,
+    () => _fetchListingDetail(listingId),
+    null
+  );
+}
+
+async function _fetchListingDetail(
   listingId: string
 ): Promise<ListingDetail | null> {
   const now = new Date();
@@ -496,6 +555,16 @@ export async function fetchCategoriesWithCounts(): Promise<CategoryWithCount[]> 
 export async function fetchCategoryBySlug(
   slug: string
 ): Promise<CategoryDetailWithBrands | null> {
+  return withDbFallback(
+    `fetchCategoryBySlug(${slug})`,
+    () => _fetchCategoryBySlug(slug),
+    null
+  );
+}
+
+async function _fetchCategoryBySlug(
+  slug: string
+): Promise<CategoryDetailWithBrands | null> {
   await ensureDefaultCategories();
 
   let category = await db.category.findUnique({
@@ -581,6 +650,17 @@ export * from "./buyer-history";
  * from the same physical warehouse to save on freight/trucking.
  */
 export async function fetchDepotListings(
+  sellerId: string,
+  excludeListingId?: string
+): Promise<CatalogListing[]> {
+  return withDbFallback(
+    `fetchDepotListings(${sellerId})`,
+    () => _fetchDepotListings(sellerId, excludeListingId),
+    []
+  );
+}
+
+async function _fetchDepotListings(
   sellerId: string,
   excludeListingId?: string
 ): Promise<CatalogListing[]> {
@@ -731,6 +811,19 @@ export async function fetchProductsCatalog(
   brandFilter?: string,
   sortBy: string = "supplier_count"
 ): Promise<ProductCatalogRow[]> {
+  return withDbFallback(
+    "fetchProductsCatalog",
+    () => _fetchProductsCatalog(categorySlug, searchQuery, brandFilter, sortBy),
+    []
+  );
+}
+
+async function _fetchProductsCatalog(
+  categorySlug?: string,
+  searchQuery?: string,
+  brandFilter?: string,
+  sortBy: string = "supplier_count"
+): Promise<ProductCatalogRow[]> {
   const now = new Date();
 
   const whereClause: Record<string, unknown> = {
@@ -867,6 +960,16 @@ export interface SellerStoreProfile {
 export async function fetchSellerStore(
   sellerId: string
 ): Promise<SellerStoreProfile | null> {
+  return withDbFallback(
+    `fetchSellerStore(${sellerId})`,
+    () => _fetchSellerStore(sellerId),
+    null
+  );
+}
+
+async function _fetchSellerStore(
+  sellerId: string
+): Promise<SellerStoreProfile | null> {
   const now = new Date();
 
   const seller = await db.user.findUnique({
@@ -950,6 +1053,14 @@ export interface SellerStoreCard {
 }
 
 export async function fetchSellerStores(): Promise<SellerStoreCard[]> {
+  return withDbFallback(
+    "fetchSellerStores",
+    () => _fetchSellerStores(),
+    []
+  );
+}
+
+async function _fetchSellerStores(): Promise<SellerStoreCard[]> {
   const sellers = await db.user.findMany({
     where: {
       role: "SELLER",
@@ -993,6 +1104,16 @@ export async function fetchSellerStores(): Promise<SellerStoreCard[]> {
  * Fetches a product and all competing seller depot offers side-by-side.
  */
 export async function fetchProductWithCompetingOffers(
+  productId: string
+): Promise<ProductWithOffers | null> {
+  return withDbFallback(
+    `fetchProductWithCompetingOffers(${productId})`,
+    () => _fetchProductWithCompetingOffers(productId),
+    null
+  );
+}
+
+async function _fetchProductWithCompetingOffers(
   productId: string
 ): Promise<ProductWithOffers | null> {
   const now = new Date();
