@@ -1512,14 +1512,49 @@ export function getCategoryTitle(slug: string, fallback: string, locale: Locale)
   const normalized = slug.toLowerCase().replace(/[^a-z]/g, "");
   const dict = translations[locale] || translations.en;
 
+  if (locale === "am") {
+    if (normalized.includes("cement")) return "ሲሚንቶ";
+    if (normalized.includes("steel") || normalized.includes("rebar")) return "ሪባር (የብረት ዘንግ)";
+    if (normalized.includes("aggregate") || normalized.includes("sand")) return "ጠጠር እና አሸዋ";
+    if (normalized.includes("ready") || normalized.includes("concrete")) return "ሬዲ ሚክስ ኮንክሪት";
+    if (normalized.includes("metal")) return "የብረታ ብረት ስራዎች";
+    if (normalized.includes("alumin") || normalized.includes("almun")) return "የአሉሚኒየም ስራዎች";
+    if (normalized.includes("glass")) return "የመስታወት ስራዎች";
+    if (normalized.includes("roof")) return "የጣሪያ ቆርቆሮና ክዳኖች";
+    if (normalized.includes("tile") || normalized.includes("finish")) return "የፊኒሺንግ ታይሎች";
+    if (normalized.includes("paint") || normalized.includes("gypsum")) return "ቀለሞች እና የጂፕሰም ስራዎች";
+    if (normalized.includes("admixture") || normalized.includes("chem")) return "የኮንክሪት ኬሚካሎች";
+    if (normalized.includes("block") || normalized.includes("hcb")) return "ኤች ሲ ቢ (ብሎኬት)";
+    if (normalized.includes("sanitary")) return "የሳኒታሪ ዕቃዎች";
+    if (normalized.includes("plumb") || normalized.includes("pipe")) return "የውሃ መስመርና ቱቦዎች";
+    if (normalized.includes("electr") || normalized.includes("cable")) return "የኤሌክትሪክ ዕቃዎች";
+    if (normalized.includes("hardw") || normalized.includes("tool")) return "ሃርድዌር እና መሣሪያዎች";
+    if (normalized.includes("hvac") || normalized.includes("vent")) return "ኤች ቪ ኤ ሲ እና ሜካኒካል";
+    if (normalized.includes("infra") || normalized.includes("landscap")) return "የመሰረተ ልማት እና ላንድስኬፒንግ";
+    if (normalized.includes("wast") || normalized.includes("reuse")) return "የሳይት ተረፈ ምርቶች";
+    if (normalized.includes("other")) return "ሌሎች የግንባታ ዕቃዎች";
+  }
+
   if (normalized.includes("cement")) return dict.cat_cement ?? fallback;
-  if (normalized.includes("steel") || normalized.includes("rebar")) return dict.cat_steel ?? fallback;
+  if (normalized.includes("steel") || normalized.includes("rebar")) return "Rebar";
+  if (normalized.includes("aggregate") || normalized.includes("sand")) return "Aggregate & Sand";
+  if (normalized.includes("ready") || normalized.includes("concrete")) return "Ready Made Concrete";
+  if (normalized.includes("metal")) return "Metal Works";
+  if (normalized.includes("alumin") || normalized.includes("almun")) return "Aluminium Works";
+  if (normalized.includes("glass")) return "Glass";
   if (normalized.includes("roof")) return dict.cat_roofing ?? fallback;
-  if (normalized.includes("paint")) return dict.cat_paint ?? fallback;
-  if (normalized.includes("tile") || normalized.includes("ceramic")) return dict.cat_tiles ?? fallback;
-  if (normalized.includes("electric")) return dict.cat_electrical ?? fallback;
-  if (normalized.includes("plumb") || normalized.includes("pipe")) return dict.cat_plumbing ?? fallback;
-  if (normalized.includes("aggregate") || normalized.includes("sand")) return dict.cat_aggregates ?? fallback;
+  if (normalized.includes("tile") || normalized.includes("finish")) return "Finishing Tiles";
+  if (normalized.includes("paint") || normalized.includes("gypsum")) return "Paints & Gypsum Work";
+  if (normalized.includes("admixture") || normalized.includes("chem")) return "Admixture & Chemicals";
+  if (normalized.includes("block") || normalized.includes("hcb")) return "HCB";
+  if (normalized.includes("sanitary")) return "Sanitary Materials";
+  if (normalized.includes("plumb") || normalized.includes("pipe")) return "Plumbing & Pipes";
+  if (normalized.includes("electr") || normalized.includes("cable")) return "Electrical Materials";
+  if (normalized.includes("hardw") || normalized.includes("tool")) return "Hardware Tools & Consumables";
+  if (normalized.includes("hvac") || normalized.includes("vent")) return "HVAC & Mechanical";
+  if (normalized.includes("infra") || normalized.includes("landscap")) return "Infrastructure & Landscaping";
+  if (normalized.includes("wast") || normalized.includes("reuse")) return "Site Wastages (Reusable)";
+  if (normalized.includes("other")) return "Other Materials";
 
   return fallback;
 }

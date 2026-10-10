@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  Package,
   Search,
   ArrowRight,
   ShieldCheck,
@@ -19,8 +18,7 @@ import {
   fetchRecentBuyerEnquiries,
 } from "@/lib/data/catalog";
 import { cn } from "@/lib/utils";
-
-import { getCategoryImage } from "@/lib/data/category-images";
+import { CategoryGlanceView } from "./category-glance-view";
 
 export default async function BuyerCategoryHubPage() {
   const user = await getSessionUser();
@@ -37,41 +35,43 @@ export default async function BuyerCategoryHubPage() {
   const totalOffers = categories.reduce((sum, c) => sum + c.listingCount, 0);
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6 sm:space-y-8">
       {/* ============================================================
-          HERO BANNER
+          HERO BANNER — COMPACT & ACTION-FIRST
       ============================================================ */}
-      <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 sm:p-8">
-        <div className="pointer-events-none absolute inset-0 cm-glow opacity-70" />
-        <div className="relative max-w-2xl space-y-4">
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-xs">
+        <div className="pointer-events-none absolute inset-0 cm-glow opacity-60" />
+        <div className="relative max-w-2xl space-y-3.5">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+            <p className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
               <ShieldCheck className="size-3.5" />
-              Direct introduction · Addis Ababa
+              Depot-direct wholesale · Addis Ababa
             </p>
             {isAnonymous && (
               <Link
                 href="/landing"
                 className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
-                Learn how ConMart works
+                How ConMart works
                 <ArrowRight className="size-3" />
               </Link>
             )}
           </div>
+
           <PageHeader
             className="border-0 pb-0"
             title={
               isAnonymous
-                ? "Compare wholesale construction prices"
-                : `Welcome back, ${buyerName}`
+                ? "What do you want to buy?"
+                : `Welcome back, ${buyerName} — What do you want to buy?`
             }
             description={
               isAnonymous
-                ? "Browse depot-direct wholesale offers from verified yards. No account needed to see prices — sign up free when you're ready to buy."
-                : `${companyName} — compare depot-direct wholesale offers, then send a purchase request. Contacts stay masked until the supplier unlocks.`
+                ? "Choose any category below to compare live depot-direct wholesale prices and request proformas from verified suppliers."
+                : `${companyName} — compare live wholesale rates and send purchase requests. Contacts stay masked until the supplier unlocks.`
             }
           />
+
           <form
             action="/buyer/category/all"
             method="GET"
@@ -82,25 +82,32 @@ export default async function BuyerCategoryHubPage() {
               <Input
                 type="search"
                 name="search"
-                placeholder="Dangote, Zuquala rebar, river sand…"
-                className="h-11 rounded-xl bg-background pl-10"
+                placeholder="Search Dangote, Zuquala rebar, river sand, HCB, pipes…"
+                className="h-10 sm:h-11 rounded-xl bg-background pl-10 text-sm"
               />
             </div>
             <button
               type="submit"
               className={cn(
-                buttonVariants({ size: "lg" }),
-                "h-11 rounded-xl font-semibold"
+                buttonVariants({ size: "default" }),
+                "h-10 sm:h-11 rounded-xl font-semibold px-5"
               )}
             >
-              Browse
+              Search
               <ArrowRight className="size-4" />
             </button>
           </form>
-          <div className="flex flex-wrap gap-2 text-xs">
-            <QuickChip href="/buyer/category/cement">Cement</QuickChip>
-            <QuickChip href="/buyer/category/steel">Rebar Ø16</QuickChip>
-            <QuickChip href="/buyer/category/aggregates">River sand</QuickChip>
+
+          {/* Quick preset chips */}
+          <div className="flex flex-wrap items-center gap-1.5 text-xs">
+            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mr-1">
+              Quick:
+            </span>
+            <QuickChip href="/buyer/category/cement">1. Cement</QuickChip>
+            <QuickChip href="/buyer/category/steel">2. Rebar</QuickChip>
+            <QuickChip href="/buyer/category/aggregates">3. Sand</QuickChip>
+            <QuickChip href="/buyer/category/ready-mix-concrete">4. Concrete</QuickChip>
+            <QuickChip href="/buyer/category/blocks">12. HCB</QuickChip>
             <QuickChip href="/buyer/stores">
               <Store className="size-3 mr-0.5" />
               All Stores
@@ -110,82 +117,10 @@ export default async function BuyerCategoryHubPage() {
       </div>
 
       {/* ============================================================
-          BROWSE BY CATEGORY — IMAGE CARDS
+          20 CATEGORIES — VISIBLE & SEEN AT ONE GLANCE (MOBILE & PC)
       ============================================================ */}
-      <section className="space-y-4">
-        <div className="flex items-end justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold tracking-tight">Categories</h2>
-            <p className="text-sm text-muted-foreground">
-              {totalOffers} live depot offers from verified yards.
-            </p>
-          </div>
-          <Link
-            href="/buyer/category/all"
-            className="text-sm font-medium text-primary hover:underline"
-          >
-            View all
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {categories.length === 0 ? (
-            <p className="col-span-full rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">
-              Categories are being prepared. Refresh in a moment.
-            </p>
-          ) : (
-            categories.map((cat) => {
-              const image =
-                cat.imageUrl ||
-                getCategoryImage(cat.slug, 600);
-              return (
-                <Link
-                  key={cat.id}
-                  href={`/buyer/category/${cat.slug}`}
-                  className="group relative flex flex-col justify-end overflow-hidden rounded-2xl border border-border aspect-[4/3] shadow-xs hover:shadow-md hover:border-primary/40 transition-all duration-200"
-                >
-                  {/* Background image */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={image}
-                    alt={cat.name}
-                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  {/* Gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent" />
-                  {/* Text */}
-                  <div className="relative p-3">
-                    <h3 className="text-sm font-bold text-white leading-tight">
-                      {cat.name}
-                    </h3>
-                    <p className="text-[11px] text-white/70 mt-0.5">
-                      {cat.listingCount}{" "}
-                      {cat.listingCount === 1 ? "depot" : "depots"}
-                    </p>
-                  </div>
-                </Link>
-              );
-            })
-          )}
-
-          {/* Stores tile */}
-          <Link
-            href="/buyer/stores"
-            className="group relative flex flex-col justify-end overflow-hidden rounded-2xl border border-dashed border-primary/40 bg-primary/5 aspect-[4/3] shadow-xs hover:shadow-md hover:border-primary transition-all duration-200"
-          >
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Store className="h-12 w-12 text-primary/30 group-hover:text-primary/50 transition-colors" />
-            </div>
-            <div className="relative p-3">
-              <h3 className="text-sm font-bold text-foreground leading-tight">
-                All Stores
-              </h3>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
-                Browse by supplier
-              </p>
-            </div>
-          </Link>
-        </div>
+      <section>
+        <CategoryGlanceView categories={categories} totalOffers={totalOffers} />
       </section>
 
       {/* ============================================================
@@ -194,31 +129,31 @@ export default async function BuyerCategoryHubPage() {
       {!isAnonymous && recentEnquiries.length > 0 && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+            <h2 className="flex items-center gap-2 text-base sm:text-lg font-bold tracking-tight">
               <SendHorizontal className="size-4 text-primary" />
               Recent enquiries
             </h2>
             <Link
               href="/buyer/enquiries"
-              className="text-sm font-medium text-primary hover:underline"
+              className="text-xs sm:text-sm font-medium text-primary hover:underline"
             >
               View all
             </Link>
           </div>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-2.5 sm:grid-cols-3">
             {recentEnquiries.map((enq) => (
               <Link
                 key={enq.id}
                 href="/buyer/enquiries"
-                className="rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40"
+                className="rounded-xl border border-border bg-card p-3.5 transition-colors hover:border-primary/40 shadow-2xs"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <span className="font-mono text-xs font-semibold">
+                  <span className="font-mono text-xs font-bold text-primary">
                     {enq.referenceCode}
                   </span>
                   <StatusBadge domain="enquiry" status={enq.status} size="sm" />
                 </div>
-                <p className="mt-2 line-clamp-1 text-sm font-medium">
+                <p className="mt-2 line-clamp-1 text-sm font-semibold">
                   {enq.productTitle}
                 </p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
@@ -233,28 +168,28 @@ export default async function BuyerCategoryHubPage() {
       {/* ============================================================
           HOW IT WORKS
       ============================================================ */}
-      <section className="rounded-2xl border border-border bg-card p-6">
-        <h2 className="text-center text-lg font-semibold">
+      <section className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs">
+        <h2 className="text-center text-base sm:text-lg font-bold">
           How introductions work
         </h2>
-        <p className="mx-auto mt-1 max-w-lg text-center text-sm text-muted-foreground">
-          You never pay to see a listing. The supplier pays to see you.
+        <p className="mx-auto mt-1 max-w-lg text-center text-xs sm:text-sm text-muted-foreground">
+          You never pay to browse listings. The supplier pays to unlock your purchase request.
         </p>
-        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
           <Guarantee
             icon={Building2}
             title="Verified depots"
-            body="Trade licenses and mill certificates before a listing is published."
+            body="Trade licenses and mill certificates verified before any listing is published."
           />
           <Guarantee
             icon={Coins}
             title="Prepaid unlock"
-            body="The supplier pays the category fee from their wallet to open your request."
+            body="The supplier pays the introduction fee from their wallet to unlock your proforma."
           />
           <Guarantee
             icon={ShieldCheck}
-            title="80% credit if it fails"
-            body="If the deal does not close, most of the fee returns as non-withdrawable credit."
+            title="80% credit if deal fails"
+            body="If a deal does not close, 80% of the fee returns to the supplier's wallet as credit."
           />
         </div>
       </section>
@@ -272,7 +207,7 @@ function QuickChip({
   return (
     <Link
       href={href}
-      className="inline-flex items-center rounded-full border border-border bg-background px-2.5 py-1 text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+      className="inline-flex items-center rounded-full border border-border bg-background px-2.5 py-0.5 text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
     >
       {children}
     </Link>
@@ -289,11 +224,11 @@ function Guarantee({
   body: string;
 }) {
   return (
-    <div className="rounded-xl border border-border/70 bg-background/50 p-4">
-      <span className="mb-3 flex size-8 items-center justify-center rounded-lg bg-primary/12 text-primary">
-        <Icon className="size-4" />
+    <div className="rounded-xl border border-border/70 bg-background/50 p-3.5">
+      <span className="mb-2 flex size-7 items-center justify-center rounded-lg bg-primary/12 text-primary">
+        <Icon className="size-3.5" />
       </span>
-      <h3 className="text-sm font-semibold">{title}</h3>
+      <h3 className="text-xs sm:text-sm font-semibold">{title}</h3>
       <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{body}</p>
     </div>
   );

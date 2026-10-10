@@ -372,7 +372,7 @@ const fetchCachedCategoriesWithCounts = unstable_cache(
           },
         },
       },
-      orderBy: { name: "asc" },
+      orderBy: { sortOrder: "asc" },
     });
 
     return categories.map((cat) => ({
@@ -388,7 +388,7 @@ const fetchCachedCategoriesWithCounts = unstable_cache(
       ),
     }));
   },
-  ["categories-with-counts-v2"],
+  ["categories-with-counts-v3"],
   { revalidate: 60, tags: ["categories"] }
 );
 
@@ -411,7 +411,7 @@ export async function fetchCategoriesWithCounts(): Promise<CategoryWithCount[]> 
           },
         },
       },
-      orderBy: { name: "asc" },
+      orderBy: { sortOrder: "asc" },
     });
 
     return categories.map((cat) => ({
@@ -448,7 +448,7 @@ export async function fetchCategoryBySlug(
 ): Promise<CategoryDetailWithBrands | null> {
   await ensureDefaultCategories();
 
-  const category = await db.category.findUnique({
+  let category = await db.category.findUnique({
     where: { slug },
     include: {
       products: {
@@ -461,6 +461,37 @@ export async function fetchCategoryBySlug(
       },
     },
   });
+
+  if (!category) {
+    const aliasMap: Record<string, string> = {
+      rebar: "steel",
+      steel: "rebar",
+      hcb: "blocks",
+      blocks: "hcb",
+      finishes: "finishing-tiles",
+      "finishing-tiles": "finishes",
+      "infrastructure-external": "infrastructure-landscaping",
+      "infrastructure-landscaping": "infrastructure-external",
+      "aggregates-sand": "aggregates",
+      concrete: "ready-mix-concrete",
+    };
+    const altSlug = aliasMap[slug];
+    if (altSlug) {
+      category = await db.category.findUnique({
+        where: { slug: altSlug },
+        include: {
+          products: {
+            include: {
+              listings: {
+                where: { active: true },
+                select: { id: true },
+              },
+            },
+          },
+        },
+      });
+    }
+  }
 
   if (!category) {
     return null;
