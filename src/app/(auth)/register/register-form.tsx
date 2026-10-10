@@ -12,7 +12,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { UserPlus, Building2, ShoppingCart, Gift } from "lucide-react";
+import { UserPlus, Building2, ShoppingCart, Gift, Briefcase } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -128,16 +128,7 @@ export function RegisterForm() {
 
         <div className="space-y-2">
           <Label>{t("auth_role_label")}</Label>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => selectRole("BUYER")}
-              aria-pressed={selectedRole === "BUYER"}
-              className={roleButtonClass("BUYER")}
-            >
-              <ShoppingCart className="size-5" aria-hidden="true" />
-              <span className="line-clamp-2">{t("auth_role_buyer")}</span>
-            </button>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <button
               type="button"
               onClick={() => selectRole("SELLER")}
@@ -145,7 +136,28 @@ export function RegisterForm() {
               className={roleButtonClass("SELLER")}
             >
               <Building2 className="size-5" aria-hidden="true" />
-              <span className="line-clamp-2">{t("auth_role_seller")}</span>
+              <span className="font-bold">Supplier / Store</span>
+              <span className="text-[10px] text-muted-foreground">List materials</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => selectRole("COMMISSION_AGENT")}
+              aria-pressed={selectedRole === "COMMISSION_AGENT"}
+              className={roleButtonClass("COMMISSION_AGENT")}
+            >
+              <Briefcase className="size-5" aria-hidden="true" />
+              <span className="font-bold">Commission Agent</span>
+              <span className="text-[10px] text-muted-foreground">Guide buyers</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => selectRole("BUYER")}
+              aria-pressed={selectedRole === "BUYER"}
+              className={roleButtonClass("BUYER")}
+            >
+              <ShoppingCart className="size-5" aria-hidden="true" />
+              <span className="font-bold">Buyer</span>
+              <span className="text-[10px] text-muted-foreground">(Optional account)</span>
             </button>
           </div>
           <input type="hidden" {...register("role")} />
@@ -173,7 +185,7 @@ export function RegisterForm() {
           <Label htmlFor="reg-company">{t("auth_company_label")}</Label>
           <Input
             id="reg-company"
-            placeholder={t("auth_company_placeholder")}
+            placeholder="e.g. ABC Building Materials / Independent"
             disabled={isPending}
             {...register("companyName")}
             aria-invalid={!!errors.companyName}
@@ -184,11 +196,14 @@ export function RegisterForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="reg-phone">{t("auth_phone_label")}</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="reg-phone">{t("auth_phone_label")}</Label>
+            <span className="text-[11px] text-muted-foreground">e.g. 0911 234 567 (no '+' needed)</span>
+          </div>
           <Input
             id="reg-phone"
             type="tel"
-            placeholder="+251 91 234 5678"
+            placeholder="0911 234 567"
             autoComplete="tel"
             disabled={isPending}
             {...register("phone")}

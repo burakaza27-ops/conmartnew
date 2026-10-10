@@ -183,12 +183,55 @@ enum DisputeStatus {
   @@map("dispute_status")
 }
 
-/// Supplier chat entitlement. Expired ACTIVE rows resolve to FREE at read time.
+/// Supplier subscription status.
 enum SubscriptionStatus {
   FREE
   ACTIVE
+  EXPIRED
+  PENDING_CONFIRMATION
 
   @@map("subscription_status")
+}
+
+/// Supplier subscription tiers.
+enum SubscriptionTier {
+  BASIC
+  PREMIUM
+  FEATURED
+
+  @@map("subscription_tier")
+}
+
+/// Supplier lead analytics events (views, call clicks, whatsapp clicks, directions clicks).
+enum SupplierLeadEventType {
+  VIEW
+  CALL_CLICK
+  WHATSAPP_CLICK
+  DIRECTIONS_CLICK
+  AGENT_DELIVERED
+
+  @@map("supplier_lead_event_type")
+}
+
+/// Guided lead lifecycle status for agent-delivered leads.
+enum GuidedLeadStatus {
+  NEW
+  ASSIGNED
+  GUIDING
+  DELIVERED
+  CLOSED
+
+  @@map("guided_lead_status")
+}
+
+/// Agent commission ledger status.
+enum AgentCommissionStatus {
+  PENDING
+  DUE
+  PAID
+  VOID
+
+  @@map("agent_commission_status")
 }
 
 /// Local-agent deal ticket lifecycle.
@@ -263,11 +306,16 @@ model User {
   notifications    AppNotification[]
   sentReferrals    Referral[]      @relation("ReferrerUser")
   receivedReferral Referral?       @relation("ReferredUser")
+  subscriptionPayments SubscriptionPayment[]
+  leadEvents           SupplierLeadEvent[]
+  targetedLeads        GuidedLead[]            @relation("TargetSellerLeads")
+  assignedLeads        GuidedLead[]            @relation("AssignedAgentLeads")
+  agentCommissions     AgentCommissionRecord[]
 
   @@map("users")
 }
 
-/// Detailed seller profile storing verification, business licenses, and metrics.
+/// Detailed seller profile storing verification, business licenses, subscription tier, and metrics.
 model SellerProfile {
   id                     String                   @id @default(cuid())
   userId                 String                   @unique @map("user_id")
@@ -284,7 +332,17 @@ model SellerProfile {
   completedDealsCount    Int                      @default(0) @map("completed_deals_count")
   failedDealsCount       Int                      @default(0) @map("failed_deals_count")
   subscriptionStatus     SubscriptionStatus       @default(FREE) @map("subscription_status")
+  subscriptionTier       SubscriptionTier         @default(BASIC) @map("subscription_tier")
   subscriptionExpiresAt  DateTime?                @map("subscription_expires_at")
+  workingHours           String?                  @default("Mon - Sat: 8:00 AM - 6:00 PM") @map("working_hours")
+  address                String?
+  latitude               Float?
+  longitude              Float?
+  whatsappNumber         String?                  @map("whatsapp_number")
+  directPhone            String?                  @map("direct_phone")
+  reverificationNeeded   Boolean                  @default(false) @map("reverification_needed")
+  lastVerifiedAt         DateTime?                @map("last_verified_at")
+  verificationNotes      String?                  @map("verification_notes")
   referralCode           String?                  @unique @map("referral_code")
   referralMilestone      Int                      @default(0) @map("referral_milestone")
   createdAt              DateTime                 @default(now()) @map("created_at")
@@ -740,4 +798,103 @@ model Referral {
 
   @@index([referrerId, qualified])
   @@map("referrals")
+}
+
+// =============================================================================
+// REVENUE & SUBSCRIPTION SYSTEM (CONMART DIRECTORY & AGENT MODEL)
+// =============================================================================
+
+/// Admin-configurable supplier subscription tiers and pricing.
+model SubscriptionPlan {
+  id           String           @id @default(cuid())
+  tier         SubscriptionTier @unique
+  name         String
+  priceETB     Decimal          @map("price_etb") @db.Decimal(12, 2)
+  durationDays Int              @default(30) @map("duration_days")
+  description  String
+  features     Json             @default("[]")
+  isActive     Boolean          @default(true) @map("is_active")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+
+  @@map("subscription_plans")
+}
+
+/// Offline/mobile subscription payments submitted by suppliers and verified by Admin.
+model SubscriptionPayment {
+  id            String           @id @default(cuid())
+  sellerId      String           @map("seller_id")
+  seller        User             @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  tier          SubscriptionTier
+  amount        Decimal          @db.Decimal(12, 2)
+  paymentMethod PaymentMethod    @default(TELEBIRR) @map("payment_method")
+  referenceCode String           @map("reference_code")
+  slipUrl       String?          @map("slip_url")
+  status        WalletTxStatus   @default(PENDING)
+  reviewedBy    String?          @map("reviewed_by")
+  reviewedAt    DateTime?        @map("reviewed_at")
+  notes         String?
+  createdAt     DateTime         @default(now()) @map("created_at")
+
+  @@index([sellerId, status])
+  @@map("subscription_payments")
+}
+
+/// Real-time click and interaction telemetry for Supplier Leads Dashboard.
+model SupplierLeadEvent {
+  id         String                @id @default(cuid())
+  sellerId   String                @map("seller_id")
+  seller     User                  @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  listingId  String?               @map("listing_id")
+  eventType  SupplierLeadEventType @map("event_type")
+  buyerPhone String?               @map("buyer_phone")
+  metadata   Json?                 @default("{}")
+  createdAt  DateTime              @default(now()) @map("created_at")
+
+  @@index([sellerId, eventType, createdAt])
+  @@map("supplier_lead_events")
+}
+
+/// Buyer 'Get Guided' / 'Request a Visit' leads routed to CONMART Agents.
+model GuidedLead {
+  id                 String           @id @default(cuid())
+  referenceCode      String           @unique @map("reference_code")
+  materialNeeded     String           @map("material_needed")
+  quantity           String
+  areaLocation       String           @map("area_location")
+  buyerPhone         String           @map("buyer_phone")
+  buyerName          String?          @map("buyer_name")
+  preferredVisitTime String?          @map("preferred_visit_time")
+  notes              String?
+  targetSellerId     String?          @map("target_seller_id")
+  targetSeller       User?            @relation("TargetSellerLeads", fields: [targetSellerId], references: [id], onDelete: SetNull)
+  assignedAgentId    String?          @map("assigned_agent_id")
+  assignedAgent      User?            @relation("AssignedAgentLeads", fields: [assignedAgentId], references: [id], onDelete: SetNull)
+  status             GuidedLeadStatus @default(NEW)
+  closeReason        String?          @map("close_reason")
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+
+  commissionRecords  AgentCommissionRecord[]
+
+  @@index([status, createdAt])
+  @@index([assignedAgentId, status])
+  @@map("guided_leads")
+}
+
+/// Agent commission ledger for recording service fees earned per delivered lead.
+model AgentCommissionRecord {
+  id           String                @id @default(cuid())
+  guidedLeadId String                @map("guided_lead_id")
+  guidedLead   GuidedLead            @relation(fields: [guidedLeadId], references: [id], onDelete: Cascade)
+  agentId      String                @map("agent_id")
+  agent        User                  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  feeAmount    Decimal               @map("fee_amount") @db.Decimal(12, 2)
+  status       AgentCommissionStatus @default(PENDING)
+  notes        String?
+  recordedAt   DateTime              @default(now()) @map("recorded_at")
+  paidAt       DateTime?             @map("paid_at")
+
+  @@index([agentId, status])
+  @@map("agent_commission_records")
 }

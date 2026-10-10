@@ -1,6 +1,6 @@
 "use client";
 
-import { Briefcase, LogOut, MessageCircle, Package, Settings } from "lucide-react";
+import { Briefcase, LogOut, MessageCircle, Package, Settings, UserCheck, DollarSign } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { MobileTabLink, SidebarNavLink } from "@/components/layout/nav-link";
@@ -8,10 +8,12 @@ import { useLanguage } from "@/lib/i18n/language-context";
 import { signOut } from "@/app/actions/auth";
 
 export function AgentSidebarNav() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
 
   const links = [
-    { href: "/agent", label: t("agent_job_board", "Job board"), icon: Briefcase, exact: true },
+    { href: "/agent/leads", label: locale === "am" ? "የገዢዎች መሪዎች (Leads)" : "Guided Leads Inbox", icon: UserCheck, exact: true },
+    { href: "/agent/commissions", label: locale === "am" ? "የኮሚሽን ሂሳብ" : "Commission Ledger", icon: DollarSign, exact: true },
+    { href: "/agent", label: t("agent_job_board", "Legacy Job board"), icon: Briefcase, exact: true },
     { href: "/agent/messages", label: t("chat_inbox_title", "Messages"), icon: MessageCircle },
     {
       href: "/buyer/category/all",
@@ -31,12 +33,15 @@ export function AgentSidebarNav() {
 }
 
 export function AgentBottomNav() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
 
   return (
     <>
+      <MobileTabLink href="/agent/leads" label={locale === "am" ? "መሪዎች" : "Leads"} icon={UserCheck} exact />
+      <MobileTabLink href="/agent/commissions" label={locale === "am" ? "ኮሚሽን" : "Earned"} icon={DollarSign} exact />
       <MobileTabLink href="/agent" label={t("agent_job_board", "Jobs")} icon={Briefcase} exact />
       <MobileTabLink href="/agent/messages" label={t("chat_inbox_title", "Messages")} icon={MessageCircle} />
+
       <MobileTabLink
         href="/buyer/category/all"
         label={t("agent_browse_materials", "Catalog")}

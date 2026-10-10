@@ -209,15 +209,24 @@ export async function signUp(
     };
   }
 
+  const dbRole = role === "COMMISSION_AGENT" ? ("FIELD_AGENT" as const) : role;
+
   try {
     // Nested writes, not `db.$transaction(async (tx) => ...)`.
     // Interactive transactions pin a session, which PgBouncer in transaction
     // mode (Supabase port 6543) does not keep. A single nested create is one
     // round-trip the pooler can run atomically.
+
+    let defaultZoneId: string | null = null;
+    if (role === "COMMISSION_AGENT") {
+      const zone = await db.zone.findFirst({ select: { id: true } });
+      defaultZoneId = zone?.id || null;
+    }
+
     await db.user.create({
       data: {
         authId,
-        role,
+        role: dbRole,
         name,
         phone,
         companyName,
@@ -229,14 +238,21 @@ export async function signUp(
                   sellerType: "RETAILER" as const,
                 },
               },
-              wallet: {
-                create: { cashBalance: 0, creditBalance: 0 },
+            }
+          : {}),
+        ...(role === "COMMISSION_AGENT" && defaultZoneId
+          ? {
+              agentProfile: {
+                create: {
+                  zoneId: defaultZoneId,
+                },
               },
             }
           : {}),
       },
     });
   } catch (dbError) {
+
     const raced = await db.user.findUnique({
       where: { authId },
       select: { role: true },
@@ -278,8 +294,9 @@ export async function signUp(
   if (!authData.session) {
     return { success: true, data: { redirectUrl: "/login?registered=1" } };
   }
-  return { success: true, data: { redirectUrl: defaultRouteForRole(role) } };
+  return { success: true, data: { redirectUrl: defaultRouteForRole(dbRole) } };
 }
+
 
 /**
  * Deletes the Supabase Auth account created moments earlier, so a failed

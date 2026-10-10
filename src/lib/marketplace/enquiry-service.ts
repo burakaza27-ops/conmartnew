@@ -245,12 +245,25 @@ export async function sellerAcceptEnquiry(
     throw new DomainError(`This enquiry is already ${enquiry.status.toLowerCase()}.`);
   }
 
+  const sellerProfile = await db.sellerProfile.findUnique({
+    where: { userId: enquiry.sellerId },
+    select: { subscriptionStatus: true, subscriptionExpiresAt: true },
+  });
+  const now = new Date();
+  const isSubscribed =
+    sellerProfile?.subscriptionStatus === "ACTIVE" &&
+    (sellerProfile.subscriptionExpiresAt === null || sellerProfile.subscriptionExpiresAt > now);
+
+  // Subscribed suppliers have zero pay-per-lead / unlock fee
+  const feeAmount = isSubscribed ? 0 : Number(enquiry.listing.product.category.unlockFee);
+
   const result = await executeUnlockIntroductionTransaction({
     enquiryId: enquiry.id,
     sellerId: enquiry.sellerId,
     buyerId: enquiry.buyerId,
-    feeAmount: Number(enquiry.listing.product.category.unlockFee),
+    feeAmount,
   });
+
 
   await createNotification({
     userId: enquiry.buyerId,

@@ -86,6 +86,14 @@ export interface ListingDetail {
   };
   /** True when the supplier's subscription currently entitles direct chat. */
   directChatEnabled: boolean;
+  isSubscribed: boolean;
+  subscriptionTier: string | null;
+  directPhone: string | null;
+  whatsappNumber: string | null;
+  address: string | null;
+  workingHours: string | null;
+  latitude: number | null;
+  longitude: number | null;
   priceTiers: Array<{
     id: string;
     minQty: number;
@@ -95,6 +103,7 @@ export interface ListingDetail {
     isExpired: boolean;
   }>;
 }
+
 
 /** Category with listing count and visuals for showcase grid */
 export interface CategoryWithCount {
@@ -311,10 +320,18 @@ export async function fetchListingDetail(
           id: true,
           name: true,
           companyName: true,
+          phone: true,
           sellerProfile: {
             select: {
               subscriptionStatus: true,
               subscriptionExpiresAt: true,
+              subscriptionTier: true,
+              directPhone: true,
+              whatsappNumber: true,
+              address: true,
+              workingHours: true,
+              latitude: true,
+              longitude: true,
             },
           },
         },
@@ -329,9 +346,27 @@ export async function fetchListingDetail(
     return null;
   }
 
+  const profile = listing.seller.sellerProfile;
+  const isSubscribed =
+    profile?.subscriptionStatus === "ACTIVE" &&
+    (profile.subscriptionExpiresAt === null || profile.subscriptionExpiresAt > now);
+
+  const directPhone = isSubscribed
+    ? profile?.directPhone || listing.seller.phone || null
+    : null;
+  const whatsappNumber = isSubscribed
+    ? profile?.whatsappNumber || profile?.directPhone || listing.seller.phone || null
+    : null;
+  const address = isSubscribed ? profile?.address || listing.location : null;
+  const workingHours = isSubscribed
+    ? profile?.workingHours || "Mon–Sat: 8:00 AM – 6:00 PM"
+    : null;
+  const latitude = isSubscribed ? profile?.latitude ?? null : null;
+  const longitude = isSubscribed ? profile?.longitude ?? null : null;
+
   return {
     id: listing.id,
-    location: coarsenLocation(listing.location),
+    location: isSubscribed && profile?.address ? profile.address : coarsenLocation(listing.location),
     active: listing.active,
     imageUrl: listing.imageUrl || listing.product.imageUrl || null,
     product: {
@@ -342,8 +377,22 @@ export async function fetchListingDetail(
       specs: (listing.product.specs as Record<string, string>) || {},
       category: listing.product.category,
     },
-    seller: maskedSupplier(listing.seller.id),
+    seller: isSubscribed
+      ? {
+          id: listing.seller.id,
+          name: listing.seller.name,
+          companyName: listing.seller.companyName,
+        }
+      : maskedSupplier(listing.seller.id),
     directChatEnabled: isDirectChatEntitled(listing.seller.sellerProfile, now),
+    isSubscribed,
+    subscriptionTier: isSubscribed ? profile?.subscriptionTier ?? null : null,
+    directPhone,
+    whatsappNumber,
+    address,
+    workingHours,
+    latitude,
+    longitude,
     priceTiers: listing.priceTiers.map((tier) => ({
       id: tier.id,
       minQty: tier.minQty,
@@ -609,6 +658,14 @@ export interface CompetingOffer {
   verificationStatus: string;
   vatRegistered: boolean;
   directChatEnabled: boolean;
+  isSubscribed: boolean;
+  subscriptionTier: string | null;
+  directPhone: string | null;
+  whatsappNumber: string | null;
+  address: string | null;
+  workingHours: string | null;
+  latitude: number | null;
+  longitude: number | null;
   lowestPrice: number | null;
   moq: number;
   tiers: Array<{
@@ -619,6 +676,7 @@ export interface CompetingOffer {
     validUntil: Date;
   }>;
 }
+
 
 export interface ProductWithOffers {
   id: string;
@@ -962,6 +1020,9 @@ export async function fetchProductWithCompetingOffers(
           seller: {
             select: {
               id: true,
+              name: true,
+              companyName: true,
+              phone: true,
               sellerProfile: {
                 select: {
                   sellerType: true,
@@ -969,6 +1030,13 @@ export async function fetchProductWithCompetingOffers(
                   vatRegistered: true,
                   subscriptionStatus: true,
                   subscriptionExpiresAt: true,
+                  subscriptionTier: true,
+                  directPhone: true,
+                  whatsappNumber: true,
+                  address: true,
+                  workingHours: true,
+                  latitude: true,
+                  longitude: true,
                 },
               },
             },
@@ -988,6 +1056,10 @@ export async function fetchProductWithCompetingOffers(
 
   const offers: CompetingOffer[] = product.listings.map((listing) => {
     const profile = listing.seller.sellerProfile;
+    const isSubscribed =
+      profile?.subscriptionStatus === "ACTIVE" &&
+      (profile.subscriptionExpiresAt === null || profile.subscriptionExpiresAt > now);
+
     const lowestPrice =
       listing.priceTiers.length > 0
         ? Math.min(...listing.priceTiers.map((t) => Number(t.unitPrice)))
@@ -1000,14 +1072,24 @@ export async function fetchProductWithCompetingOffers(
     return {
       listingId: listing.id,
       sellerId: listing.seller.id,
-      depotName: getMaskedSellerLabel(listing.seller.id),
-      location: coarsenLocation(listing.location),
+      depotName: isSubscribed
+        ? listing.seller.companyName || listing.seller.name
+        : getMaskedSellerLabel(listing.seller.id),
+      location: isSubscribed && profile?.address ? profile.address : coarsenLocation(listing.location),
       sellerType: profile?.sellerType || "RETAILER",
-      // A supplier with no profile row has not been reviewed. Defaulting these
-      // to VERIFIED / VAT-registered would show a trust badge nobody earned.
       verificationStatus: profile?.verificationStatus || "UNVERIFIED",
       vatRegistered: profile?.vatRegistered ?? false,
       directChatEnabled: isDirectChatEntitled(profile, now),
+      isSubscribed,
+      subscriptionTier: isSubscribed ? profile?.subscriptionTier ?? null : null,
+      directPhone: isSubscribed ? profile?.directPhone || listing.seller.phone || null : null,
+      whatsappNumber: isSubscribed
+        ? profile?.whatsappNumber || profile?.directPhone || listing.seller.phone || null
+        : null,
+      address: isSubscribed ? profile?.address || listing.location : null,
+      workingHours: isSubscribed ? profile?.workingHours || "Mon–Sat: 8:00 AM – 6:00 PM" : null,
+      latitude: isSubscribed ? profile?.latitude ?? null : null,
+      longitude: isSubscribed ? profile?.longitude ?? null : null,
       lowestPrice,
       moq,
       tiers: listing.priceTiers.map((t) => ({

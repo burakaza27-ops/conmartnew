@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, LogOut, Settings } from "lucide-react";
+import { BarChart3, CreditCard, LogOut, Settings } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { MobileTabLink, SidebarNavLink } from "@/components/layout/nav-link";
@@ -8,7 +8,7 @@ import { useLanguage } from "@/lib/i18n/language-context";
 import { signOut } from "@/app/actions/auth";
 
 export function AdminSidebarNav() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
 
   return (
     <nav className="space-y-1">
@@ -16,6 +16,12 @@ export function AdminSidebarNav() {
         href="/admin/command-center"
         label={t("nav_command_center")}
         icon={BarChart3}
+        exact
+      />
+      <SidebarNavLink
+        href="/admin/subscriptions"
+        label={locale === "am" ? "የአቅራቢዎች ደንበኝነት" : "Supplier Subscriptions"}
+        icon={CreditCard}
         exact
       />
       <SidebarNavLink
@@ -29,7 +35,7 @@ export function AdminSidebarNav() {
 }
 
 export function AdminBottomNav() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
 
   return (
     <>
@@ -39,6 +45,13 @@ export function AdminBottomNav() {
         icon={BarChart3}
         exact
       />
+      <MobileTabLink
+        href="/admin/subscriptions"
+        label={locale === "am" ? "ደንበኝነት" : "Subscriptions"}
+        icon={CreditCard}
+        exact
+      />
+
       <form action={signOut} className="flex flex-1">
         <button
           type="submit"

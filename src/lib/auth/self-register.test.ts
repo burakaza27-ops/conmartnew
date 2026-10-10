@@ -11,10 +11,9 @@ describe("Public self-registration role constraints", () => {
     companyName: "Kebede Construction PLC",
   };
 
-  it("exposes only BUYER and SELLER as self-registerable roles", () => {
-    expect(SELF_REGISTERABLE_ROLES).toEqual(["BUYER", "SELLER"]);
+  it("exposes BUYER, SELLER, and COMMISSION_AGENT as self-registerable roles", () => {
+    expect(SELF_REGISTERABLE_ROLES).toEqual(["BUYER", "SELLER", "COMMISSION_AGENT"]);
     expect(SELF_REGISTERABLE_ROLES).not.toContain("ADMIN");
-    expect(SELF_REGISTERABLE_ROLES).not.toContain("FIELD_AGENT");
   });
 
   it("allows registration as BUYER", () => {
@@ -33,12 +32,12 @@ describe("Public self-registration role constraints", () => {
     expect(result.success).toBe(true);
   });
 
-  it("strictly rejects attempts to register as FIELD_AGENT", () => {
+  it("allows registration as COMMISSION_AGENT", () => {
     const result = registerSchema.safeParse({
       ...baseValidData,
-      role: "FIELD_AGENT",
+      role: "COMMISSION_AGENT",
     });
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
   it("strictly rejects attempts to register as ADMIN", () => {

@@ -67,9 +67,10 @@ export default async function BuyerCategoryHubPage() {
             }
             description={
               isAnonymous
-                ? "Choose any category below to compare live depot-direct wholesale prices and request proformas from verified suppliers."
-                : `${companyName} — compare live wholesale rates and send purchase requests. Contacts stay masked until the supplier unlocks.`
+                ? "Find construction materials near you — free. Search suppliers, see their location, and get help from our team if you need it."
+                : `${companyName} — search verified depots, see direct contact details, or request a free agent visit.`
             }
+
           />
 
           <form

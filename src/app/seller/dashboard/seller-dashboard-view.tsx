@@ -19,6 +19,8 @@ import { SellerSubscriptionCard } from "./seller-subscription-card";
 import { SellerReferralCard } from "./seller-referral-card";
 import { SellerStatsCards } from "./seller-stats-cards";
 import { SellerListingCard } from "./seller-listing-card";
+import { SupplierLeadsDashboardCard } from "./supplier-leads-dashboard-card";
+import type { SupplierLeadsDashboardSummary } from "@/lib/subscription/subscription-service";
 import type {
   SellerListingItem,
   ReferralData,
@@ -31,14 +33,17 @@ export interface SellerDashboardViewProps {
   listings: SellerListingItem[];
   subscription: SellerSubscriptionInfo;
   referral: ReferralData | null;
+  leadsSummary?: SupplierLeadsDashboardSummary | null;
 }
 
 export function SellerDashboardView({
   listings,
   subscription,
   referral,
+  leadsSummary,
 }: SellerDashboardViewProps) {
   const { t } = useLanguage();
+
 
   const totalOrders = listings.reduce((sum, listing) => sum + listing.orderCount, 0);
   const totalEnquiries = listings.reduce((sum, listing) => sum + listing.enquiryCount, 0);
@@ -63,11 +68,16 @@ export function SellerDashboardView({
         }
       />
 
-      {/* Subscription Tier Card */}
-      <SellerSubscriptionCard subscription={subscription} />
+      {/* Supplier Leads & Performance Dashboard Card */}
+      {leadsSummary ? (
+        <SupplierLeadsDashboardCard summary={leadsSummary} />
+      ) : (
+        <SellerSubscriptionCard subscription={subscription} />
+      )}
 
       {/* Referral Program Card */}
       {referral && <SellerReferralCard referral={referral} />}
+
 
       {/* Metrics Summary */}
       {listings.length > 0 ? (

@@ -71,14 +71,21 @@ describe("registerSchema", () => {
 });
 
 describe("ethiopianPhoneSchema", () => {
-  it.each(["+251 91 234 5678", "+251912345678", "+251 71 234 5678"])(
+  it.each([
+    "+251 91 234 5678",
+    "+251912345678",
+    "+251 71 234 5678",
+    "0912345678",
+    "912345678",
+    "0712345678",
+  ])(
     "accepts %s",
     (phone) => {
       expect(ethiopianPhoneSchema.safeParse(phone).success).toBe(true);
     }
   );
 
-  it.each(["0912345678", "+1 555 123 4567", "912345678", ""])(
+  it.each(["+1 555 123 4567", "12345", "0812345678", ""])(
     "rejects %s",
     (phone) => {
       expect(ethiopianPhoneSchema.safeParse(phone).success).toBe(false);
@@ -202,6 +209,13 @@ describe("normalizeEthiopianPhone", () => {
   it("canonicalizes compact and spaced numbers to the same form", () => {
     expect(normalizeEthiopianPhone("+251912345678")).toBe("+251 91 234 5678");
     expect(normalizeEthiopianPhone("+251 91 234 5678")).toBe("+251 91 234 5678");
+  });
+
+  it("normalizes local 09 and 07 numbers without requiring + or 251 prefix", () => {
+    expect(normalizeEthiopianPhone("0912345678")).toBe("+251 91 234 5678");
+    expect(normalizeEthiopianPhone("912345678")).toBe("+251 91 234 5678");
+    expect(normalizeEthiopianPhone("0712345678")).toBe("+251 71 234 5678");
+    expect(normalizeEthiopianPhone("712345678")).toBe("+251 71 234 5678");
   });
 
   it("includes both forms in lookup variants", () => {

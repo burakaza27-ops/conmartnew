@@ -19,38 +19,50 @@ import { ProductUnit } from "@prisma/client";
  * accounts is the same as no access control. Promote those roles with
  * `scripts/grant-role.ts`.
  */
-export const SELF_REGISTERABLE_ROLES = ["BUYER", "SELLER"] as const;
+export const SELF_REGISTERABLE_ROLES = ["BUYER", "SELLER", "COMMISSION_AGENT"] as const;
 export type SelfRegisterableRole = (typeof SELF_REGISTERABLE_ROLES)[number];
 
-/** Ethiopian mobile number in international format, e.g. +251 91 234 5678. */
+/**
+ * Normalizes any Ethiopian mobile input (e.g. 0911234567, 911234567, 0711234567, +251911234567)
+ * into canonical international format: `+251 91 234 5678`.
+ * Users never have to type "+" or "+251".
+ */
+export function normalizeEthiopianPhone(phone: string): string {
+  if (!phone) return "";
+  let cleaned = phone.trim().replace(/[^\d+]/g, "");
+
+  if (cleaned.startsWith("+251")) {
+    cleaned = cleaned.slice(4);
+  } else if (cleaned.startsWith("251")) {
+    cleaned = cleaned.slice(3);
+  } else if (cleaned.startsWith("0")) {
+    cleaned = cleaned.slice(1);
+  }
+
+  // Matches 9-digit Ethiopian mobile number (Telebirr 09... or Safaricom 07...)
+  if (/^[97]\d{8}$/.test(cleaned)) {
+    return `+251 ${cleaned.slice(0, 2)} ${cleaned.slice(2, 5)} ${cleaned.slice(5)}`;
+  }
+
+  return phone.trim();
+}
+
+/** Ethiopian mobile number schema that automatically normalizes local formats */
 export const ethiopianPhoneSchema = z
   .string()
   .min(1, "Phone number is required")
-  .regex(
-    /^\+251\s?\d{2}\s?\d{3}\s?\d{4}$/,
-    "Enter a valid Ethiopian phone number (e.g., +251 91 234 5678)"
+  .transform((val) => normalizeEthiopianPhone(val))
+  .refine(
+    (val) => /^\+251\s?[97]\d\s?\d{3}\s?\d{4}$/.test(val),
+    "Enter a valid Ethiopian phone number (e.g. 0911 234 567 or +251 91 234 5678)"
   );
 
-/**
- * Canonical Ethiopian mobile form: `+251 91 234 5678`.
- * Signup and settings both store this so unlocks, agent lookups, and uniqueness
- * checks compare the same string rather than spacing variants of one number.
- */
-export function normalizeEthiopianPhone(phone: string): string {
-  const digits = phone.replace(/\s+/g, "");
-  const match = digits.match(/^\+251(\d{9})$/);
-  if (!match) {
-    return phone.trim();
-  }
-  const local = match[1];
-  return `+251 ${local.slice(0, 2)} ${local.slice(2, 5)} ${local.slice(5)}`;
-}
-
-/** Lookup variants so a number stored without spaces still matches. */
+/** Lookup variants so a number stored with or without spaces/prefixes still matches */
 export function ethiopianPhoneLookupVariants(phone: string): string[] {
   const canonical = normalizeEthiopianPhone(phone);
   const compact = canonical.replace(/\s+/g, "");
-  return Array.from(new Set([canonical, compact, phone.trim()].filter(Boolean)));
+  const local = compact.replace(/^\+251/, "0");
+  return Array.from(new Set([canonical, compact, local, phone.trim()].filter(Boolean)));
 }
 
 /** Password rules shared by registration, settings, and reset. */
@@ -431,3 +443,36 @@ export const setSellerSubscriptionSchema = z.object({
     .optional(),
 });
 export type SetSellerSubscriptionInput = z.infer<typeof setSellerSubscriptionSchema>;
+
+// =============================================================================
+// SUBSCRIPTION DIRECTORY & GUIDED LEADS SCHEMAS
+// =============================================================================
+
+export const submitSubscriptionPaymentSchema = z.object({
+  tier: z.enum(["BASIC", "PREMIUM", "FEATURED"]),
+  paymentMethod: z.enum(["TELEBIRR", "CBE_BANK", "AWASH_BANK", "CASH_DEPOSIT"]),
+  referenceCode: z.string().trim().min(3, "Transaction reference code is required").max(100),
+  slipUrl: z.string().trim().optional(),
+});
+export type SubmitSubscriptionPaymentInput = z.infer<typeof submitSubscriptionPaymentSchema>;
+
+
+export const createGuidedLeadSchema = z.object({
+  materialNeeded: z.string().trim().min(2, "Material needed is required").max(200),
+  quantity: z.string().trim().min(1, "Quantity / scale is required").max(100),
+  areaLocation: z.string().trim().min(2, "Area or project location is required").max(200),
+  buyerPhone: ethiopianPhoneSchema,
+  buyerName: z.string().trim().max(100).optional(),
+  preferredVisitTime: z.string().trim().max(100).optional(),
+  notes: z.string().trim().max(1000).optional(),
+  targetSellerId: z.string().trim().optional(),
+});
+export type CreateGuidedLeadInput = z.infer<typeof createGuidedLeadSchema>;
+
+export const updateGuidedLeadStatusSchema = z.object({
+  leadId: z.string().min(1, "Lead ID is required"),
+  status: z.enum(["NEW", "ASSIGNED", "GUIDING", "DELIVERED", "CLOSED"]),
+  closeReason: z.string().trim().max(500).optional(),
+});
+export type UpdateGuidedLeadStatusInput = z.infer<typeof updateGuidedLeadStatusSchema>;
+

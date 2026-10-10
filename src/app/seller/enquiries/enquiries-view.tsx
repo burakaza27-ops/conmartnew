@@ -356,8 +356,9 @@ export function SellerEnquiriesView({
       ) : (
         <div className="grid gap-4">
           {filteredEnquiries.map((enq) => {
-            const canAfford = walletSpendable >= enq.unlockFee;
+            const canAfford = enq.directChatEnabled || walletSpendable >= enq.unlockFee;
             const isPendingState = enq.status === "PENDING";
+
             const isAcceptedState = enq.status === "ACCEPTED" || enq.status === "DELIVERY_IN_PROGRESS";
             const isCompletedState = enq.status === "COMPLETED";
             const isFailedState = enq.status === "FAILED";
@@ -515,8 +516,11 @@ export function SellerEnquiriesView({
                             className="gap-1.5 text-xs font-semibold shadow-xs"
                           >
                             <Unlock className="h-3.5 w-3.5" />
-                            {t("enquiry_accept_btn")} ({formatPrice(enq.unlockFee, locale)})
+                            {enq.directChatEnabled
+                              ? (locale === "am" ? "ተቀበል (ነፃ — ደንበኛ)" : "Accept Enquiry (Free)")
+                              : `${t("enquiry_accept_btn")} (${formatPrice(enq.unlockFee, locale)})`}
                           </Button>
+
                         </div>
                       </div>
                     </div>
@@ -634,31 +638,45 @@ export function SellerEnquiriesView({
               {t("enquiry_accept_confirm_desc")}
             </p>
 
-            {/* Wallet Burn Breakdown */}
-            <div className="rounded-lg border bg-muted/40 p-3.5 space-y-2 text-xs">
-              <div className="font-semibold text-foreground pb-1 border-b">
-                {locale === "am" ? "የዋሌት ክፍያ ዝርዝር" : "Wallet Deduction Breakdown"}
+            {actionEnquiry.directChatEnabled ? (
+              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3.5 space-y-1 text-xs">
+                <div className="font-semibold text-emerald-700 dark:text-emerald-400">
+                  {locale === "am" ? "የደንበኝነት ጥቅማጥቅም (0 ETB)" : "Subscribed Plan Benefit (0 ETB)"}
+                </div>
+                <p className="text-muted-foreground text-[11px]">
+                  {locale === "am"
+                    ? "ንቁ ደንበኛ ስለሆኑ ለዚህ ጥያቄ ምንም ክፍያ አይቆረጥብዎትም።"
+                    : "As an active subscriber, accepting buyer enquiries is 100% free with zero fee deducted."}
+                </p>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">{t("enquiry_fee_burn_credit")}</span>
-                <span className="font-mono font-medium text-foreground">
-                  {formatPrice(Math.min(walletCredit, actionEnquiry.unlockFee), locale)}
-                </span>
+            ) : (
+              /* Wallet Burn Breakdown */
+              <div className="rounded-lg border bg-muted/40 p-3.5 space-y-2 text-xs">
+                <div className="font-semibold text-foreground pb-1 border-b">
+                  {locale === "am" ? "የዋሌት ክፍያ ዝርዝር" : "Wallet Deduction Breakdown"}
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{t("enquiry_fee_burn_credit")}</span>
+                  <span className="font-mono font-medium text-foreground">
+                    {formatPrice(Math.min(walletCredit, actionEnquiry.unlockFee), locale)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{t("enquiry_fee_burn_cash")}</span>
+                  <span className="font-mono font-medium text-foreground">
+                    {formatPrice(
+                      Math.max(0, actionEnquiry.unlockFee - Math.min(walletCredit, actionEnquiry.unlockFee)),
+                      locale
+                    )}
+                  </span>
+                </div>
+                <div className="flex justify-between pt-1 border-t font-bold text-primary">
+                  <span>{t("enquiry_fee_total")}</span>
+                  <span className="font-mono">{formatPrice(actionEnquiry.unlockFee, locale)}</span>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">{t("enquiry_fee_burn_cash")}</span>
-                <span className="font-mono font-medium text-foreground">
-                  {formatPrice(
-                    Math.max(0, actionEnquiry.unlockFee - Math.min(walletCredit, actionEnquiry.unlockFee)),
-                    locale
-                  )}
-                </span>
-              </div>
-              <div className="flex justify-between pt-1 border-t font-bold text-primary">
-                <span>{t("enquiry_fee_total")}</span>
-                <span className="font-mono">{formatPrice(actionEnquiry.unlockFee, locale)}</span>
-              </div>
-            </div>
+            )}
+
 
             <div className="flex items-center justify-end gap-2 pt-2 border-t">
               <Button

@@ -12,6 +12,7 @@ import { db } from "@/lib/db";
 import { SellerDashboardView } from "./seller-dashboard-view";
 import { resolveSubscription } from "@/lib/marketplace/subscription";
 import { getReferralDashboardAction } from "@/app/actions/referral";
+import { getSupplierLeadsSummary } from "@/lib/subscription/subscription-service";
 
 export const dynamic = "force-dynamic";
 
@@ -39,9 +40,10 @@ export default async function SellerDashboardPage() {
     redirect("/unauthorized");
   }
 
-  const [listings, referralResult] = await Promise.all([
+  const [listings, referralResult, leadsSummary] = await Promise.all([
     fetchSellerListings(user.id),
     getReferralDashboardAction(),
+    getSupplierLeadsSummary(dbUser.id),
   ]);
 
   const effectiveStatus = resolveSubscription(dbUser.sellerProfile);
@@ -56,7 +58,9 @@ export default async function SellerDashboardPage() {
         directChatEnabled: effectiveStatus === "ACTIVE",
       }}
       referral={referralResult.success ? referralResult.data : null}
+      leadsSummary={leadsSummary}
     />
   );
 }
+
 

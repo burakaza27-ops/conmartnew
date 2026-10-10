@@ -22,6 +22,9 @@ import {
   Layers,
   ChevronDown,
   AlertCircle,
+  Phone,
+  MessageCircle,
+  UserCheck,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -37,7 +40,11 @@ import {
 import { PurchaseRequestModal } from "@/components/enquiry/purchase-request-modal";
 import { AuthGateButton } from "@/components/auth/auth-gate-modal";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { GetGuidedModal } from "@/components/leads/get-guided-modal";
+import { logLeadEventAction } from "@/app/actions/leads";
+import { SYSTEM_CONTACTS } from "@/lib/config/system-contacts";
 import type { ProductWithOffers, CompetingOffer } from "@/lib/data/catalog";
+
 
 interface ProductOffersViewProps {
   product: ProductWithOffers;
@@ -50,6 +57,7 @@ export function ProductOffersView({ product, isAuthenticated = false }: ProductO
   const [selectedListingForEnquiry, setSelectedListingForEnquiry] = useState<CompetingOffer | null>(
     null
   );
+  const [guidedOfferModal, setGuidedOfferModal] = useState<CompetingOffer | null>(null);
   const [expandedTiersListingId, setExpandedTiersListingId] = useState<string | null>(null);
 
   const unitLabel = getLocalizedUnit(product.unit, locale);
@@ -62,6 +70,23 @@ export function ProductOffersView({ product, isAuthenticated = false }: ProductO
   const toggleTiers = (listingId: string) => {
     setExpandedTiersListingId((prev) => (prev === listingId ? null : listingId));
   };
+
+  const handleCallClick = (offer: CompetingOffer) => {
+    logLeadEventAction({
+      sellerId: offer.sellerId,
+      eventType: "CALL_CLICK",
+      listingId: offer.listingId,
+    });
+  };
+
+  const handleWhatsAppClick = (offer: CompetingOffer) => {
+    logLeadEventAction({
+      sellerId: offer.sellerId,
+      eventType: "WHATSAPP_CLICK",
+      listingId: offer.listingId,
+    });
+  };
+
 
   return (
     <div className="space-y-8 pb-24 md:pb-8">
@@ -278,45 +303,52 @@ export function ProductOffersView({ product, isAuthenticated = false }: ProductO
                         <span>{t("offers_freight_available")}</span>
                       </div>
 
-                      <div className="flex items-center gap-2 ml-auto">
-                        <AuthGateButton
-                          isAuthenticated={isAuthenticated}
-                          redirectTo={`/buyer/product/${product.id}`}
-                          fallbackLabel={t("offers_btn_proforma")}
-                          fallbackIcon={<Calculator className="h-3.5 w-3.5" />}
-                          fallbackVariant="outline"
-                          fallbackSize="sm"
-                          fallbackClassName="gap-1.5 text-xs font-medium"
-                        >
-                          <Link
-                            href={`/buyer/catalog/${offer.listingId}`}
-                            className={cn(
-                              buttonVariants({ variant: "outline", size: "sm" }),
-                              "gap-1.5 text-xs font-medium"
+                      <div className="flex flex-wrap items-center gap-2 ml-auto">
+                        {offer.isSubscribed && offer.directPhone ? (
+                          <>
+                            <a
+                              href={`tel:${offer.directPhone.replace(/\s+/g, "")}`}
+                              onClick={() => handleCallClick(offer)}
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow-xs hover:bg-primary/90 transition-colors"
+                            >
+                              <Phone className="h-3.5 w-3.5" />
+                              <span>{locale === "am" ? "ይደውሉ" : "Call"}</span>
+                            </a>
+                            {(offer.whatsappNumber || offer.directPhone) && (
+                              <a
+                                href={`https://wa.me/${(offer.whatsappNumber || offer.directPhone).replace(/[^\d]/g, "")}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={() => handleWhatsAppClick(offer)}
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 transition-colors"
+                              >
+                                <MessageCircle className="h-3.5 w-3.5" />
+                                <span>WhatsApp</span>
+                              </a>
                             )}
-                          >
-                            <Calculator className="h-3.5 w-3.5" />
-                            {t("offers_btn_proforma")}
-                          </Link>
-                        </AuthGateButton>
-
-                        <AuthGateButton
-                          isAuthenticated={isAuthenticated}
-                          redirectTo={`/buyer/product/${product.id}`}
-                          fallbackLabel={t("offers_btn_send_enquiry")}
-                          fallbackIcon={<SendHorizontal className="h-3.5 w-3.5" />}
-                          fallbackSize="sm"
-                          fallbackClassName="gap-1.5 text-xs font-semibold shadow-xs"
-                        >
+                          </>
+                        ) : (
                           <Button
                             size="sm"
-                            onClick={() => setSelectedListingForEnquiry(offer)}
-                            className="gap-1.5 text-xs font-semibold shadow-xs"
+                            variant="outline"
+                            onClick={() => setGuidedOfferModal(offer)}
+                            className="gap-1.5 text-xs font-semibold border-amber-600/40 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10"
                           >
-                            <SendHorizontal className="h-3.5 w-3.5" />
-                            {t("offers_btn_send_enquiry")}
+                            <UserCheck className="h-3.5 w-3.5 text-amber-600" />
+                            <span>{locale === "am" ? "ወኪል ይጠይቁ (ነፃ)" : "Request Agent Visit"}</span>
                           </Button>
-                        </AuthGateButton>
+                        )}
+
+                        <Link
+                          href={`/buyer/catalog/${offer.listingId}`}
+                          className={cn(
+                            buttonVariants({ variant: "outline", size: "sm" }),
+                            "gap-1.5 text-xs font-medium"
+                          )}
+                        >
+                          <Calculator className="h-3.5 w-3.5" />
+                          {t("offers_btn_proforma")}
+                        </Link>
                       </div>
                     </div>
                   </div>
@@ -326,6 +358,17 @@ export function ProductOffersView({ product, isAuthenticated = false }: ProductO
           </div>
         )}
       </div>
+
+      {/* Guided Agent Modal */}
+      {guidedOfferModal && (
+        <GetGuidedModal
+          isOpen={Boolean(guidedOfferModal)}
+          onClose={() => setGuidedOfferModal(null)}
+          prefillMaterial={product.title}
+          targetSellerId={guidedOfferModal.sellerId}
+          targetSellerName={guidedOfferModal.depotName}
+        />
+      )}
 
       {/* Purchase Request Modal */}
       {selectedListingForEnquiry && (
@@ -338,6 +381,7 @@ export function ProductOffersView({ product, isAuthenticated = false }: ProductO
           basePrice={selectedListingForEnquiry.lowestPrice ?? undefined}
         />
       )}
+
 
       {/* Sticky Bottom Mobile Conversion Bar */}
       {product.offers.length > 0 && (

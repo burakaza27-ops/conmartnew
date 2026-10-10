@@ -38,6 +38,7 @@ import { PurchaseRequestModal } from "@/components/enquiry/purchase-request-moda
 import { StatusBadge } from "@/components/ui/status-badge";
 import { StartChatButton } from "@/components/chat/start-chat-button";
 import { AuthGateButton } from "@/components/auth/auth-gate-modal";
+import { SupplierContactCard } from "@/components/leads/supplier-contact-card";
 import type { CatalogListing, ListingDetail } from "@/lib/data/catalog";
 import { getCategoryImage } from "@/lib/data/category-images";
 
@@ -308,33 +309,26 @@ export function ListingDetailView({
               />
             </AuthGateButton>
 
-            {/* Warehouse & Supplier Depot */}
-            <Card className="border-border/60 bg-card">
-              <CardContent className="p-4 space-y-3 text-xs">
-                <div>
-                  <p className="font-bold uppercase tracking-wider text-muted-foreground text-[10px]">
-                    {t("detail_yard_label")}
-                  </p>
-                  <p className="font-medium text-foreground mt-0.5">
-                    {localizedLocation}
-                  </p>
-                </div>
-                <div className="border-t border-border/40 pt-2">
-                  <p className="font-bold uppercase tracking-wider text-muted-foreground text-[10px]">
-                    {t("detail_escrow_desk_title")}
-                  </p>
-                  <p className="font-semibold text-foreground mt-0.5">
-                    {t("detail_escrow_desk_name")}
-                  </p>
-                  <p className="text-muted-foreground">
-                    {t("detail_direct_coordination")} {adminPhone}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Supplier Contact & Telemetry Card */}
+            <SupplierContactCard
+              sellerId={listing.seller.id}
+              sellerName={listing.seller.name}
+              companyName={listing.seller.companyName}
+              isSubscribed={listing.isSubscribed}
+              subscriptionTier={listing.subscriptionTier}
+              directPhone={listing.directPhone}
+              whatsappNumber={listing.whatsappNumber}
+              address={listing.address}
+              workingHours={listing.workingHours}
+              latitude={listing.latitude}
+              longitude={listing.longitude}
+              listingId={listing.id}
+              materialTitle={listing.product.title}
+            />
           </div>
         </div>
       </div>
+
 
       {/* Purchase Request Modal */}
       <PurchaseRequestModal
