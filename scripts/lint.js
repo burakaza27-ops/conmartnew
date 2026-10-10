@@ -10,7 +10,7 @@ const ESLINT_BIN = path.join(ROOT, 'node_modules', 'eslint', 'bin', 'eslint.js')
 
 const TARGET_GROUPS = [
   ['src/lib'],
-  ['src/components', 'src/proxy.ts'],
+  ['src/components', 'src/middleware.ts'],
   ['src/app/actions'],
   ['src/app/api'],
   ['src/app/buyer'],
@@ -42,7 +42,7 @@ for (let i = 0; i < TARGET_GROUPS.length; i++) {
   for (let attempt = 1; attempt <= 2; attempt++) {
     const res = spawnSync(
       process.execPath,
-      [ESLINT_BIN, ...group],
+      ['--max-old-space-size=4096', ESLINT_BIN, ...group],
       { cwd: ROOT, encoding: 'utf-8', stdio: ['ignore', 'pipe', 'pipe'] }
     );
 

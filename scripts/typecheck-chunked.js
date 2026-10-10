@@ -88,6 +88,7 @@ console.log(
 function spawnWorker(files) {
   return new Promise((resolve) => {
     const child = fork(__filename, [], {
+      execArgv: ["--max-old-space-size=4096"],
       env: {
         ...process.env,
         CONMART_IS_WORKER: "1",

@@ -105,14 +105,29 @@ export async function getGuidedLeads(filters?: {
 
 /**
  * Assigns a lead to an agent (admin assignment or agent self-claim).
+ * Guarded with an atomic status check (where: { id: leadId, status: 'NEW' })
+ * to ensure field agents cannot hijack or overwrite active assignments.
  */
 export async function assignGuidedLead(leadId: string, agentId: string) {
-  return db.guidedLead.update({
-    where: { id: leadId },
+  const result = await db.guidedLead.updateMany({
+    where: {
+      id: leadId,
+      status: GuidedLeadStatus.NEW,
+    },
     data: {
       assignedAgentId: agentId,
       status: GuidedLeadStatus.ASSIGNED,
     },
+  });
+
+  if (result.count === 0) {
+    throw new Error(
+      "Guided lead is no longer available for assignment or has already been assigned."
+    );
+  }
+
+  return db.guidedLead.findUniqueOrThrow({
+    where: { id: leadId },
   });
 }
 

@@ -267,8 +267,50 @@ export async function getAgentNearbyRequests(userId: string) {
   };
 }
 
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { env } from "@/lib/config/env";
+
+/**
+ * Resolves a stored document URL or storage key into a secure, short-lived presigned URL (1 hour).
+ */
+export async function createPresignedDocumentUrl(
+  urlOrPath: string | null | undefined
+): Promise<string | null> {
+  if (!urlOrPath) return null;
+  if (
+    urlOrPath.startsWith("https://local-private-storage") ||
+    urlOrPath.startsWith("https://example.com")
+  ) {
+    return urlOrPath;
+  }
+
+  const supabase = createSupabaseAdminClient();
+  if (!supabase) return urlOrPath;
+
+  const bucket = env.SUPABASE_STORAGE_BUCKET;
+  let path = urlOrPath;
+  if (urlOrPath.includes("/agent-docs/")) {
+    const parts = urlOrPath.split("/agent-docs/");
+    path = `agent-docs/${parts[1]?.split("?")[0]}`;
+  } else if (urlOrPath.startsWith("/")) {
+    path = urlOrPath.replace(/^\//, "");
+  }
+
+  try {
+    const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 3600);
+    if (!error && data?.signedUrl) {
+      return data.signedUrl;
+    }
+  } catch (err) {
+    console.warn("Failed to generate presigned URL for document:", err);
+  }
+
+  return urlOrPath;
+}
+
 /**
  * Admin: Retrieves all agent applications for vetting (01B Screen 5).
+ * Enforces short-lived presigned URLs for viewing sensitive documents (National IDs, diplomas).
  */
 export async function adminGetAgentApplications(filters?: {
   status?: AgentApprovalStatus;
@@ -289,7 +331,7 @@ export async function adminGetAgentApplications(filters?: {
     ];
   }
 
-  return db.agentProfile.findMany({
+  const profiles = await db.agentProfile.findMany({
     where,
     include: {
       user: {
@@ -299,6 +341,15 @@ export async function adminGetAgentApplications(filters?: {
     },
     orderBy: { updatedAt: "desc" },
   });
+
+  return Promise.all(
+    profiles.map(async (p) => ({
+      ...p,
+      identityDocUrl: await createPresignedDocumentUrl(p.identityDocUrl),
+      grade12DocUrl: await createPresignedDocumentUrl(p.grade12DocUrl),
+      guarantorDocUrl: await createPresignedDocumentUrl(p.guarantorDocUrl),
+    }))
+  );
 }
 
 /**

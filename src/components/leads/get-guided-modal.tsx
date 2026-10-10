@@ -23,7 +23,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   Phone,
-  Mail,
   UserCheck,
   CheckCircle2,
   Clock,
@@ -68,11 +67,13 @@ export function GetGuidedModal({
   } | null>(null);
 
   // Sync prefill if prop changes
-  React.useEffect(() => {
-    if (prefillMaterial && !materialNeeded) {
+  const [prevPrefill, setPrevPrefill] = useState(prefillMaterial);
+  if (prefillMaterial !== prevPrefill) {
+    setPrevPrefill(prefillMaterial);
+    if (!materialNeeded) {
       setMaterialNeeded(prefillMaterial);
     }
-  }, [prefillMaterial, materialNeeded]);
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

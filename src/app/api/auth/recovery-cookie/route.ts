@@ -22,7 +22,12 @@ export async function POST(request: Request) {
     );
   }
 
-  const origin = new URL(request.url).origin;
+  const urlOrigin = new URL(request.url).origin;
+  const requestOrigin = request.headers.get("origin");
+  if (requestOrigin && requestOrigin !== urlOrigin) {
+    return NextResponse.json({ error: "Forbidden: cross-origin request rejected." }, { status: 403 });
+  }
+
   const response = NextResponse.json({ ok: true });
   response.cookies.set(
     PASSWORD_RECOVERY_COOKIE,

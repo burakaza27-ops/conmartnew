@@ -14,14 +14,14 @@
     "check:pwa": "node scripts/check-playstore-readiness.js",
     "check:secrets": "node scripts/check-secret-hygiene.js",
     "verify": "node scripts/check-secret-hygiene.js && npm run typecheck && npm run lint && npm run test",
-    "db:generate": "prisma generate",
+    "db:generate": "node --max-old-space-size=4096 ./node_modules/prisma/build/index.js generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:status": "prisma migrate status",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
-    "postinstall": "prisma generate"
+    "postinstall": "node --max-old-space-size=4096 ./node_modules/prisma/build/index.js generate"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

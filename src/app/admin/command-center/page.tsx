@@ -11,7 +11,6 @@
 
 import Link from "next/link";
 import {
-  Clock,
   ShieldAlert,
   ShieldCheck,
   CreditCard,
@@ -20,7 +19,6 @@ import {
   Sparkles,
   ArrowRight,
   Building2,
-  CheckCircle2,
   Users,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -36,7 +34,6 @@ import { getAdminAgentApplicationsAction } from "@/app/actions/agents";
 import { OrdersTable } from "./orders-table";
 import { DisputesTable } from "./disputes-table";
 import { SellerVerificationTable } from "./seller-verification-table";
-import { formatETB } from "@/lib/types";
 
 export default async function CommandCenterPage() {
   await requireRole(["ADMIN"], "/admin/command-center");

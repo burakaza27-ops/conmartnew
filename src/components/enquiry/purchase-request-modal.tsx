@@ -99,6 +99,7 @@ export function PurchaseRequestModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isPending) return;
     setErrorMsg(null);
 
     const parsedQty = parseFloat(qty);

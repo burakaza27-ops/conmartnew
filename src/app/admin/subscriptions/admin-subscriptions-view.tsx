@@ -16,15 +16,12 @@ import {
   CheckCircle2,
   XCircle,
   Phone,
-  Building2,
-  Calendar,
   ExternalLink,
   Edit,
   Loader2,
   AlertCircle,
-  ShieldCheck,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

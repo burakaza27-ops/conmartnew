@@ -100,6 +100,7 @@ export async function updateSubscriptionPlan(
 
 /**
  * Supplier submits a manual subscription payment request (Telebirr, CBE Birr, Bank).
+ * Normalizes referenceCode to uppercase/trimmed and enforces uniqueness.
  */
 export async function submitSubscriptionPayment(params: {
   sellerId: string;
@@ -116,6 +117,22 @@ export async function submitSubscriptionPayment(params: {
     throw new Error(`Plan for tier ${params.tier} not found`);
   }
 
+  const normalizedRef = params.referenceCode.trim().toUpperCase();
+
+  // Enforce global reference uniqueness to prevent duplicate submission floods or cross-seller reuse
+  const existing = await db.subscriptionPayment.findUnique({
+    where: { referenceCode: normalizedRef },
+    select: { status: true },
+  });
+
+  if (existing && existing.status !== WalletTxStatus.FAILED) {
+    throw new Error(
+      existing.status === WalletTxStatus.PENDING
+        ? "A subscription payment with this reference code is already awaiting review."
+        : "This subscription payment reference code has already been processed."
+    );
+  }
+
   // Create payment record in PENDING state
   const payment = await db.subscriptionPayment.create({
     data: {
@@ -123,7 +140,7 @@ export async function submitSubscriptionPayment(params: {
       tier: params.tier,
       amount: plan.priceETB,
       paymentMethod: params.paymentMethod,
-      referenceCode: params.referenceCode.trim(),
+      referenceCode: normalizedRef,
       slipUrl: params.slipUrl,
       status: WalletTxStatus.PENDING,
     },
@@ -142,7 +159,8 @@ export async function submitSubscriptionPayment(params: {
 
 /**
  * Admin reviews and confirms/rejects a subscription payment.
- * When approved, sets subscription status to ACTIVE and calculates new expiry.
+ * Hardened with atomic conditional update (`updateMany` guarding `status: PENDING`)
+ * to completely eliminate TOCTOU race conditions and double-crediting bugs.
  */
 export async function reviewSubscriptionPayment(params: {
   paymentId: string;
@@ -159,59 +177,107 @@ export async function reviewSubscriptionPayment(params: {
     throw new Error("Payment record not found");
   }
 
-  if (payment.status !== WalletTxStatus.PENDING) {
-    throw new Error("Payment has already been processed");
-  }
-
-  if (!params.approved) {
-    return db.subscriptionPayment.update({
-      where: { id: params.paymentId },
-      data: {
-        status: WalletTxStatus.FAILED,
-        reviewedBy: params.adminId,
-        reviewedAt: new Date(),
-        notes: params.notes || "Rejected by admin",
-      },
-    });
-  }
-
-  const plan = await db.subscriptionPlan.findUnique({
-    where: { tier: payment.tier },
-  });
-  const durationDays = plan?.durationDays ?? 30;
-
   const now = new Date();
-  const currentExpiry = payment.seller.sellerProfile?.subscriptionExpiresAt;
-  const baseDate = currentExpiry && currentExpiry > now ? currentExpiry : now;
-  const newExpiry = new Date(baseDate.getTime() + durationDays * 24 * 60 * 60 * 1000);
 
-  // Run update in transaction
   return db.$transaction(async (tx) => {
-    const updatedPayment = await tx.subscriptionPayment.update({
-      where: { id: params.paymentId },
+    // Atomic state guard: only transition if currently in PENDING status
+    const updateResult = await tx.subscriptionPayment.updateMany({
+      where: {
+        id: params.paymentId,
+        status: WalletTxStatus.PENDING,
+      },
       data: {
-        status: WalletTxStatus.COMPLETED,
+        status: params.approved ? WalletTxStatus.COMPLETED : WalletTxStatus.FAILED,
         reviewedBy: params.adminId,
         reviewedAt: now,
-        notes: params.notes,
+        notes: params.notes || (params.approved ? undefined : "Rejected by admin"),
       },
     });
 
-    await tx.sellerProfile.update({
-      where: { userId: payment.sellerId },
-      data: {
-        subscriptionStatus: SubscriptionStatus.ACTIVE,
-        subscriptionTier: payment.tier,
-        subscriptionExpiresAt: newExpiry,
-      },
-    });
+    if (updateResult.count === 0) {
+      throw new Error("Payment has already been processed or is no longer pending.");
+    }
 
-    return updatedPayment;
+    if (params.approved) {
+      const plan = await tx.subscriptionPlan.findUnique({
+        where: { tier: payment.tier },
+      });
+      const durationDays = plan?.durationDays ?? 30;
+
+      const currentExpiry = payment.seller.sellerProfile?.subscriptionExpiresAt;
+      const baseDate = currentExpiry && currentExpiry > now ? currentExpiry : now;
+      const newExpiry = new Date(baseDate.getTime() + durationDays * 24 * 60 * 60 * 1000);
+
+      await tx.sellerProfile.update({
+        where: { userId: payment.sellerId },
+        data: {
+          subscriptionStatus: SubscriptionStatus.ACTIVE,
+          subscriptionTier: payment.tier,
+          subscriptionExpiresAt: newExpiry,
+        },
+      });
+    }
+
+    return tx.subscriptionPayment.findUniqueOrThrow({
+      where: { id: params.paymentId },
+    });
   });
+}
+
+// -----------------------------------------------------------------------------
+// Telemetry Event Buffering
+// -----------------------------------------------------------------------------
+
+interface BufferedLeadEvent {
+  sellerId: string;
+  eventType: SupplierLeadEventType;
+  listingId?: string | null;
+  buyerPhone?: string | null;
+  metadata: Record<string, unknown>;
+  createdAt: Date;
+}
+
+const TELEMETRY_BUFFER: BufferedLeadEvent[] = [];
+const BUFFER_MAX_SIZE = 50;
+const FLUSH_INTERVAL_MS = 3000;
+let flushTimer: ReturnType<typeof setTimeout> | null = null;
+
+export async function flushTelemetryBuffer() {
+  if (TELEMETRY_BUFFER.length === 0) return;
+  const batch = TELEMETRY_BUFFER.splice(0, TELEMETRY_BUFFER.length);
+
+  try {
+    await db.supplierLeadEvent.createMany({
+      data: batch.map((item) => ({
+        sellerId: item.sellerId,
+        eventType: item.eventType,
+        listingId: item.listingId || null,
+        buyerPhone: item.buyerPhone || null,
+        metadata: item.metadata as never,
+        createdAt: item.createdAt,
+      })),
+    });
+  } catch (err) {
+    console.error("Telemetry batch flush error (non-fatal):", err);
+  }
+}
+
+function scheduleTelemetryFlush() {
+  if (!flushTimer) {
+    flushTimer = setTimeout(async () => {
+      flushTimer = null;
+      await flushTelemetryBuffer();
+    }, FLUSH_INTERVAL_MS);
+    if (typeof flushTimer.unref === "function") {
+      flushTimer.unref();
+    }
+  }
 }
 
 /**
  * Telemetry: Records interaction events on a supplier's listing or store.
+ * Buffers events in memory and flushes in batches using createMany to prevent
+ * saturating the database connection pool on high-frequency traffic.
  */
 export async function logSupplierLeadEvent(params: {
   sellerId: string;
@@ -221,25 +287,33 @@ export async function logSupplierLeadEvent(params: {
   metadata?: Record<string, unknown>;
 }) {
   try {
-    return await db.supplierLeadEvent.create({
-      data: {
-        sellerId: params.sellerId,
-        eventType: params.eventType,
-        listingId: params.listingId,
-        buyerPhone: params.buyerPhone,
-        metadata: (params.metadata as never) || {},
-      },
+    TELEMETRY_BUFFER.push({
+      sellerId: params.sellerId,
+      eventType: params.eventType,
+      listingId: params.listingId || null,
+      buyerPhone: params.buyerPhone || null,
+      metadata: params.metadata || {},
+      createdAt: new Date(),
     });
+
+    if (TELEMETRY_BUFFER.length >= BUFFER_MAX_SIZE) {
+      await flushTelemetryBuffer();
+    } else {
+      scheduleTelemetryFlush();
+    }
+    return { queued: true };
   } catch (err) {
     // Non-fatal telemetry logging
-    console.error("Failed to log supplier lead event:", err);
+    console.error("Failed to buffer supplier lead event:", err);
     return null;
   }
 }
 
 /**
  * Supplier Leads Dashboard Analytics Engine
- * Calculates views, direct calls, WhatsApp taps, directions, and trend comparisons.
+ * Database-Level Analytics Aggregation:
+ * Pushes groupings and counts directly into PostgreSQL via `groupBy` and `count`,
+ * completely eliminating raw event array loading into Node.js V8 heap.
  */
 export async function getSupplierLeadsSummary(sellerId: string): Promise<SupplierLeadsDashboardSummary> {
   const profile = await db.sellerProfile.findUnique({
@@ -251,31 +325,34 @@ export async function getSupplierLeadsSummary(sellerId: string): Promise<Supplie
   const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
   const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-  // Run analytics aggregation queries in parallel
+  // Run analytics aggregation queries in parallel at the database level
   const [
-    weeklyEvents,
-    previousWeekEvents,
+    weeklyGrouped,
+    lastWeekInteractions,
     monthlyViewsCount,
   ] = await Promise.all([
-    // This week's events
-    db.supplierLeadEvent.findMany({
+    // Group this week's events by type directly in PostgreSQL
+    db.supplierLeadEvent.groupBy({
+      by: ["eventType"],
       where: {
         sellerId,
         createdAt: { gte: oneWeekAgo },
       },
-      select: { eventType: true },
+      _count: {
+        eventType: true,
+      },
     }),
 
-    // Previous week's events (for trend comparison)
-    db.supplierLeadEvent.findMany({
+    // Count previous week's interactions (excluding views) in PostgreSQL
+    db.supplierLeadEvent.count({
       where: {
         sellerId,
         createdAt: { gte: twoWeeksAgo, lt: oneWeekAgo },
+        eventType: { not: SupplierLeadEventType.VIEW },
       },
-      select: { eventType: true },
     }),
 
-    // Monthly views
+    // Monthly views count in PostgreSQL
     db.supplierLeadEvent.count({
       where: {
         sellerId,
@@ -285,25 +362,35 @@ export async function getSupplierLeadsSummary(sellerId: string): Promise<Supplie
     }),
   ]);
 
-  // Aggregate this week
   let weeklyViews = 0;
   let weeklyCallClicks = 0;
   let weeklyWhatsAppClicks = 0;
   let weeklyDirectionsClicks = 0;
   let weeklyAgentDeliveredLeads = 0;
 
-  for (const ev of weeklyEvents) {
-    if (ev.eventType === SupplierLeadEventType.VIEW) weeklyViews++;
-    else if (ev.eventType === SupplierLeadEventType.CALL_CLICK) weeklyCallClicks++;
-    else if (ev.eventType === SupplierLeadEventType.WHATSAPP_CLICK) weeklyWhatsAppClicks++;
-    else if (ev.eventType === SupplierLeadEventType.DIRECTIONS_CLICK) weeklyDirectionsClicks++;
-    else if (ev.eventType === SupplierLeadEventType.AGENT_DELIVERED) weeklyAgentDeliveredLeads++;
+  for (const row of weeklyGrouped) {
+    const count = row._count.eventType;
+    switch (row.eventType) {
+      case SupplierLeadEventType.VIEW:
+        weeklyViews = count;
+        break;
+      case SupplierLeadEventType.CALL_CLICK:
+        weeklyCallClicks = count;
+        break;
+      case SupplierLeadEventType.WHATSAPP_CLICK:
+        weeklyWhatsAppClicks = count;
+        break;
+      case SupplierLeadEventType.DIRECTIONS_CLICK:
+        weeklyDirectionsClicks = count;
+        break;
+      case SupplierLeadEventType.AGENT_DELIVERED:
+        weeklyAgentDeliveredLeads = count;
+        break;
+    }
   }
 
-  const thisWeekInteractions = weeklyCallClicks + weeklyWhatsAppClicks + weeklyDirectionsClicks + weeklyAgentDeliveredLeads;
-  const lastWeekInteractions = previousWeekEvents.filter(
-    (e) => e.eventType !== SupplierLeadEventType.VIEW
-  ).length;
+  const thisWeekInteractions =
+    weeklyCallClicks + weeklyWhatsAppClicks + weeklyDirectionsClicks + weeklyAgentDeliveredLeads;
 
   let growthPercentage = 0;
   if (lastWeekInteractions === 0) {

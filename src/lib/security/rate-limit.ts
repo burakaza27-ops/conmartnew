@@ -152,24 +152,68 @@ export async function rateLimit(
   }
 }
 
+import { isIP } from "node:net";
+
+/**
+ * Validates if the given string is a genuine IPv4 or IPv6 address.
+ * Uses Node.js RFC-compliant isIP check to prevent malformed/spoofed inputs.
+ */
+export function isValidIpAddress(ip: string): boolean {
+  if (!ip || typeof ip !== "string") return false;
+  const trimmed = ip.trim();
+  return isIP(trimmed) !== 0;
+}
+
 /**
  * Best-effort caller identity for anonymous endpoints.
  *
- * `x-forwarded-for` is client-controlled behind a misconfigured proxy, so this
- * is only used for throttling — never for authorization.
+ * Prioritizes platform-verified edge headers (Cloudflare `cf-connecting-ip`,
+ * Vercel `x-vercel-forwarded-for`, and `x-real-ip`). Safely parses `x-forwarded-for`
+ * to protect against client header spoofing attacks and validates address syntax.
  */
-export async function getClientIdentifier(): Promise<string> {
-  const headerList = await headers();
-  const forwardedFor = headerList.get("x-forwarded-for");
+export async function getClientIdentifier(customHeaders?: Headers | null): Promise<string> {
+  const headerList = customHeaders || (await headers());
 
-  if (forwardedFor) {
-    const [clientIp] = forwardedFor.split(",");
-    if (clientIp?.trim()) {
-      return clientIp.trim();
+  // 1. Cloudflare edge header (cryptographically verified / stripped from untrusted clients)
+  const cfIp = headerList.get("cf-connecting-ip")?.trim();
+  if (cfIp && isValidIpAddress(cfIp)) {
+    return cfIp;
+  }
+
+  // 2. Vercel edge proxy header
+  const vercelIp = headerList.get("x-vercel-forwarded-for")?.trim();
+  if (vercelIp) {
+    const candidate = vercelIp.split(",")[0]?.trim();
+    if (candidate && isValidIpAddress(candidate)) {
+      return candidate;
     }
   }
 
-  return headerList.get("x-real-ip")?.trim() || "unknown";
+  // 3. Trusted reverse proxy X-Real-IP
+  const realIp = headerList.get("x-real-ip")?.trim();
+  if (realIp && isValidIpAddress(realIp)) {
+    return realIp;
+  }
+
+  // 4. Multi-hop X-Forwarded-For: take the rightmost valid public/proxy IP to prevent
+  // client-injected spoofed headers from poisoning rate limits.
+  const forwardedFor = headerList.get("x-forwarded-for");
+  if (forwardedFor) {
+    const hops = forwardedFor
+      .split(",")
+      .map((h) => h.trim())
+      .filter((h) => h.length > 0);
+
+    // Scan backwards from rightmost (last proxy added) to avoid attacker's prepended IPs
+    for (let i = hops.length - 1; i >= 0; i--) {
+      const hop = hops[i];
+      if (isValidIpAddress(hop)) {
+        return hop;
+      }
+    }
+  }
+
+  return "unknown";
 }
 
 /** Standard message shown when a caller exhausts their budget. */

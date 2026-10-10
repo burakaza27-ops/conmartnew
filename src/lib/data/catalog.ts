@@ -166,6 +166,7 @@ export async function fetchCatalogListings(
 
   const whereClause: Record<string, unknown> = {
     active: true,
+    isDeleted: false,
     seller: {
       OR: [
         { sellerProfile: null },
@@ -588,6 +589,7 @@ export async function fetchDepotListings(
     where: {
       sellerId,
       active: true,
+      isDeleted: false,
       ...(excludeListingId ? { id: { not: excludeListingId } } : {}),
     },
     include: {
@@ -884,7 +886,7 @@ export async function fetchSellerStore(
         },
       },
       sellerListings: {
-        where: { active: true },
+        where: { active: true, isDeleted: false },
         include: {
           product: {
             include: {
@@ -955,7 +957,7 @@ export async function fetchSellerStores(): Promise<SellerStoreCard[]> {
         { sellerProfile: null },
         { sellerProfile: { verificationStatus: { not: "SUSPENDED" } } },
       ],
-      sellerListings: { some: { active: true } },
+      sellerListings: { some: { active: true, isDeleted: false } },
     },
     select: {
       id: true,
@@ -968,7 +970,7 @@ export async function fetchSellerStores(): Promise<SellerStoreCard[]> {
         },
       },
       sellerListings: {
-        where: { active: true },
+        where: { active: true, isDeleted: false },
         select: { location: true },
       },
     },

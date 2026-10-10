@@ -94,7 +94,7 @@ function loadServerEnv(): ServerEnv {
     return {
       DATABASE_URL:
         process.env.DATABASE_URL ||
-        "postgresql://postgres:postgres@localhost:5432/conmart",
+        "postgresql://localhost:5432/conmart",
       DATABASE_POOLER_URL: process.env.DATABASE_POOLER_URL,
       DATABASE_CA_CERT: process.env.DATABASE_CA_CERT,
       DATABASE_SSL_NO_VERIFY:

@@ -1,4 +1,4 @@
-﻿import { AppShell } from "@/components/layout/app-shell";
+import { AppShell } from "@/components/layout/app-shell";
 import { requireRole } from "@/lib/auth/session";
 import { getUnreadCountAction } from "@/app/actions/notifications";
 import {
@@ -6,6 +6,8 @@ import {
   SellerBottomNav,
   SellerSignOutButton,
 } from "./seller-nav";
+
+export const dynamic = "force-dynamic";
 
 export default async function SellerLayout({
   children,

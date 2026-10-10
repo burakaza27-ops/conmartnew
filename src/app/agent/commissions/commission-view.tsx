@@ -15,8 +15,6 @@ import {
   TrendingUp,
   Clock,
   CheckCircle2,
-  Calendar,
-  Building2,
   ShieldCheck,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

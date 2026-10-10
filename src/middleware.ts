@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Edge Proxy (Next.js 16 Proxy Convention)
+// ConMart — Edge Middleware (Next.js Edge Middleware Convention)
 // =============================================================================
 // Runs before every matched request and is responsible for three things:
 //
@@ -57,7 +57,7 @@ function getSupabaseOrigin(): string {
   return "https://placeholder.supabase.co";
 }
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const nonce = crypto.randomUUID();
   const csp = buildContentSecurityPolicy(nonce);
 
@@ -101,7 +101,7 @@ export async function proxy(request: NextRequest) {
       const { data, error } = await supabase.auth.getUser();
       isAuthenticated = !error && Boolean(data?.user);
     } catch (error) {
-      console.error("Proxy auth check failed, treating request as anonymous:", error);
+      console.error("Middleware auth check failed, treating request as anonymous:", error);
     }
   }
 
@@ -144,6 +144,9 @@ export async function proxy(request: NextRequest) {
   return withSecurityHeaders(response, csp);
 }
 
+// Alias for proxy convention support
+export const proxy = middleware;
+
 function buildRequestHeaders(request: NextRequest, nonce: string, csp: string): Headers {
   const headers = new Headers(request.headers);
   headers.set("x-nonce", nonce);
@@ -153,8 +156,11 @@ function buildRequestHeaders(request: NextRequest, nonce: string, csp: string): 
 }
 
 /**
- * Builds standard Content Security Policy permitting Next.js chunks, nonced scripts,
+ * Builds strict Content Security Policy permitting Next.js chunks, nonced scripts,
  * inline styles, and verified remote origins.
+ *
+ * Enforces strict nonce-based CSP with 'strict-dynamic'. Strips https: and 'unsafe-eval'
+ * from script-src to prevent arbitrary remote or dynamic code injection.
  */
 function buildContentSecurityPolicy(nonce: string): string {
   const isDev = process.env.NODE_ENV === "development";
@@ -162,8 +168,8 @@ function buildContentSecurityPolicy(nonce: string): string {
 
   const directives = [
     `default-src 'self'`,
-    `script-src 'self' 'unsafe-inline' 'unsafe-eval' https: 'nonce-${nonce}'`,
-    `style-src 'self' 'unsafe-inline' https:`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    `style-src 'self' 'unsafe-inline'`,
     `img-src 'self' blob: data: https:`,
     `font-src 'self' data: https:`,
     `connect-src 'self' ${supabaseOrigin} ${supabaseOrigin.replace(/^http/, 'ws')} https: wss: ws:`,

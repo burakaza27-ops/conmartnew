@@ -26,7 +26,7 @@
     "src/app/buyer/product/[productId]/page.tsx",
     "src/components/layout/public-browse-shell.tsx",
     "src/components/auth/auth-gate-modal.tsx",
-    "src/proxy.ts",
+    "src/middleware.ts",
     "src/app/sitemap.ts",
     "src/app/robots.ts"
   ]

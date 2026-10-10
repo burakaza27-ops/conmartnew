@@ -14,6 +14,11 @@ import { authorize } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import { ProductUnit } from "@prisma/client";
 import { qualifyReferralIfApplicable } from "@/lib/marketplace/referral";
+import {
+  rateLimit,
+  getClientIdentifier,
+  rateLimitMessage,
+} from "@/lib/security/rate-limit";
 
 export interface CreatePriceTierInput {
   minQty: number;
@@ -40,6 +45,13 @@ export async function createSellerListing(input: CreateListingInput) {
       return { error: auth.error };
     }
     const dbUser = auth.user;
+
+    // Rate-limit: 30 listing creations per hour per seller
+    const clientId = await getClientIdentifier();
+    const rl = await rateLimit(`listing:create:${dbUser.id}`, { limit: 30, windowSeconds: 3600 });
+    if (!rl.allowed) {
+      return { error: rateLimitMessage(rl.retryAfterSeconds) };
+    }
 
     if (!input.title || input.title.trim().length < 3) {
       return { error: "Please enter a valid product title (at least 3 characters)." };
@@ -309,17 +321,42 @@ export async function updateSellerListing(input: UpdateListingInput) {
       }
     }
 
-    // Atomic update
+    // Atomic update with catalog isolation
     await db.$transaction(async (tx) => {
-      // 1. Update Product title if provided
-      if (input.title && input.title.trim().length >= 3) {
-        await tx.product.update({
-          where: { id: listing.productId },
-          data: {
-            title: input.title.trim(),
-            imageUrl: input.imageUrl || listing.product.imageUrl,
+      let targetProductId = listing.productId;
+
+      // 1. Catalog Isolation: Never mutate shared Product record across sellers
+      if (input.title && input.title.trim().length >= 3 && input.title.trim() !== listing.product.title) {
+        // Count other active or existing listings referencing this product
+        const otherListingsCount = await tx.listing.count({
+          where: {
+            productId: listing.productId,
+            id: { not: input.listingId },
           },
         });
+
+        if (otherListingsCount > 0) {
+          // Shared product: Fork into a seller-specific Product record
+          const forkedProduct = await tx.product.create({
+            data: {
+              categoryId: listing.product.categoryId,
+              title: input.title.trim(),
+              unit: listing.product.unit,
+              imageUrl: input.imageUrl || listing.product.imageUrl,
+              specs: listing.product.specs || {},
+            },
+          });
+          targetProductId = forkedProduct.id;
+        } else {
+          // Isolated product: Safe to update in place
+          await tx.product.update({
+            where: { id: listing.productId },
+            data: {
+              title: input.title.trim(),
+              imageUrl: input.imageUrl || listing.product.imageUrl,
+            },
+          });
+        }
       }
 
       // 2. Update Listing
@@ -328,6 +365,7 @@ export async function updateSellerListing(input: UpdateListingInput) {
         data: {
           location: input.location.trim(),
           imageUrl: input.imageUrl !== undefined ? input.imageUrl : listing.imageUrl,
+          ...(targetProductId !== listing.productId ? { productId: targetProductId } : {}),
         },
       });
 
@@ -395,8 +433,13 @@ export async function deleteSellerListing(listingId: string) {
       return { error: "You are not authorized to delete this listing." };
     }
 
-    await db.listing.delete({
+    // Soft delete: sets isDeleted = true and active = false to prevent FK constraint crashes (P2003)
+    await db.listing.update({
       where: { id: listingId },
+      data: {
+        isDeleted: true,
+        active: false,
+      },
     });
 
     revalidatePath("/seller/dashboard");

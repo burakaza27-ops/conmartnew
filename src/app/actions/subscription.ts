@@ -25,6 +25,18 @@ import {
 } from "@/lib/validations";
 import { toSafeErrorMessage } from "@/lib/errors";
 import { WalletTxStatus } from "@prisma/client";
+import { z } from "zod";
+import {
+  rateLimit,
+  getClientIdentifier,
+  rateLimitMessage,
+} from "@/lib/security/rate-limit";
+
+const reviewSubscriptionPaymentInputSchema = z.object({
+  paymentId: z.string().min(1, "Payment ID is required"),
+  approved: z.boolean(),
+  notes: z.string().max(500).optional(),
+});
 
 /**
  * Public/Seller: Retrieves all currently active subscription plans.
@@ -47,6 +59,18 @@ export async function submitSubscriptionPaymentAction(input: SubmitSubscriptionP
   if (!auth.ok) {
     return { success: false as const, error: auth.error };
   }
+
+  // Rate-limit: max 5 payment submissions per hour per user
+  const clientId = await getClientIdentifier();
+  const [byUser, byIp] = await Promise.all([
+    rateLimit(`subscription-pay:user:${auth.user.id}`, { limit: 5, windowSeconds: 3600 }),
+    rateLimit(`subscription-pay:ip:${clientId}`, { limit: 10, windowSeconds: 3600 }),
+  ]);
+  const retryAfter = Math.max(byUser.retryAfterSeconds, byIp.retryAfterSeconds);
+  if (!byUser.allowed || !byIp.allowed) {
+    return { success: false as const, error: rateLimitMessage(retryAfter) };
+  }
+
 
   const parsed = submitSubscriptionPaymentSchema.safeParse(input);
   if (!parsed.success) {
@@ -195,12 +219,20 @@ export async function reviewSubscriptionPaymentAction(params: {
     return { success: false as const, error: auth.error };
   }
 
+  const parsed = reviewSubscriptionPaymentInputSchema.safeParse(params);
+  if (!parsed.success) {
+    return {
+      success: false as const,
+      error: parsed.error.issues[0]?.message || "Invalid review parameters",
+    };
+  }
+
   try {
     const updated = await reviewSubscriptionPayment({
-      paymentId: params.paymentId,
+      paymentId: parsed.data.paymentId,
       adminId: auth.user.id,
-      approved: params.approved,
-      notes: params.notes,
+      approved: parsed.data.approved,
+      notes: parsed.data.notes,
     });
 
     revalidatePath("/admin/command-center");

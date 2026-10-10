@@ -378,13 +378,13 @@ export async function submitWalletTopUpRequest({
 }) {
   const wallet = await getOrCreateSellerWallet(sellerId);
 
-  // One bank reference corresponds to one real deposit. Submitting it twice —
-  // by double-clicking, or deliberately — would put two claims on the same
-  // transfer in front of an administrator reconciling a statement by hand.
+  const normalizedRef = referenceCode.trim().toUpperCase();
+
+  // One bank reference corresponds to one real deposit globally. Submitting it twice —
+  // across accounts or deliberately — would put two claims on the same transfer.
   const duplicate = await db.topUpRequest.findFirst({
     where: {
-      sellerId,
-      referenceCode,
+      referenceCode: normalizedRef,
       status: { in: [WalletTxStatus.PENDING, WalletTxStatus.COMPLETED] },
     },
     select: { status: true },
@@ -404,7 +404,7 @@ export async function submitWalletTopUpRequest({
       walletId: wallet.walletId,
       amount: new Prisma.Decimal(amount),
       paymentMethod,
-      referenceCode,
+      referenceCode: normalizedRef,
       slipUrl,
       status: WalletTxStatus.PENDING,
     },

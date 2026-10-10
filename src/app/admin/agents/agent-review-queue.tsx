@@ -6,14 +6,10 @@
 
 import React, { useState } from "react";
 import {
-  CheckCircle2,
-  XCircle,
-  Clock,
   AlertCircle,
   FileText,
   ShieldCheck,
   Search,
-  Filter,
   ExternalLink,
   MapPin,
   Building2,
@@ -22,7 +18,7 @@ import {
   Loader2,
   AlertTriangle,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,19 +33,58 @@ import {
 } from "@/components/ui/dialog";
 import { reviewAgentApplicationAction } from "@/app/actions/agents";
 import { AgentApprovalStatus } from "@prisma/client";
-import { useLanguage } from "@/lib/i18n/language-context";
+
+export interface AgentApplicationRecord {
+  id: string;
+  userId?: string;
+  approvalStatus: AgentApprovalStatus;
+  serviceArea?: string | null;
+  subCity?: string | null;
+  travelRadiusKm?: number | null;
+  availableDaysHours?: string | null;
+  experienceYears?: number | null;
+  notes?: string | null;
+  rejectionReason?: string | null;
+  grade12DocUrl?: string | null;
+  identityDocUrl?: string | null;
+  guarantorDocUrl?: string | null;
+  guarantorLetterDocUrl?: string | null;
+  guarantorConsentObtained?: boolean | null;
+  guarantorName?: string | null;
+  guarantorPhone?: string | null;
+  guarantorEmployer?: string | null;
+  guarantorDescription?: string | null;
+  checklistPhoneVerified?: boolean | null;
+  checklistGrade12Reviewed?: boolean | null;
+  checklistIdentityReviewed?: boolean | null;
+  checklistGuaranteeVerified?: boolean | null;
+  checklistAreaConfirmed?: boolean | null;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  reviewedAt?: string | Date | null;
+  user?: {
+    id?: string;
+    name?: string | null;
+    phone?: string | null;
+    email?: string | null;
+  } | null;
+  tier?: {
+    name?: string;
+  } | null;
+}
+
+type ChecklistKey = "phone" | "grade12" | "id" | "guarantee" | "area";
 
 interface AgentReviewQueueProps {
-  initialApplications: any[];
+  initialApplications: AgentApplicationRecord[];
 }
 
 export function AgentReviewQueue({ initialApplications }: AgentReviewQueueProps) {
-  const { locale } = useLanguage();
-  const [applications, setApplications] = useState<any[]>(initialApplications);
+  const [applications, setApplications] = useState<AgentApplicationRecord[]>(initialApplications);
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [search, setSearch] = useState("");
 
-  const [reviewModalApp, setReviewModalApp] = useState<any | null>(null);
+  const [reviewModalApp, setReviewModalApp] = useState<AgentApplicationRecord | null>(null);
   const [modalAction, setModalAction] = useState<"REQUEST_CORRECTION" | "REJECT" | "SUSPEND">("REQUEST_CORRECTION");
   const [actionReason, setActionReason] = useState("");
   const [loadingAppId, setLoadingAppId] = useState<string | null>(null);
@@ -68,7 +103,7 @@ export function AgentReviewQueue({ initialApplications }: AgentReviewQueueProps)
       }
     >
   >(() => {
-    const map: Record<string, any> = {};
+    const map: Record<string, { phone: boolean; grade12: boolean; id: boolean; guarantee: boolean; area: boolean }> = {};
     for (const app of initialApplications) {
       map[app.id] = {
         phone: app.checklistPhoneVerified || false,
@@ -103,7 +138,7 @@ export function AgentReviewQueue({ initialApplications }: AgentReviewQueueProps)
     return true;
   });
 
-  const handleApprove = async (app: any) => {
+  const handleApprove = async (app: AgentApplicationRecord) => {
     setLoadingAppId(app.id);
     setErrorMessage(null);
     try {
@@ -352,7 +387,7 @@ export function AgentReviewQueue({ initialApplications }: AgentReviewQueueProps)
                       ].map((item) => (
                         <label
                           key={item.key}
-                          onClick={() => toggleChecklist(app.id, item.key as any)}
+                          onClick={() => toggleChecklist(app.id, item.key as ChecklistKey)}
                           className="flex items-center gap-2.5 cursor-pointer select-none hover:text-foreground transition-colors"
                         >
                           <div
@@ -466,7 +501,7 @@ export function AgentReviewQueue({ initialApplications }: AgentReviewQueueProps)
                       )}
                       {app.guarantorDescription && (
                         <p className="text-muted-foreground italic text-[11px] pt-1">
-                          "{app.guarantorDescription}"
+                          &ldquo;{app.guarantorDescription}&rdquo;
                         </p>
                       )}
                       <div className="pt-1">

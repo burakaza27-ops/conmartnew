@@ -263,7 +263,7 @@ export async function fetchSellerListings(sellerAuthId: string) {
   if (!dbUser) return [];
 
   const listings = await db.listing.findMany({
-    where: { sellerId: dbUser.id },
+    where: { sellerId: dbUser.id, isDeleted: false },
     include: {
       product: {
         include: {

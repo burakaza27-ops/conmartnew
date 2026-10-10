@@ -198,7 +198,7 @@ export function RegisterForm() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="reg-phone">{t("auth_phone_label")}</Label>
-            <span className="text-[11px] text-muted-foreground">e.g. 0911 234 567 (no '+' needed)</span>
+            <span className="text-[11px] text-muted-foreground">e.g. 0911 234 567 (no &apos;+&apos; needed)</span>
           </div>
           <Input
             id="reg-phone"

@@ -13,8 +13,6 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import fs from "fs";
-import path from "path";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSessionUser } from "@/lib/auth/session";
@@ -128,58 +126,60 @@ export async function POST(request: NextRequest) {
     const sanitizedDocType = docType.replace(/[^a-zA-Z0-9_-]/g, "");
     const filename = `agent-${sanitizedDocType}-${Date.now()}-${randomSuffix}${extension}`;
 
-    let publicUrl: string | null = null;
+    let documentUrl: string | null = null;
+    const storagePath = `agent-docs/${filename}`;
 
-    // Try Supabase Storage first
+    // Cloud object storage (Supabase Storage with private bucket access)
     try {
       const supabase = createSupabaseAdminClient();
       const bucket = env.SUPABASE_STORAGE_BUCKET;
 
       if (supabase) {
+        // Enforce private bucket to prevent unauthenticated public scraping of PII
         await supabase.storage.createBucket(bucket, {
-          public: true,
+          public: false,
           fileSizeLimit: MAX_FILE_SIZE,
         });
 
         const { error: uploadError } = await supabase.storage
           .from(bucket)
-          .upload(`agent-docs/${filename}`, buffer, {
+          .upload(storagePath, buffer, {
             contentType,
             upsert: false,
           });
 
         if (!uploadError) {
-          publicUrl = supabase.storage
+          // Generate short-lived presigned URL (1 hour / 3600s) for viewing
+          const { data: signedData, error: signError } = await supabase.storage
             .from(bucket)
-            .getPublicUrl(`agent-docs/${filename}`).data?.publicUrl ?? null;
+            .createSignedUrl(storagePath, 3600);
+
+          if (!signError && signedData?.signedUrl) {
+            documentUrl = signedData.signedUrl;
+          }
+        } else {
+          console.error("Supabase private document upload error:", uploadError.message);
         }
       }
     } catch (storageErr) {
-      console.warn("Supabase storage agent doc upload fallback:", storageErr);
+      console.error("Supabase storage agent doc upload error:", storageErr);
     }
 
-    // Local filesystem fallback
-    if (!publicUrl) {
-      try {
-        const uploadDir = path.join(process.cwd(), "public", "uploads", "agent-docs");
-        await fs.promises.mkdir(uploadDir, { recursive: true });
-        await fs.promises.writeFile(path.join(uploadDir, filename), buffer);
-        publicUrl = `/uploads/agent-docs/${filename}`;
-      } catch (fsErr) {
-        console.error("Local disk upload error:", fsErr);
-      }
-    }
-
-    if (!publicUrl) {
+    // PII Security: Cloud object storage is strictly MANDATORY for sensitive identity documents
+    // (national IDs, certificates, guarantor letters).
+    // Under NO circumstances should PII ever be written to local disk (neither public/ nor private).
+    // If cloud storage is unavailable, fail hard with 503 Service Unavailable and leave zero files on disk.
+    if (!documentUrl) {
       return NextResponse.json(
-        { error: "Document storage is temporarily unavailable. Please retry." },
+        { error: "Secure document storage is temporarily unavailable. Please retry." },
         { status: 503 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      url: publicUrl,
+      url: documentUrl,
+      storagePath,
       filename,
     });
   } catch (error) {

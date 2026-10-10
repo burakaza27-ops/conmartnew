@@ -8,9 +8,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
-  Upload,
   MapPin,
-  Clock,
   ShieldCheck,
   FileText,
   AlertCircle,
@@ -34,6 +32,45 @@ import { Textarea } from "@/components/ui/textarea";
 import { submitAgentApplicationAction } from "@/app/actions/agents";
 import { useLanguage } from "@/lib/i18n/language-context";
 
+export interface ExistingAgentProfile {
+  id?: string;
+  userId?: string;
+  approvalStatus?: string;
+  serviceArea?: string | null;
+  experienceYears?: number | null;
+  notes?: string | null;
+  rejectionReason?: string | null;
+  correctionNote?: string | null;
+  grade12DocUrl?: string | null;
+  identityDocUrl?: string | null;
+  guarantorLetterDocUrl?: string | null;
+  guarantorConsentObtained?: boolean | null;
+  guarantorName?: string | null;
+  guarantorPhone?: string | null;
+  guarantorEmployer?: string | null;
+  guarantorDescription?: string | null;
+  city?: string | null;
+  subCity?: string | null;
+  travelRadiusKm?: number | null;
+  availableDaysHours?: string | null;
+  isAvailableForAssignments?: boolean | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  guarantorType?: string | null;
+  guarantorRelationship?: string | null;
+  guarantorDocUrl?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  reviewedAt?: string | null;
+  user?: {
+    id?: string;
+    name?: string | null;
+    phone?: string | null;
+    email?: string | null;
+  } | null;
+  [key: string]: unknown;
+}
+
 interface AgentApplyWizardProps {
   user: {
     id: string;
@@ -41,7 +78,7 @@ interface AgentApplyWizardProps {
     phone: string;
     email: string | null;
   };
-  existingProfile: any | null;
+  existingProfile: ExistingAgentProfile | null;
 }
 
 const ADDIS_ABABA_SUB_CITIES = [
@@ -93,7 +130,8 @@ export function AgentApplyWizard({ user, existingProfile }: AgentApplyWizardProp
 
   // --- Step 4: Guarantee & Consent ---
   const [guarantorType, setGuarantorType] = useState<"GOVERNMENT_EMPLOYEE" | "COMMUNITY_OR_OTHER">(
-    existingProfile?.guarantorType || "GOVERNMENT_EMPLOYEE"
+    (existingProfile?.guarantorType as "GOVERNMENT_EMPLOYEE" | "COMMUNITY_OR_OTHER" | undefined) ??
+      "GOVERNMENT_EMPLOYEE"
   );
   const [guarantorName, setGuarantorName] = useState(existingProfile?.guarantorName || "");
   const [guarantorPhone, setGuarantorPhone] = useState(existingProfile?.guarantorPhone || "");
@@ -135,8 +173,9 @@ export function AgentApplyWizard({ user, existingProfile }: AgentApplyWizardProp
       }
 
       setUrl(data.url);
-    } catch (err: any) {
-      setFormError(err.message || "Document upload failed");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Document upload failed";
+      setFormError(message);
     } finally {
       setLoading(false);
     }
@@ -211,8 +250,9 @@ export function AgentApplyWizard({ user, existingProfile }: AgentApplyWizardProp
 
       router.push("/agent/leads");
       router.refresh();
-    } catch (err: any) {
-      setFormError(err.message || "Failed to submit application. Please retry.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to submit application. Please retry.";
+      setFormError(message);
       setSubmitting(false);
     }
   };

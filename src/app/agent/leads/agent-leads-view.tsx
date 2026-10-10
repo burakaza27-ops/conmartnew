@@ -17,7 +17,6 @@ import {
   Phone,
   MapPin,
   Clock,
-  Package,
   Search,
   Filter,
   CheckCircle2,
@@ -25,10 +24,8 @@ import {
   ArrowRight,
   AlertCircle,
   Building2,
-  Calendar,
   Loader2,
   Lock,
-  Eye,
   ShieldCheck,
   Check,
   Sparkles,
@@ -48,10 +45,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  assignGuidedLeadAction,
-  updateGuidedLeadStatusAction,
-} from "@/app/actions/leads";
+import { updateGuidedLeadStatusAction } from "@/app/actions/leads";
 import {
   toggleAgentAvailabilityAction,
   acceptNearbyRequestAction,
@@ -86,11 +80,34 @@ export interface GuidedLeadItem {
   createdAt: string;
 }
 
+export interface AgentProfileSummary {
+  id?: string;
+  isAvailableForAssignments?: boolean;
+  serviceArea?: string | null;
+  approvalStatus?: AgentApprovalStatus | string;
+  rejectionReason?: string | null;
+  correctionNote?: string | null;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+  reviewedAt?: string | Date | null;
+  travelRadiusKm?: number | null;
+  availableDaysHours?: string | null;
+  guarantorType?: string | null;
+  guarantorName?: string | null;
+  user?: {
+    id?: string;
+    name?: string | null;
+    phone?: string | null;
+    email?: string | null;
+    role?: string;
+  } | null;
+}
+
 interface AgentLeadsViewProps {
   initialLeads: GuidedLeadItem[];
   currentAgentId: string;
   isAdmin?: boolean;
-  agentProfile?: any | null;
+  agentProfile?: AgentProfileSummary | null;
 }
 
 export function AgentLeadsView({
@@ -524,7 +541,7 @@ export function AgentLeadsView({
                     </Button>
                   </Link>
                   <span className="text-[11px] text-muted-foreground">
-                    Submitted on {new Date(agentProfile.createdAt).toLocaleDateString()}
+                    Submitted on {agentProfile?.createdAt ? new Date(agentProfile.createdAt).toLocaleDateString() : "Recently"}
                   </span>
                 </div>
               </div>
