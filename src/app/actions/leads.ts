@@ -95,6 +95,12 @@ export async function logLeadEventAction(params: {
   metadata?: Record<string, unknown>;
 }) {
   try {
+    const clientId = await getClientIdentifier();
+    const rl = await rateLimit(`telemetry:${clientId}`, { limit: 30, windowSeconds: 60 });
+    if (!rl.allowed) {
+      return { success: false as const, error: "Rate limit exceeded" };
+    }
+
     await logSupplierLeadEvent(params);
     return { success: true as const };
   } catch {
@@ -159,6 +165,7 @@ export async function getGuidedLeadsAction(filters?: {
 
 /**
  * Agent / Admin: Claims or assigns a lead.
+ * Field agents can only assign leads to themselves; only Admins can assign to any agent.
  */
 export async function assignGuidedLeadAction(leadId: string, targetAgentId?: string) {
   const auth = await authorize(["FIELD_AGENT", "ADMIN"]);
@@ -166,7 +173,7 @@ export async function assignGuidedLeadAction(leadId: string, targetAgentId?: str
     return { success: false as const, error: auth.error };
   }
 
-  const agentId = targetAgentId || auth.user.id;
+  const agentId = auth.user.role === "ADMIN" && targetAgentId ? targetAgentId : auth.user.id;
 
   try {
     const lead = await assignGuidedLead(leadId, agentId);

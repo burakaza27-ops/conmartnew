@@ -66,6 +66,9 @@ export async function getAdminSellersAction() {
       cashBalance: Number(s.wallet?.cashBalance ?? 0),
       creditBalance: Number(s.wallet?.creditBalance ?? 0),
       subscriptionStatus: resolveSubscription(s.sellerProfile),
+      subscriptionTier: s.sellerProfile?.subscriptionTier ?? "BASIC",
+      reverificationNeeded: s.sellerProfile?.reverificationNeeded ?? false,
+      lastVerifiedAt: s.sellerProfile?.lastVerifiedAt ? s.sellerProfile.lastVerifiedAt.toISOString() : null,
       storedSubscriptionStatus: s.sellerProfile?.subscriptionStatus ?? "FREE",
       subscriptionExpiresAt: s.sellerProfile?.subscriptionExpiresAt
         ? s.sellerProfile.subscriptionExpiresAt.toISOString()
@@ -93,6 +96,7 @@ export async function updateSellerVerificationAction({
     data: {
       verificationStatus: status,
       ...(sellerType ? { sellerType } : {}),
+      ...(status === "VERIFIED" ? { lastVerifiedAt: new Date(), reverificationNeeded: false } : {}),
     },
   });
 
@@ -102,5 +106,23 @@ export async function updateSellerVerificationAction({
   revalidatePath("/buyer/catalog");
   revalidatePath("/buyer/category/all");
 
+  return { success: true };
+}
+
+export async function toggleSellerReverificationAction(sellerProfileId: string, needed: boolean) {
+  const auth = await authorize(["ADMIN"]);
+  if (!auth.ok) {
+    return { success: false, error: auth.error };
+  }
+
+  await db.sellerProfile.update({
+    where: { id: sellerProfileId },
+    data: {
+      reverificationNeeded: needed,
+      ...(!needed ? { lastVerifiedAt: new Date() } : {}),
+    },
+  });
+
+  revalidatePath("/admin/command-center");
   return { success: true };
 }

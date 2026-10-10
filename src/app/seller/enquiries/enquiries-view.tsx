@@ -1,11 +1,9 @@
 // =============================================================================
-// ConMart — Seller Enquiry Inbox Client Component
+// ConMart — Seller Enquiry Inbox Client Component (Subscription Model)
 // =============================================================================
-// Implements the Addis Ababa Contractor Introduction model:
-// - Pre-unlock: Zero buyer contact leakage (masked contractor ID, destination sub-city only)
-// - One-click accept: Deducts fee from seller wallet (credit first, then cash)
-// - Post-unlock: Full contractor phone & delivery address revealed
-// - Deal outcome: Success confirmation or Failed reporting with 80% refund to credit balance
+// - Zero unlock fee: Subscribed suppliers accept buyer purchase enquiries at 0 ETB
+// - Post-accept: Full contractor contact and delivery requirements revealed
+// - Direct fulfillment: Buyers and suppliers deal directly with zero platform fee
 // =============================================================================
 
 "use client";
@@ -30,6 +28,7 @@ import {
   ChevronRight,
   X,
   Plus,
+  CreditCard,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -211,11 +210,11 @@ export function SellerEnquiriesView({
         setFailNotes("");
         setSuccessMsg(
           locale === "am"
-            ? "ግብይቱ እንዳልተሳካ ተመዝግቧል። 80% ተመላሽ ወደ ዋሌትዎ ገቢ ተደርጓል።"
-            : "Deal reported failed. 80% refund credited to your wallet."
+            ? "ግብይቱ እንዳልተሳካ ተመዝግቧል።"
+            : "Deal outcome recorded as unfulfilled."
         );
       } else {
-        setErrorMsg(res.error || "Failed to process refund.");
+        setErrorMsg(res.error || "Failed to update enquiry status.");
       }
     });
   };
@@ -235,18 +234,18 @@ export function SellerEnquiriesView({
         </div>
 
         <Link
-          href="/seller/wallet"
+          href="/seller/subscription"
           className="flex items-center gap-3 rounded-lg border bg-card p-3 shadow-xs hover:border-primary/50 transition-colors"
         >
           <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary">
-            <Coins className="h-5 w-5" />
+            <CreditCard className="h-5 w-5" />
           </div>
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("wallet_total_spendable")}
+              {locale === "am" ? "የደንበኝነት ሁኔታ" : "Subscription Status"}
             </div>
-            <div className="font-mono text-sm font-bold text-foreground">
-              {formatPrice(walletSpendable, locale)}
+            <div className="font-mono text-sm font-bold text-emerald-600 dark:text-emerald-400">
+              {locale === "am" ? "ንቁ / ነፃ ዕድል" : "Active Directory"}
             </div>
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground ml-1" />
@@ -345,18 +344,18 @@ export function SellerEnquiriesView({
               {locale === "am" ? "አዲስ እቃ ይዘርዝሩ" : "Add New Listing"}
             </Link>
             <Link
-              href="/seller/wallet"
+              href="/seller/subscription"
               className={cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-1.5 font-semibold")}
             >
-              <Coins className="h-4 w-4 text-primary" />
-              {locale === "am" ? "ዋሌት ይሙሉ" : "Top up Wallet"}
+              <CreditCard className="h-4 w-4 text-primary" />
+              {locale === "am" ? "ደንበኝነትን ይመልከቱ" : "View Subscription"}
             </Link>
           </div>
         </div>
       ) : (
         <div className="grid gap-4">
           {filteredEnquiries.map((enq) => {
-            const canAfford = enq.directChatEnabled || walletSpendable >= enq.unlockFee;
+            const canAfford = true;
             const isPendingState = enq.status === "PENDING";
 
             const isAcceptedState = enq.status === "ACCEPTED" || enq.status === "DELIVERY_IN_PROGRESS";
@@ -513,12 +512,10 @@ export function SellerEnquiriesView({
                             size="sm"
                             onClick={() => setActionEnquiry(enq)}
                             disabled={!canAfford || isPending}
-                            className="gap-1.5 text-xs font-semibold shadow-xs"
+                            className="gap-1.5 text-xs font-semibold shadow-xs bg-emerald-600 hover:bg-emerald-700 text-white"
                           >
-                            <Unlock className="h-3.5 w-3.5" />
-                            {enq.directChatEnabled
-                              ? (locale === "am" ? "ተቀበል (ነፃ — ደንበኛ)" : "Accept Enquiry (Free)")
-                              : `${t("enquiry_accept_btn")} (${formatPrice(enq.unlockFee, locale)})`}
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            {locale === "am" ? "ተቀበል (ነፃ)" : "Accept Enquiry (Free)"}
                           </Button>
 
                         </div>
@@ -638,44 +635,17 @@ export function SellerEnquiriesView({
               {t("enquiry_accept_confirm_desc")}
             </p>
 
-            {actionEnquiry.directChatEnabled ? (
-              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3.5 space-y-1 text-xs">
-                <div className="font-semibold text-emerald-700 dark:text-emerald-400">
-                  {locale === "am" ? "የደንበኝነት ጥቅማጥቅም (0 ETB)" : "Subscribed Plan Benefit (0 ETB)"}
-                </div>
-                <p className="text-muted-foreground text-[11px]">
-                  {locale === "am"
-                    ? "ንቁ ደንበኛ ስለሆኑ ለዚህ ጥያቄ ምንም ክፍያ አይቆረጥብዎትም።"
-                    : "As an active subscriber, accepting buyer enquiries is 100% free with zero fee deducted."}
-                </p>
+            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3.5 space-y-1.5 text-xs">
+              <div className="font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                <ShieldCheck className="h-4 w-4" />
+                {locale === "am" ? "የኮንማርት አቅራቢ ጥቅማጥቅም (0 ETB)" : "ConMart Supplier Benefit (0 ETB Commission)"}
               </div>
-            ) : (
-              /* Wallet Burn Breakdown */
-              <div className="rounded-lg border bg-muted/40 p-3.5 space-y-2 text-xs">
-                <div className="font-semibold text-foreground pb-1 border-b">
-                  {locale === "am" ? "የዋሌት ክፍያ ዝርዝር" : "Wallet Deduction Breakdown"}
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t("enquiry_fee_burn_credit")}</span>
-                  <span className="font-mono font-medium text-foreground">
-                    {formatPrice(Math.min(walletCredit, actionEnquiry.unlockFee), locale)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t("enquiry_fee_burn_cash")}</span>
-                  <span className="font-mono font-medium text-foreground">
-                    {formatPrice(
-                      Math.max(0, actionEnquiry.unlockFee - Math.min(walletCredit, actionEnquiry.unlockFee)),
-                      locale
-                    )}
-                  </span>
-                </div>
-                <div className="flex justify-between pt-1 border-t font-bold text-primary">
-                  <span>{t("enquiry_fee_total")}</span>
-                  <span className="font-mono">{formatPrice(actionEnquiry.unlockFee, locale)}</span>
-                </div>
-              </div>
-            )}
+              <p className="text-muted-foreground text-[11px] leading-relaxed">
+                {locale === "am"
+                  ? "ይህን ጥያቄ ሲቀበሉ የገዢውን ሙሉ ስልክ እና አድራሻ ያገኛሉ። ምንም የኮሚሽን ወይም የዋሌት ክፍያ አይቆረጥም።"
+                  : "Accepting this enquiry immediately connects you directly with the buyer with full contact details and delivery location. Zero sales commission or unlock fees."}
+              </p>
+            </div>
 
 
             <div className="flex items-center justify-end gap-2 pt-2 border-t">
@@ -720,16 +690,14 @@ export function SellerEnquiriesView({
               </button>
             </div>
 
-            <div className="rounded-lg bg-blue-500/10 border border-blue-500/20 p-3 text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
-              <div className="font-semibold flex items-center gap-1.5 mb-1">
-                <RefreshCw className="h-4 w-4 shrink-0" />
-                {locale === "am" ? "የ 80% ተመላሽ ዋስትና" : "80% Fee Protection Guarantee"}
+            <div className="rounded-lg bg-muted/50 border border-border/60 p-3 text-xs text-muted-foreground leading-relaxed">
+              <div className="font-semibold text-foreground flex items-center gap-1.5 mb-1">
+                <RefreshCw className="h-4 w-4 shrink-0 text-primary" />
+                {locale === "am" ? "የጥያቄ ሁኔታ መዝገብ" : "Enquiry Fulfillment Status"}
               </div>
-              {t("enquiry_modal_fail_desc")}{" "}
-              <span className="font-mono font-bold text-foreground">
-                ({formatPrice(failModalEnquiry.unlockFee * 0.8, locale)}{" "}
-                {locale === "am" ? "ወደ ዋሌትዎ ገቢ ይደረጋል" : "will be credited"})
-              </span>
+              {locale === "am"
+                ? "እቃው ባለመኖሩ ወይም በዋጋ አለመስማማት ምክንያት ማስተናገድ ካልቻሉ ለስርዓቱ መዝገብ ምክንያትዎን ያሳውቁ።"
+                : "Record why this enquiry could not be fulfilled (e.g. out of stock, price mismatch, or buyer unreachable) to keep your supplier records accurate."}
             </div>
 
             <form onSubmit={handleReportFailure} className="space-y-4 pt-1">

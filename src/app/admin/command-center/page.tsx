@@ -1,53 +1,54 @@
 // =============================================================================
 // ConMart — Admin Command Center (Operations Hub)
 // =============================================================================
-// Operational control room for:
-// 1. Unlocked Introductions & Prepaid Wallet Revenue Analytics
-// 2. Prepaid Top-Up Deposit Approvals (CBE & Telebirr receipts)
-// 3. Trade Dispute Mediation Queue (Shortage, Spec Mismatch, Non-Delivery)
-// 4. Supplier Document Verification & Yard Compliance Queue
-// 5. Category Introduction Fee & Status Switcher
+// Operational control room for the Subscription & Guided Leads Directory Model:
+// 1. Supplier Subscription Approvals & Tier Assignments
+// 2. Guided Buyer Leads Inbox & Agent Assignments
+// 3. Supplier Document Verification & Yard Inspection Compliance Queue
+// 4. Trade Dispute Mediation Queue
+// 5. Bank Proforma Invoices & Fulfillment
 // =============================================================================
 
+import Link from "next/link";
 import {
   Clock,
-  CheckCircle,
   ShieldAlert,
   ShieldCheck,
-  Coins,
+  CreditCard,
+  UserCheck,
   Inbox,
   Sparkles,
+  ArrowRight,
+  Building2,
+  CheckCircle2,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { fetchAllOrders, fetchAdminStats } from "@/lib/data/admin";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { fetchAllOrders } from "@/lib/data/admin";
 import { requireRole } from "@/lib/auth/session";
-import { getAdminPendingTopUpsAction } from "@/app/actions/wallet";
-import { getAdminCategoriesAction } from "@/app/actions/categories";
+import { getPendingSubscriptionPaymentsAction } from "@/app/actions/subscription";
+import { getGuidedLeadsAction } from "@/app/actions/leads";
 import { getAdminDisputesAction } from "@/app/actions/enquiries";
 import { getAdminSellersAction } from "@/app/actions/sellers";
 import { OrdersTable } from "./orders-table";
-import { TopUpsApprovalTable } from "./topups-approval-table";
-import { CategoryFeeEditor } from "./category-fee-editor";
 import { DisputesTable } from "./disputes-table";
 import { SellerVerificationTable } from "./seller-verification-table";
 import { formatETB } from "@/lib/types";
 
 export default async function CommandCenterPage() {
-  // The layout already guards this route; repeated here so the page is safe on
-  // its own. getSessionUser is memoized per request, so this costs no extra query.
   await requireRole(["ADMIN"], "/admin/command-center");
 
-  const [orders, stats, topUpsRes, categoriesRes, disputesRes, sellersRes] = await Promise.all([
+  const [orders, subscriptionsRes, guidedLeadsRes, disputesRes, sellersRes] = await Promise.all([
     fetchAllOrders(),
-    fetchAdminStats(),
-    getAdminPendingTopUpsAction(),
-    getAdminCategoriesAction(),
+    getPendingSubscriptionPaymentsAction(),
+    getGuidedLeadsAction(),
     getAdminDisputesAction(),
     getAdminSellersAction(),
   ]);
 
-  const topUps = topUpsRes.success && topUpsRes.data ? topUpsRes.data : [];
-  const categories = categoriesRes.success && categoriesRes.data ? categoriesRes.data : [];
+  const pendingPayments = subscriptionsRes.success && subscriptionsRes.data ? subscriptionsRes.data : [];
+  const guidedLeads = guidedLeadsRes.success && guidedLeadsRes.data ? guidedLeadsRes.data : [];
   const disputes = disputesRes.success && disputesRes.data ? disputesRes.data : [];
   const sellers = sellersRes.success && sellersRes.data ? sellersRes.data : [];
 
@@ -62,31 +63,33 @@ export default async function CommandCenterPage() {
           Platform Operations Command Center
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Real-time oversight: prepaid wallet top-up approvals, introduction revenue, dispute mediation, supplier document verification, and category fee administration.
+          Real-time oversight: supplier subscription verification, guided buyer leads assignment, depot yard compliance, and dispute mediation.
         </p>
       </div>
 
-      {/* Primary Introduction Platform Stats Cards */}
+      {/* KPI Stats Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <StatCard
-          icon={<Coins className="h-5 w-5 text-emerald-500" />}
-          label="Introduction Revenue"
-          value={formatETB(stats.unlockRevenue)}
+          icon={<CreditCard className="h-5 w-5 text-emerald-500" />}
+          label="Pending Subscriptions"
+          value={pendingPayments.length.toString()}
+          href="/admin/subscriptions"
         />
         <StatCard
-          icon={<Inbox className="h-5 w-5 text-primary" />}
-          label="Purchase Enquiries"
-          value={stats.totalEnquiries.toString()}
+          icon={<UserCheck className="h-5 w-5 text-primary" />}
+          label="Guided Buyer Leads"
+          value={guidedLeads.length.toString()}
+          href="/agent/leads"
         />
         <StatCard
-          icon={<CheckCircle className="h-5 w-5 text-blue-500" />}
-          label="Unlocked Leads"
-          value={stats.unlockedEnquiries.toString()}
+          icon={<ShieldCheck className="h-5 w-5 text-indigo-500" />}
+          label="Verified Suppliers"
+          value={sellers.filter((s) => s.verificationStatus === "VERIFIED").length.toString()}
         />
         <StatCard
-          icon={<Clock className="h-5 w-5 text-amber-500" />}
-          label="Pending Deposits"
-          value={topUps.length.toString()}
+          icon={<Building2 className="h-5 w-5 text-blue-500" />}
+          label="Re-check Due"
+          value={sellers.filter((s) => s.reverificationNeeded).length.toString()}
         />
         <StatCard
           icon={<ShieldAlert className="h-5 w-5 text-rose-500" />}
@@ -94,30 +97,77 @@ export default async function CommandCenterPage() {
           value={disputes.filter((d) => d.status === "OPEN" || d.status === "MEDIATING").length.toString()}
         />
         <StatCard
-          icon={<ShieldCheck className="h-5 w-5 text-indigo-500" />}
-          label="Verified Suppliers"
-          value={sellers.filter((s) => s.verificationStatus === "VERIFIED").length.toString()}
+          icon={<Inbox className="h-5 w-5 text-amber-500" />}
+          label="Bank Proformas"
+          value={orders.length.toString()}
         />
       </div>
 
-      {/* 1. Prepaid Top-Up Deposit Approvals */}
-      <TopUpsApprovalTable initialTopUps={topUps} />
+      {/* Quick Action Navigation Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="border-border/60 bg-gradient-to-br from-card to-card/50 shadow-xs">
+          <CardContent className="p-5 flex items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-emerald-600" />
+                <h3 className="font-bold text-sm text-foreground">Supplier Subscriptions Queue</h3>
+                {pendingPayments.length > 0 && (
+                  <Badge className="bg-amber-600 text-white text-[10px]">
+                    {pendingPayments.length} Pending
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Review Telebirr, CBE Bank, and Awash Bank transaction slips to activate supplier directory listings.
+              </p>
+            </div>
+            <Link href="/admin/subscriptions">
+              <Button size="sm" className="gap-1.5 font-bold shadow-xs shrink-0">
+                <span>Review Plans</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60 bg-gradient-to-br from-card to-card/50 shadow-xs">
+          <CardContent className="p-5 flex items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <UserCheck className="h-5 w-5 text-primary" />
+                <h3 className="font-bold text-sm text-foreground">Buyer Guided Leads Inbox</h3>
+                {guidedLeads.filter((l) => l.status === "NEW").length > 0 && (
+                  <Badge className="bg-primary text-primary-foreground text-[10px]">
+                    {guidedLeads.filter((l) => l.status === "NEW").length} New
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Assign contractor material requests to field commission agents and track delivery stages.
+              </p>
+            </div>
+            <Link href="/agent/leads">
+              <Button size="sm" variant="outline" className="gap-1.5 font-bold shrink-0">
+                <span>Open Leads</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 1. Supplier Verification & Document Compliance Queue */}
+      <SellerVerificationTable initialSellers={sellers} />
 
       {/* 2. Trade Disputes & Mediation Queue */}
       <DisputesTable initialDisputes={disputes} />
 
-      {/* 3. Supplier Verification & Document Compliance Queue */}
-      <SellerVerificationTable initialSellers={sellers} />
-
-      {/* 4. Category Introduction Fees & Enable Switcher */}
-      <CategoryFeeEditor initialCategories={categories} />
-
-      {/* 5. Legacy Logistics & Bank Proformas (Preserved for Backwards Compatibility) */}
+      {/* 3. Bank Proformas & Procurement Invoices */}
       <div className="space-y-3 pt-4 border-t border-border/40">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold tracking-tight text-foreground">
-              Bank Proforma Invoices & Fulfillment
+              Bank Proforma Invoices & Procurement
             </h2>
             <p className="text-xs text-muted-foreground">
               Official bank proformas generated by contractors for loan, LC, or offline procurement.
@@ -137,13 +187,15 @@ function StatCard({
   icon,
   label,
   value,
+  href,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
+  href?: string;
 }) {
-  return (
-    <Card className="border-border/50 shadow-2xs">
+  const content = (
+    <Card className="border-border/50 shadow-2xs hover:border-primary/40 transition-colors">
       <CardContent className="flex items-center gap-3 pt-4 pb-4">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
           {icon}
@@ -155,4 +207,9 @@ function StatCard({
       </CardContent>
     </Card>
   );
+
+  if (href) {
+    return <Link href={href}>{content}</Link>;
+  }
+  return content;
 }

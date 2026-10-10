@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, CreditCard, LogOut, Settings } from "lucide-react";
+import { BarChart3, CreditCard, LogOut, Settings, UserCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { MobileTabLink, SidebarNavLink } from "@/components/layout/nav-link";
@@ -22,6 +22,12 @@ export function AdminSidebarNav() {
         href="/admin/subscriptions"
         label={locale === "am" ? "የአቅራቢዎች ደንበኝነት" : "Supplier Subscriptions"}
         icon={CreditCard}
+        exact
+      />
+      <SidebarNavLink
+        href="/agent/leads"
+        label={locale === "am" ? "የገዢዎች መሪዎች (Leads)" : "Guided Leads Inbox"}
+        icon={UserCheck}
         exact
       />
       <SidebarNavLink
@@ -49,6 +55,12 @@ export function AdminBottomNav() {
         href="/admin/subscriptions"
         label={locale === "am" ? "ደንበኝነት" : "Subscriptions"}
         icon={CreditCard}
+        exact
+      />
+      <MobileTabLink
+        href="/agent/leads"
+        label={locale === "am" ? "መሪዎች" : "Leads"}
+        icon={UserCheck}
         exact
       />
 

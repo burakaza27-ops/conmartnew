@@ -125,7 +125,7 @@ export function defaultRouteForRole(role: UserRole): string {
     case "SELLER":
       return "/seller/dashboard";
     case "FIELD_AGENT":
-      return "/agent";
+      return "/agent/leads";
     case "BUYER":
     default:
       return "/buyer";

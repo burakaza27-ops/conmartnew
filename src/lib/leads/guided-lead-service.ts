@@ -125,6 +125,19 @@ export async function updateGuidedLeadStatus(params: {
   status: GuidedLeadStatus;
   closeReason?: string;
 }) {
+  const currentLead = await db.guidedLead.findUnique({
+    where: { id: params.leadId },
+  });
+  if (!currentLead) {
+    throw new Error("Guided lead not found");
+  }
+
+  // If caller is an agent (agentId provided), verify IDOR authorization:
+  // Cannot modify leads assigned to a different agent.
+  if (params.agentId && currentLead.assignedAgentId && currentLead.assignedAgentId !== params.agentId) {
+    throw new Error("You are not authorized to update a lead assigned to another agent.");
+  }
+
   if (params.status === GuidedLeadStatus.CLOSED && !params.closeReason) {
     throw new Error("A reason is required when closing an undelivered lead (e.g. buyer unreachable, out of stock, price mismatch)");
   }
@@ -141,6 +154,7 @@ export async function updateGuidedLeadStatus(params: {
 
 /**
  * Records fee earned per delivered guided lead for CONMART accounting ledger.
+ * Idempotent: guarantees exactly one commission entry per guided lead.
  */
 export async function recordAgentCommission(params: {
   guidedLeadId: string;
@@ -148,6 +162,14 @@ export async function recordAgentCommission(params: {
   feeAmount: number;
   notes?: string;
 }) {
+  const existing = await db.agentCommissionRecord.findFirst({
+    where: { guidedLeadId: params.guidedLeadId },
+  });
+
+  if (existing) {
+    return existing;
+  }
+
   return db.agentCommissionRecord.create({
     data: {
       guidedLeadId: params.guidedLeadId,

@@ -20,8 +20,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { updateSellerVerificationAction } from "@/app/actions/sellers";
-import { setSellerSubscriptionAction } from "@/app/actions/marketplace";
+import {
+  updateSellerVerificationAction,
+  toggleSellerReverificationAction,
+} from "@/app/actions/sellers";
 import { SellerVerificationStatus } from "@prisma/client";
 
 export interface AdminSellerItem {
@@ -47,6 +49,9 @@ export interface AdminSellerItem {
   cashBalance: number;
   creditBalance: number;
   subscriptionStatus: string;
+  subscriptionTier?: string;
+  reverificationNeeded?: boolean;
+  lastVerifiedAt?: string | null;
   subscriptionExpiresAt: string | null;
 }
 
@@ -56,7 +61,7 @@ interface SellerVerificationTableProps {
 
 export function SellerVerificationTable({ initialSellers }: SellerVerificationTableProps) {
   const [sellers, setSellers] = useState<AdminSellerItem[]>(initialSellers);
-  const [filter, setFilter] = useState<"ALL" | "UNVERIFIED" | "VERIFIED" | "SUSPENDED">("ALL");
+  const [filter, setFilter] = useState<"ALL" | "UNVERIFIED" | "VERIFIED" | "SUSPENDED" | "REVERIFY">("ALL");
   const [isPending, startTransition] = useTransition();
   const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -64,6 +69,7 @@ export function SellerVerificationTable({ initialSellers }: SellerVerificationTa
     if (filter === "UNVERIFIED") return s.verificationStatus === "UNVERIFIED" || s.verificationStatus === "PENDING";
     if (filter === "VERIFIED") return s.verificationStatus === "VERIFIED";
     if (filter === "SUSPENDED") return s.verificationStatus === "SUSPENDED";
+    if (filter === "REVERIFY") return Boolean(s.reverificationNeeded);
     return true;
   });
 
@@ -92,33 +98,24 @@ export function SellerVerificationTable({ initialSellers }: SellerVerificationTa
     });
   };
 
-  const handleToggleSubscription = (profileId: string, current: string) => {
-    const next = current === "ACTIVE" ? "FREE" : "ACTIVE";
+  const handleToggleReverification = (profileId: string, needed: boolean) => {
     setStatusMsg(null);
     startTransition(async () => {
-      const res = await setSellerSubscriptionAction({
-        sellerProfileId: profileId,
-        status: next,
-      });
+      const res = await toggleSellerReverificationAction(profileId, needed);
       if (res.success) {
         setSellers((prev) =>
-          prev.map((s) =>
-            s.profileId === profileId
-              ? { ...s, subscriptionStatus: next, subscriptionExpiresAt: null }
-              : s
-          )
+          prev.map((s) => (s.profileId === profileId ? { ...s, reverificationNeeded: needed } : s))
         );
         setStatusMsg({
           type: "success",
-          text:
-            next === "ACTIVE"
-              ? "Direct chat unlocked for this supplier."
-              : "Direct chat locked. Deals will route through local agents.",
+          text: needed
+            ? "Supplier flagged for yard & license re-verification."
+            : "Re-verification flag cleared. Verification timestamp updated.",
         });
       } else {
         setStatusMsg({
           type: "error",
-          text: res.error || "Failed to update subscription.",
+          text: res.error || "Failed to toggle re-verification status.",
         });
       }
     });
@@ -143,8 +140,8 @@ export function SellerVerificationTable({ initialSellers }: SellerVerificationTa
         </div>
 
         {/* Filters */}
-        <div className="flex items-center gap-2">
-          {(["ALL", "UNVERIFIED", "VERIFIED", "SUSPENDED"] as const).map((tab) => (
+        <div className="flex items-center gap-2 flex-wrap">
+          {(["ALL", "UNVERIFIED", "VERIFIED", "SUSPENDED", "REVERIFY"] as const).map((tab) => (
             <Button
               key={tab}
               size="sm"
@@ -156,6 +153,7 @@ export function SellerVerificationTable({ initialSellers }: SellerVerificationTa
               {tab === "UNVERIFIED" && `Pending (${sellers.filter((s) => s.verificationStatus !== "VERIFIED" && s.verificationStatus !== "SUSPENDED").length})`}
               {tab === "VERIFIED" && `Verified (${sellers.filter((s) => s.verificationStatus === "VERIFIED").length})`}
               {tab === "SUSPENDED" && `Suspended (${sellers.filter((s) => s.verificationStatus === "SUSPENDED").length})`}
+              {tab === "REVERIFY" && `Needs Re-check (${sellers.filter((s) => s.reverificationNeeded).length})`}
             </Button>
           ))}
         </div>
@@ -192,7 +190,7 @@ export function SellerVerificationTable({ initialSellers }: SellerVerificationTa
                   <th className="p-3">Type</th>
                   <th className="p-3">License & TIN</th>
                   <th className="p-3">Trade Record</th>
-                  <th className="p-3">Prepaid Balance</th>
+                  <th className="p-3">Subscription</th>
                   <th className="p-3">Verification</th>
                   <th className="p-3 text-right">Actions</th>
                 </tr>
@@ -257,12 +255,23 @@ export function SellerVerificationTable({ initialSellers }: SellerVerificationTa
                         </div>
                       </td>
 
-                      <td className="p-3 font-mono">
-                        <div className="font-bold text-foreground">
-                          {s.cashBalance.toLocaleString()} ETB
+                      <td className="p-3">
+                        <div className="flex items-center gap-1.5 font-bold text-foreground">
+                          <Badge variant="outline" className="text-[10px] uppercase font-mono font-semibold">
+                            {s.subscriptionTier || "BASIC"}
+                          </Badge>
+                          {s.reverificationNeeded && (
+                            <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30 text-[9px] font-bold">
+                              RE-CHECK
+                            </Badge>
+                          )}
                         </div>
-                        <div className="text-[10px] text-muted-foreground">
-                          +{s.creditBalance.toLocaleString()} credit
+                        <div className="text-[10px] text-muted-foreground mt-0.5">
+                          {s.subscriptionStatus === "ACTIVE" ? (
+                            <span className="text-emerald-600 font-semibold">Active Directory</span>
+                          ) : (
+                            <span>Free / Expired</span>
+                          )}
                         </div>
                       </td>
 
@@ -334,11 +343,16 @@ export function SellerVerificationTable({ initialSellers }: SellerVerificationTa
                               variant="outline"
                               disabled={isPending}
                               onClick={() =>
-                                handleToggleSubscription(s.profileId!, s.subscriptionStatus)
+                                handleToggleReverification(s.profileId!, !s.reverificationNeeded)
                               }
-                              className="h-7 text-xs font-semibold"
+                              className={`h-7 text-xs font-semibold ${
+                                s.reverificationNeeded
+                                  ? "border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-500/10"
+                                  : ""
+                              }`}
+                              title="Flag listing for 30-60 day re-verification"
                             >
-                              {s.subscriptionStatus === "ACTIVE" ? "Lock chat" : "Unlock chat"}
+                              {s.reverificationNeeded ? "Clear Re-check" : "Flag Re-check"}
                             </Button>
                           </div>
                         )}

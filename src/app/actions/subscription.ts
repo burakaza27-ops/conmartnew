@@ -242,3 +242,70 @@ export async function updateSubscriptionPlanAction(params: {
   }
 }
 
+/**
+ * System / Admin / Cron: Dispatches subscription expiry reminder notices
+ * (7 days and 1 day before expiry) to suppliers.
+ */
+export async function checkAndSendSubscriptionRemindersAction() {
+  try {
+    const now = new Date();
+    const inSevenDays = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    const expiringProfiles = await db.sellerProfile.findMany({
+      where: {
+        subscriptionStatus: "ACTIVE",
+        subscriptionExpiresAt: {
+          gte: now,
+          lte: inSevenDays,
+        },
+      },
+      include: {
+        user: {
+          select: { id: true, name: true, phone: true },
+        },
+      },
+    });
+
+    let sentCount = 0;
+    for (const profile of expiringProfiles) {
+      if (!profile.subscriptionExpiresAt) continue;
+      const daysRemaining = Math.ceil(
+        (profile.subscriptionExpiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
+      const message =
+        daysRemaining <= 1
+          ? `Urgent: Your ConMart supplier subscription expires tomorrow! Renew now to keep your direct phone and WhatsApp visible to buyers.`
+          : `Reminder: Your ConMart supplier subscription expires in ${daysRemaining} days. Renew now to avoid interruption in direct buyer calls.`;
+
+      // Avoid duplicate reminder notifications on the same day
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const existingNotif = await db.appNotification.findFirst({
+        where: {
+          userId: profile.userId,
+          type: "DEAL_STATUS_CHANGED",
+          createdAt: { gte: startOfToday },
+        },
+      });
+
+      if (!existingNotif) {
+        await db.appNotification.create({
+          data: {
+            userId: profile.userId,
+            title: "Subscription Renewal Notice",
+            body: message,
+            type: "DEAL_STATUS_CHANGED",
+            meta: { actionUrl: "/seller/subscription" },
+          },
+        });
+        sentCount++;
+      }
+    }
+
+    return { success: true as const, data: { processed: expiringProfiles.length, sent: sentCount } };
+  } catch (err) {
+    return { success: false as const, error: toSafeErrorMessage(err, "checkAndSendSubscriptionRemindersAction") };
+  }
+}
+
+
