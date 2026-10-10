@@ -20,6 +20,7 @@ import {
   recordAgentCommission,
   getAgentCommissionSummary,
 } from "@/lib/leads/guided-lead-service";
+import { maskPhoneNumber } from "@/lib/agents/agent-onboarding-service";
 import { logSupplierLeadEvent } from "@/lib/subscription/subscription-service";
 import {
   createGuidedLeadSchema,
@@ -126,37 +127,46 @@ export async function getGuidedLeadsAction(filters?: {
 
   try {
     const leads = await getGuidedLeads(filters);
+    const isAdmin = auth.user.role === "ADMIN";
+    const currentUserId = auth.user.id;
+
     return {
       success: true as const,
-      data: leads.map((l) => ({
-        id: l.id,
-        referenceCode: l.referenceCode,
-        materialNeeded: l.materialNeeded,
-        quantity: l.quantity,
-        areaLocation: l.areaLocation,
-        buyerPhone: l.buyerPhone,
-        buyerName: l.buyerName,
-        preferredVisitTime: l.preferredVisitTime,
-        notes: l.notes,
-        status: l.status,
-        closeReason: l.closeReason,
-        targetSeller: l.targetSeller
-          ? {
-              id: l.targetSeller.id,
-              name: l.targetSeller.name,
-              companyName: l.targetSeller.companyName,
-              phone: l.targetSeller.phone,
-            }
-          : null,
-        assignedAgent: l.assignedAgent
-          ? {
-              id: l.assignedAgent.id,
-              name: l.assignedAgent.name,
-              phone: l.assignedAgent.phone,
-            }
-          : null,
-        createdAt: l.createdAt.toISOString(),
-      })),
+      data: leads.map((l) => {
+        const isAssignedToMe = l.assignedAgent?.id === currentUserId;
+        const shouldRevealPhone = isAdmin || isAssignedToMe;
+
+        return {
+          id: l.id,
+          referenceCode: l.referenceCode,
+          materialNeeded: l.materialNeeded,
+          quantity: l.quantity,
+          areaLocation: l.areaLocation,
+          buyerPhone: shouldRevealPhone ? l.buyerPhone : maskPhoneNumber(l.buyerPhone),
+          isPhoneRevealed: shouldRevealPhone,
+          buyerName: l.buyerName,
+          preferredVisitTime: l.preferredVisitTime,
+          notes: l.notes,
+          status: l.status,
+          closeReason: l.closeReason,
+          targetSeller: l.targetSeller
+            ? {
+                id: l.targetSeller.id,
+                name: l.targetSeller.name,
+                companyName: l.targetSeller.companyName,
+                phone: l.targetSeller.phone,
+              }
+            : null,
+          assignedAgent: l.assignedAgent
+            ? {
+                id: l.assignedAgent.id,
+                name: l.assignedAgent.name,
+                phone: l.assignedAgent.phone,
+              }
+            : null,
+          createdAt: l.createdAt.toISOString(),
+        };
+      }),
     };
   } catch (err) {
     return { success: false as const, error: toSafeErrorMessage(err, "getGuidedLeadsAction") };

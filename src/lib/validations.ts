@@ -476,3 +476,51 @@ export const updateGuidedLeadStatusSchema = z.object({
 });
 export type UpdateGuidedLeadStatusInput = z.infer<typeof updateGuidedLeadStatusSchema>;
 
+// =============================================================================
+// 01B — ONLINE AGENT APPLICATION & VETTING SCHEMAS
+// =============================================================================
+
+export const submitAgentApplicationSchema = z.object({
+  // Personal Details & Education (Screen 2)
+  fullName: z.string().trim().min(2, "Full name is required").max(100),
+  phone: ethiopianPhoneSchema,
+  city: z.string().trim().min(2, "City is required").default("Addis Ababa"),
+  subCity: z.string().trim().min(2, "Sub-city / woreda is required"),
+  grade12DocUrl: z.string().trim().min(1, "Grade 12 completion document is required"),
+  identityDocUrl: z.string().trim().min(1, "National identity document (ID) is required"),
+
+  // Work Area & Availability (Screen 3)
+  serviceArea: z.string().trim().min(2, "Service area is required"),
+  latitude: z.number().optional().nullable(),
+  longitude: z.number().optional().nullable(),
+  travelRadiusKm: z.number().min(1).max(50).default(5),
+  availableDaysHours: z.string().trim().min(2, "Available days & hours are required").default("Mon - Fri, 9:00 - 17:00"),
+  isAvailableForAssignments: z.boolean().default(true),
+
+  // Guarantee & Consent (Screen 4)
+  guarantorType: z.enum(["GOVERNMENT_EMPLOYEE", "COMMUNITY_OR_OTHER"]),
+  guarantorName: z.string().trim().min(2, "Guarantor name is required"),
+  guarantorPhone: ethiopianPhoneSchema,
+  guarantorEmployer: z.string().trim().optional(),
+  guarantorRelationship: z.string().trim().optional(),
+  guarantorDocUrl: z.string().trim().optional(),
+  guarantorDescription: z.string().trim().optional(),
+  guarantorConsentObtained: z.boolean().refine((val) => val === true, {
+    message: "You must confirm that guarantor consent has been obtained",
+  }),
+});
+export type SubmitAgentApplicationInput = z.infer<typeof submitAgentApplicationSchema>;
+
+export const reviewAgentApplicationSchema = z.object({
+  agentProfileId: z.string().min(1, "Agent profile ID is required"),
+  action: z.enum(["APPROVE", "REQUEST_CORRECTION", "REJECT", "SUSPEND"]),
+  rejectionReason: z.string().trim().max(1000).optional(),
+  checklistPhoneVerified: z.boolean().optional(),
+  checklistGrade12Reviewed: z.boolean().optional(),
+  checklistIdentityReviewed: z.boolean().optional(),
+  checklistGuaranteeVerified: z.boolean().optional(),
+  checklistAreaConfirmed: z.boolean().optional(),
+});
+export type ReviewAgentApplicationInput = z.infer<typeof reviewAgentApplicationSchema>;
+
+

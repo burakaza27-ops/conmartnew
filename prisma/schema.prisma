@@ -234,6 +234,26 @@ enum AgentCommissionStatus {
   @@map("agent_commission_status")
 }
 
+/// Online agent vetting and approval lifecycle (01B specification).
+enum AgentApprovalStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  CHANGES_REQUIRED
+  REJECTED
+  SUSPENDED
+
+  @@map("agent_approval_status")
+}
+
+/// Guarantor backing options for field agents.
+enum GuarantorType {
+  GOVERNMENT_EMPLOYEE
+  COMMUNITY_OR_OTHER
+
+  @@map("guarantor_type")
+}
+
 /// Local-agent deal ticket lifecycle.
 enum DealTicketStatus {
   PENDING_AGENT
@@ -630,18 +650,57 @@ model Zone {
   @@map("zones")
 }
 
-/// Field agent registration against a single coverage zone.
+/// Field agent registration and 01B vetting profile against a service area.
 model AgentProfile {
-  id        String   @id @default(cuid())
-  userId    String   @unique @map("user_id")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  zoneId    String   @map("zone_id")
-  zone      Zone     @relation(fields: [zoneId], references: [id], onDelete: Restrict)
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id                         String              @id @default(cuid())
+  userId                     String              @unique @map("user_id")
+  user                       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  zoneId                     String              @map("zone_id")
+  zone                       Zone                @relation(fields: [zoneId], references: [id], onDelete: Restrict)
+  isActive                   Boolean             @default(true) @map("is_active")
+
+  // --- Online Application & Vetting Lifecycle (01B) ---
+  approvalStatus             AgentApprovalStatus @default(SUBMITTED) @map("approval_status")
+  rejectionReason            String?             @map("rejection_reason")
+  reviewedBy                 String?             @map("reviewed_by")
+  reviewedAt                 DateTime?           @map("reviewed_at")
+
+  // Personal Details & Education
+  city                       String?             @default("Addis Ababa")
+  subCity                    String?             @map("sub_city")
+  grade12DocUrl              String?             @map("grade12_doc_url")
+  identityDocUrl             String?             @map("identity_doc_url")
+
+  // Work Area & Availability
+  serviceArea                String?             @map("service_area")
+  latitude                   Float?
+  longitude                  Float?
+  travelRadiusKm             Float?              @default(5.0) @map("travel_radius_km")
+  availableDaysHours         String?             @default("Mon - Fri, 9:00 - 17:00") @map("available_days_hours")
+  isAvailableForAssignments Boolean             @default(true) @map("is_available_for_assignments")
+
+  // Guarantee & Consent
+  guarantorType              GuarantorType?      @default(GOVERNMENT_EMPLOYEE) @map("guarantor_type")
+  guarantorName              String?             @map("guarantor_name")
+  guarantorPhone             String?             @map("guarantor_phone")
+  guarantorEmployer          String?             @map("guarantor_employer")
+  guarantorRelationship      String?             @map("guarantor_relationship")
+  guarantorDocUrl            String?             @map("guarantor_doc_url")
+  guarantorDescription        String?             @map("guarantor_description")
+  guarantorConsentObtained   Boolean             @default(false) @map("guarantor_consent_obtained")
+
+  // Admin Review Checklist Flags
+  checklistPhoneVerified     Boolean             @default(false) @map("checklist_phone_verified")
+  checklistGrade12Reviewed   Boolean             @default(false) @map("checklist_grade12_reviewed")
+  checklistIdentityReviewed  Boolean             @default(false) @map("checklist_identity_reviewed")
+  checklistGuaranteeVerified Boolean             @default(false) @map("checklist_guarantee_verified")
+  checklistAreaConfirmed     Boolean             @default(false) @map("checklist_area_confirmed")
+
+  createdAt                  DateTime            @default(now()) @map("created_at")
+  updatedAt                  DateTime            @updatedAt @map("updated_at")
 
   @@index([zoneId, isActive])
+  @@index([approvalStatus, isAvailableForAssignments])
   @@map("agent_profiles")
 }
 

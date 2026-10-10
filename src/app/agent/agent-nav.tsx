@@ -1,6 +1,6 @@
 "use client";
 
-import { Briefcase, LogOut, MessageCircle, Package, Settings, UserCheck, DollarSign } from "lucide-react";
+import { Briefcase, LogOut, MessageCircle, Package, Settings, UserCheck, DollarSign, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { MobileTabLink, SidebarNavLink } from "@/components/layout/nav-link";
@@ -12,6 +12,7 @@ export function AgentSidebarNav() {
 
   const links = [
     { href: "/agent/leads", label: locale === "am" ? "የገዢዎች መሪዎች (Leads)" : "Guided Leads Inbox", icon: UserCheck, exact: true },
+    { href: "/agent/apply", label: locale === "am" ? "የወኪል ማመልከቻ" : "Onboarding & Vetting", icon: ShieldCheck, exact: true },
     { href: "/agent/commissions", label: locale === "am" ? "የኮሚሽን ሂሳብ" : "Commission Ledger", icon: DollarSign, exact: true },
     { href: "/agent", label: t("agent_job_board", "Legacy Job board"), icon: Briefcase, exact: true },
     { href: "/agent/messages", label: t("chat_inbox_title", "Messages"), icon: MessageCircle },

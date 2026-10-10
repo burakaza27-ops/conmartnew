@@ -21,6 +21,7 @@ import {
   ArrowRight,
   Building2,
   CheckCircle2,
+  Users,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ import { getPendingSubscriptionPaymentsAction } from "@/app/actions/subscription
 import { getGuidedLeadsAction } from "@/app/actions/leads";
 import { getAdminDisputesAction } from "@/app/actions/enquiries";
 import { getAdminSellersAction } from "@/app/actions/sellers";
+import { getAdminAgentApplicationsAction } from "@/app/actions/agents";
 import { OrdersTable } from "./orders-table";
 import { DisputesTable } from "./disputes-table";
 import { SellerVerificationTable } from "./seller-verification-table";
@@ -39,18 +41,21 @@ import { formatETB } from "@/lib/types";
 export default async function CommandCenterPage() {
   await requireRole(["ADMIN"], "/admin/command-center");
 
-  const [orders, subscriptionsRes, guidedLeadsRes, disputesRes, sellersRes] = await Promise.all([
+  const [orders, subscriptionsRes, guidedLeadsRes, disputesRes, sellersRes, agentsRes] = await Promise.all([
     fetchAllOrders(),
     getPendingSubscriptionPaymentsAction(),
     getGuidedLeadsAction(),
     getAdminDisputesAction(),
     getAdminSellersAction(),
+    getAdminAgentApplicationsAction(),
   ]);
 
   const pendingPayments = subscriptionsRes.success && subscriptionsRes.data ? subscriptionsRes.data : [];
   const guidedLeads = guidedLeadsRes.success && guidedLeadsRes.data ? guidedLeadsRes.data : [];
   const disputes = disputesRes.success && disputesRes.data ? disputesRes.data : [];
   const sellers = sellersRes.success && sellersRes.data ? sellersRes.data : [];
+  const agentApps = agentsRes.success && agentsRes.data ? agentsRes.data : [];
+  const pendingAgents = agentApps.filter((a) => a.approvalStatus === "UNDER_REVIEW" || a.approvalStatus === "SUBMITTED");
 
   return (
     <div className="space-y-8">
@@ -68,12 +73,18 @@ export default async function CommandCenterPage() {
       </div>
 
       {/* KPI Stats Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
         <StatCard
           icon={<CreditCard className="h-5 w-5 text-emerald-500" />}
           label="Pending Subscriptions"
           value={pendingPayments.length.toString()}
           href="/admin/subscriptions"
+        />
+        <StatCard
+          icon={<Users className="h-5 w-5 text-amber-500" />}
+          label="Agent Vetting"
+          value={pendingAgents.length.toString()}
+          href="/admin/agents"
         />
         <StatCard
           icon={<UserCheck className="h-5 w-5 text-primary" />}
@@ -104,7 +115,7 @@ export default async function CommandCenterPage() {
       </div>
 
       {/* Quick Action Navigation Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="border-border/60 bg-gradient-to-br from-card to-card/50 shadow-xs">
           <CardContent className="p-5 flex items-center justify-between gap-4">
             <div className="space-y-1">
@@ -124,6 +135,31 @@ export default async function CommandCenterPage() {
             <Link href="/admin/subscriptions">
               <Button size="sm" className="gap-1.5 font-bold shadow-xs shrink-0">
                 <span>Review Plans</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60 bg-gradient-to-br from-card to-card/50 shadow-xs">
+          <CardContent className="p-5 flex items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-amber-500" />
+                <h3 className="font-bold text-sm text-foreground">01B Agent Vetting Queue</h3>
+                {pendingAgents.length > 0 && (
+                  <Badge className="bg-amber-600 text-white text-[10px]">
+                    {pendingAgents.length} Pending
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                5-point verification: Grade 12 certificates, National ID, guarantor backing, and service areas.
+              </p>
+            </div>
+            <Link href="/admin/agents">
+              <Button size="sm" className="gap-1.5 font-bold shadow-xs shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground">
+                <span>Review Agents</span>
                 <ArrowRight className="h-3.5 w-3.5" />
               </Button>
             </Link>
