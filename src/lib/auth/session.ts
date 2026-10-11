@@ -110,7 +110,11 @@ export async function authorize(
 ): Promise<AuthorizationResult> {
   const user = await getSessionUser();
 
-  if (!user || !allowedRoles.includes(user.role)) {
+  if (!user) {
+    return { ok: false, error: "Please log in to continue." };
+  }
+
+  if (!allowedRoles.includes(user.role)) {
     return { ok: false, error: "You are not authorized to perform this action." };
   }
 

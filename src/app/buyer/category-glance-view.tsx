@@ -180,6 +180,12 @@ export function CategoryGlanceView({ categories, totalOffers }: CategoryGlanceVi
                   <img
                     src={image}
                     alt={cat.name}
+                    onError={(e) => {
+                      const fallback = getCategoryImage(cat.slug, 600);
+                      if (e.currentTarget.src !== fallback) {
+                        e.currentTarget.src = fallback;
+                      }
+                    }}
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
                     loading="lazy"
                   />
@@ -245,6 +251,12 @@ export function CategoryGlanceView({ categories, totalOffers }: CategoryGlanceVi
                 <img
                   src={image}
                   alt={cat.name}
+                  onError={(e) => {
+                    const fallback = getCategoryImage(cat.slug, 600);
+                    if (e.currentTarget.src !== fallback) {
+                      e.currentTarget.src = fallback;
+                    }
+                  }}
                   className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-108"
                   loading="lazy"
                 />

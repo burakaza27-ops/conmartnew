@@ -14,6 +14,8 @@ import { getSessionUser, defaultRouteForRole } from "@/lib/auth/session";
 // The complete marketing landing page is preserved and accessible at /landing.
 // =============================================================================
 
+export const dynamic = "force-dynamic";
+
 export default async function RootEntryPage() {
   const user = await getSessionUser();
 

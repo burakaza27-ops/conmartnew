@@ -11,6 +11,7 @@
     "test": "node ./node_modules/vitest/vitest.mjs run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
     "check:pwa": "node scripts/check-playstore-readiness.js",
     "check:secrets": "node scripts/check-secret-hygiene.js",
     "verify": "node scripts/check-secret-hygiene.js && npm run typecheck && npm run lint && npm run test",
@@ -51,6 +52,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^22",
     "@types/pg": "^8.23.1",
@@ -59,6 +61,7 @@
     "@vitest/coverage-v8": "^3.2.4",
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
+    "playwright": "^1.64.0",
     "shadcn": "^4.20.1",
     "tailwindcss": "^4",
     "tsx": "^4.23.13",

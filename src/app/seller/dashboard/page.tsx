@@ -22,19 +22,25 @@ export default async function SellerDashboardPage() {
     redirect("/login?redirect=/seller/dashboard");
   }
 
-  const dbUser = await db.user.findUnique({
-    where: { authId: user.id },
-    select: {
-      id: true,
-      role: true,
-      sellerProfile: {
-        select: {
-          subscriptionStatus: true,
-          subscriptionExpiresAt: true,
+  let dbUser: { id: string; role: string; sellerProfile: { subscriptionStatus: string; subscriptionExpiresAt: Date | null } | null } | null = null;
+  try {
+    dbUser = await db.user.findUnique({
+      where: { authId: user.id },
+      select: {
+        id: true,
+        role: true,
+        sellerProfile: {
+          select: {
+            subscriptionStatus: true,
+            subscriptionExpiresAt: true,
+          },
         },
       },
-    },
-  });
+    });
+  } catch (err) {
+    console.error("[seller/dashboard] db.user.findUnique failed:", err);
+    // Let the page render with empty state rather than crashing
+  }
 
   if (!dbUser || (dbUser.role !== "SELLER" && dbUser.role !== "ADMIN")) {
     redirect("/unauthorized");

@@ -22,6 +22,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 export const metadata = { title: "Notifications" };
+export const dynamic = "force-dynamic";
 
 export default async function NotificationsPage() {
   const user = await requireRole(

@@ -9,7 +9,8 @@ import {
   getSubscriptionPlans,
   getSupplierLeadsSummary,
 } from "@/lib/subscription/subscription-service";
-import { SubscriptionView } from "./subscription-view";
+import { SubscriptionView, type PaymentRecordItem } from "./subscription-view";
+import type { SubscriptionTier } from "@prisma/client";
 
 export default async function SellerSubscriptionPage() {
   const auth = await authorize(["SELLER", "ADMIN"]);
@@ -17,15 +18,38 @@ export default async function SellerSubscriptionPage() {
     redirect("/login?next=/seller/subscription");
   }
 
-  const [summary, plans, payments] = await Promise.all([
-    getSupplierLeadsSummary(auth.user.id),
-    getSubscriptionPlans(),
-    db.subscriptionPayment.findMany({
-      where: { sellerId: auth.user.id },
-      orderBy: { createdAt: "desc" },
-      take: 20,
-    }),
-  ]);
+  let summary: Awaited<ReturnType<typeof getSupplierLeadsSummary>> | null = null;
+  let plans: Awaited<ReturnType<typeof getSubscriptionPlans>> = [];
+  let payments: PaymentRecordItem[] = [];
+
+  try {
+    const [s, p, rawPayments] = await Promise.all([
+      getSupplierLeadsSummary(auth.user.id),
+      getSubscriptionPlans(),
+      db.subscriptionPayment.findMany({
+        where: { sellerId: auth.user.id },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      }),
+    ]);
+    summary = s;
+    plans = p;
+    payments = rawPayments.map((pm) => ({
+      id: pm.id,
+      tier: pm.tier as SubscriptionTier,
+      amount: Number(pm.amount),
+      paymentMethod: pm.paymentMethod,
+      referenceCode: pm.referenceCode,
+      slipUrl: pm.slipUrl,
+      status: pm.status,
+      notes: pm.notes,
+      createdAt: pm.createdAt.toISOString(),
+    }));
+  } catch (err) {
+    console.error("[seller/subscription] data fetch failed:", err);
+    // summary will remain null, use safe defaults below
+    summary = await getSupplierLeadsSummary(auth.user.id);
+  }
 
   return (
     <SubscriptionView
@@ -36,17 +60,7 @@ export default async function SellerSubscriptionPage() {
       isExpired={summary.isExpired}
       needsRenewalNotice={summary.needsRenewalNotice}
       plans={plans}
-      payments={payments.map((p) => ({
-        id: p.id,
-        tier: p.tier,
-        amount: Number(p.amount),
-        paymentMethod: p.paymentMethod,
-        referenceCode: p.referenceCode,
-        slipUrl: p.slipUrl,
-        status: p.status,
-        notes: p.notes,
-        createdAt: p.createdAt.toISOString(),
-      }))}
+      payments={payments}
     />
   );
 }

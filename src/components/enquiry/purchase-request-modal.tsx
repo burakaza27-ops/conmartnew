@@ -467,9 +467,24 @@ export function PurchaseRequestModal({
             </div>
 
             {errorMsg && (
-              <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-2.5 text-xs font-medium text-destructive">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                <span>{errorMsg}</span>
+              <div className="flex flex-col gap-2 rounded-md bg-destructive/10 p-3 text-xs font-medium text-destructive">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>{errorMsg}</span>
+                </div>
+                {errorMsg.toLowerCase().includes("log in") && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="mt-1 w-full text-xs"
+                    onClick={() => {
+                      onClose();
+                      router.push(`/login?redirect=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : "/buyer")}`);
+                    }}
+                  >
+                    {locale === "am" ? "ይግቡ / መለያ ይፍጠሩ" : "Log In / Register to Submit"}
+                  </Button>
+                )}
               </div>
             )}
 

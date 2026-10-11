@@ -373,6 +373,12 @@ function ProductCard({
         <img
           src={image}
           alt={product.title}
+          onError={(e) => {
+            const fallback = getProductFallback(product.category.slug || categorySlug);
+            if (e.currentTarget.src !== fallback) {
+              e.currentTarget.src = fallback;
+            }
+          }}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         {/* Supplier count badge */}

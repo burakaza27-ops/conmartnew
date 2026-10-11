@@ -25,15 +25,18 @@ export default async function AccountSettingsPage({
   const cookieStore = await cookies();
   const recoveryPending = cookieStore.get(PASSWORD_RECOVERY_COOKIE)?.value === "1";
 
-  const coverageZone =
-    user.role === "FIELD_AGENT"
-      ? (
-          await db.agentProfile.findUnique({
-            where: { userId: user.id },
-            select: { zone: { select: { name: true, region: true } } },
-          })
-        )?.zone ?? null
-      : null;
+  let coverageZone: { name: string; region: string } | null = null;
+  if (user.role === "FIELD_AGENT") {
+    try {
+      const profile = await db.agentProfile.findUnique({
+        where: { userId: user.id },
+        select: { zone: { select: { name: true, region: true } } },
+      });
+      coverageZone = profile?.zone ?? null;
+    } catch (err) {
+      console.error("[account/settings] agentProfile lookup failed:", err);
+    }
+  }
 
   return (
     <AccountSettingsView

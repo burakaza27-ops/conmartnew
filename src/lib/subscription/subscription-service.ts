@@ -56,21 +56,26 @@ export interface SupplierLeadsDashboardSummary {
  * Fetches all available subscription plans.
  */
 export async function getSubscriptionPlans(): Promise<SubscriptionPlanItem[]> {
-  const plans = await db.subscriptionPlan.findMany({
-    where: { isActive: true },
-    orderBy: { priceETB: "asc" },
-  });
+  try {
+    const plans = await db.subscriptionPlan.findMany({
+      where: { isActive: true },
+      orderBy: { priceETB: "asc" },
+    });
 
-  return plans.map((p) => ({
-    id: p.id,
-    tier: p.tier,
-    name: p.name,
-    priceETB: Number(p.priceETB),
-    durationDays: p.durationDays,
-    description: p.description,
-    features: Array.isArray(p.features) ? (p.features as string[]) : [],
-    isActive: p.isActive,
-  }));
+    return plans.map((p) => ({
+      id: p.id,
+      tier: p.tier,
+      name: p.name,
+      priceETB: Number(p.priceETB),
+      durationDays: p.durationDays,
+      description: p.description,
+      features: Array.isArray(p.features) ? (p.features as string[]) : [],
+      isActive: p.isActive,
+    }));
+  } catch (err) {
+    console.error("[subscription] getSubscriptionPlans failed:", err);
+    return [];
+  }
 }
 
 /**
@@ -316,6 +321,31 @@ export async function logSupplierLeadEvent(params: {
  * completely eliminating raw event array loading into Node.js V8 heap.
  */
 export async function getSupplierLeadsSummary(sellerId: string): Promise<SupplierLeadsDashboardSummary> {
+  try {
+    return await _getSupplierLeadsSummary(sellerId);
+  } catch (err) {
+    console.error("[subscription] getSupplierLeadsSummary failed:", err);
+    return {
+      tier: SubscriptionTier.BASIC,
+      status: SubscriptionStatus.FREE,
+      expiresAt: null,
+      daysRemaining: 0,
+      isExpired: true,
+      needsRenewalNotice: false,
+      weeklyViews: 0,
+      monthlyViews: 0,
+      weeklyCallClicks: 0,
+      weeklyWhatsAppClicks: 0,
+      weeklyDirectionsClicks: 0,
+      weeklyAgentDeliveredLeads: 0,
+      totalInteractionsThisWeek: 0,
+      totalInteractionsLastWeek: 0,
+      weeklyGrowthPercentage: 0,
+    };
+  }
+}
+
+async function _getSupplierLeadsSummary(sellerId: string): Promise<SupplierLeadsDashboardSummary> {
   const profile = await db.sellerProfile.findUnique({
     where: { userId: sellerId },
   });

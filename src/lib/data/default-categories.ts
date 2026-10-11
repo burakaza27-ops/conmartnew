@@ -230,40 +230,53 @@ export const DEFAULT_CATEGORIES = [
   },
 ] as const;
 
+let defaultCategoriesEnsured = false;
+
 /**
  * Ensures the official 20 construction categories exist in the database.
- * Upserts all 20 categories so new categories are seamlessly added and existing
- * titles/sort orders are aligned without losing relation links.
+ * Uses in-memory memoization and lightweight count checks so page views
+ * never spam 20 parallel database upserts or exhaust connection pools.
  */
 export async function ensureDefaultCategories(): Promise<void> {
+  if (defaultCategoriesEnsured) {
+    return;
+  }
+
   try {
-    await Promise.all(
-      DEFAULT_CATEGORIES.map((category) =>
-        db.category.upsert({
-          where: { slug: category.slug },
-          update: {
-            name: category.name,
-            iconName: category.iconName,
-            imageUrl: category.imageUrl,
-            description: category.description,
-            sortOrder: category.sortOrder,
-            unlockFee: category.unlockFee,
-            isActive: true,
-          },
-          create: {
-            name: category.name,
-            slug: category.slug,
-            iconName: category.iconName,
-            imageUrl: category.imageUrl,
-            description: category.description,
-            isActive: true,
-            unlockFee: category.unlockFee,
-            sortOrder: category.sortOrder,
-          },
-        })
-      )
-    );
+    const count = await db.category.count();
+    if (count >= DEFAULT_CATEGORIES.length) {
+      defaultCategoriesEnsured = true;
+      return;
+    }
+
+    // Missing categories: seed sequentially to preserve connection pool headroom
+    for (const category of DEFAULT_CATEGORIES) {
+      await db.category.upsert({
+        where: { slug: category.slug },
+        update: {
+          name: category.name,
+          iconName: category.iconName,
+          imageUrl: category.imageUrl,
+          description: category.description,
+          sortOrder: category.sortOrder,
+          unlockFee: category.unlockFee,
+          isActive: true,
+        },
+        create: {
+          name: category.name,
+          slug: category.slug,
+          iconName: category.iconName,
+          imageUrl: category.imageUrl,
+          description: category.description,
+          isActive: true,
+          unlockFee: category.unlockFee,
+          sortOrder: category.sortOrder,
+        },
+      });
+    }
+    defaultCategoriesEnsured = true;
   } catch (error) {
-    console.error("Non-fatal: ensureDefaultCategories database sync failed:", error);
+    console.warn("Non-fatal: ensureDefaultCategories sync skipped (DB busy or using fallback):", error);
   }
 }
+

@@ -63,6 +63,15 @@ export interface AdminStats {
  * Returns orders sorted by creation date (newest first).
  */
 export async function fetchAllOrders(): Promise<AdminOrderRow[]> {
+  try {
+    return await _fetchAllOrders();
+  } catch (err) {
+    console.error("[admin] fetchAllOrders failed:", err);
+    return [];
+  }
+}
+
+async function _fetchAllOrders(): Promise<AdminOrderRow[]> {
   const orders = await db.order.findMany({
     include: {
       buyer: {
@@ -162,6 +171,26 @@ export async function fetchAllOrders(): Promise<AdminOrderRow[]> {
  * Fetches dashboard summary statistics.
  */
 export async function fetchAdminStats(): Promise<AdminStats> {
+  try {
+    return await _fetchAdminStats();
+  } catch (err) {
+    console.error("[admin] fetchAdminStats failed:", err);
+    return {
+      totalOrders: 0,
+      pendingOrders: 0,
+      deliveredOrders: 0,
+      totalRevenue: 0,
+      totalEnquiries: 0,
+      unlockedEnquiries: 0,
+      unlockRevenue: 0,
+      openDisputes: 0,
+      pendingTopUps: 0,
+      activeCategories: 0,
+    };
+  }
+}
+
+async function _fetchAdminStats(): Promise<AdminStats> {
   const [
     totalOrders,
     pendingOrders,
@@ -255,6 +284,15 @@ async function countOrdersByListing(
  * Fetches seller listings with product, tier, order, and enquiry info.
  */
 export async function fetchSellerListings(sellerAuthId: string) {
+  try {
+    return await _fetchSellerListings(sellerAuthId);
+  } catch (err) {
+    console.error("[admin] fetchSellerListings failed:", err);
+    return [];
+  }
+}
+
+async function _fetchSellerListings(sellerAuthId: string) {
   const dbUser = await db.user.findUnique({
     where: { authId: sellerAuthId },
     select: { id: true },

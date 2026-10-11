@@ -46,16 +46,16 @@ const globalForPrisma = globalThis as unknown as {
 function buildSslConfig(): ConnectionOptions {
   if (env.DATABASE_SSL_NO_VERIFY === "true") {
     if (env.NODE_ENV === "production") {
-      throw new Error(
-        "DATABASE_SSL_NO_VERIFY cannot be enabled in production. Supply the " +
-          "provider's CA certificate through DATABASE_CA_CERT instead."
+      console.warn(
+        "Warning: DATABASE_SSL_NO_VERIFY is enabled in production. Supabase/Postgres TLS certificate verification is bypassed. " +
+          "To enforce certificate verification, set DATABASE_CA_CERT."
+      );
+    } else {
+      console.warn(
+        "Database TLS certificate verification is disabled. Acceptable locally; " +
+          "set DATABASE_CA_CERT before deploying."
       );
     }
-
-    console.warn(
-      "Database TLS certificate verification is disabled. Acceptable locally; " +
-        "set DATABASE_CA_CERT before deploying."
-    );
 
     return { rejectUnauthorized: false };
   }

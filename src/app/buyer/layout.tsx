@@ -13,6 +13,8 @@ import { BuyerSidebarNav, BuyerMobileBottomNav } from "./buyer-nav";
 // ConMart — Buyer Layout (Dual-Mode: Authenticated + Public Browse)
 // =============================================================================
 
+export const dynamic = "force-dynamic";
+
 export default async function BuyerLayout({
   children,
 }: {

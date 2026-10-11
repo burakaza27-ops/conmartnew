@@ -13,10 +13,8 @@ import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { PageHeader } from "@/components/layout/page-header";
 import { getSessionUser } from "@/lib/auth/session";
-import {
-  fetchCategoriesWithCounts,
-  fetchRecentBuyerEnquiries,
-} from "@/lib/data/catalog";
+import { fetchCategoriesWithCounts } from "@/lib/data/catalog";
+import { fetchRecentBuyerEnquiries } from "@/lib/data/buyer-history";
 import { cn } from "@/lib/utils";
 import { CategoryGlanceView } from "./category-glance-view";
 

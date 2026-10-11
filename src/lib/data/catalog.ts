@@ -581,38 +581,52 @@ async function _fetchCategoryBySlug(
     },
   });
 
-  if (!category) {
-    const aliasMap: Record<string, string> = {
-      rebar: "steel",
-      steel: "rebar",
-      hcb: "blocks",
-      blocks: "hcb",
-      finishes: "finishing-tiles",
-      "finishing-tiles": "finishes",
-      "infrastructure-external": "infrastructure-landscaping",
-      "infrastructure-landscaping": "infrastructure-external",
-      "aggregates-sand": "aggregates",
-      concrete: "ready-mix-concrete",
-    };
-    const altSlug = aliasMap[slug];
-    if (altSlug) {
-      category = await db.category.findUnique({
-        where: { slug: altSlug },
-        include: {
-          products: {
-            include: {
-              listings: {
-                where: { active: true },
-                select: { id: true },
-              },
+  const aliasMap: Record<string, string> = {
+    rebar: "steel",
+    steel: "rebar",
+    hcb: "blocks",
+    blocks: "hcb",
+    finishes: "finishing-tiles",
+    "finishing-tiles": "finishes",
+    "infrastructure-external": "infrastructure-landscaping",
+    "infrastructure-landscaping": "infrastructure-external",
+    "aggregates-sand": "aggregates",
+    concrete: "ready-mix-concrete",
+  };
+  const altSlug = aliasMap[slug];
+
+  if (!category && altSlug) {
+    category = await db.category.findUnique({
+      where: { slug: altSlug },
+      include: {
+        products: {
+          include: {
+            listings: {
+              where: { active: true },
+              select: { id: true },
             },
           },
         },
-      });
-    }
+      },
+    });
   }
 
   if (!category) {
+    const defaultCat = DEFAULT_CATEGORIES.find(
+      (c) => c.slug === slug || (altSlug && c.slug === altSlug)
+    );
+    if (defaultCat) {
+      return {
+        id: `default-${defaultCat.slug}`,
+        name: defaultCat.name,
+        slug: defaultCat.slug,
+        iconName: defaultCat.iconName,
+        imageUrl: defaultCat.imageUrl || null,
+        description: defaultCat.description || null,
+        listingCount: 0,
+        availableBrands: [],
+      };
+    }
     return null;
   }
 
@@ -1243,4 +1257,6 @@ async function _fetchProductWithCompetingOffers(
     offers,
   };
 }
+
+export { fetchRecentBuyerEnquiries } from "@/lib/data/buyer-history";
 
