@@ -14,6 +14,7 @@ const { mockTx, mockDb } = vi.hoisted(() => {
   const tx = {
     subscriptionPayment: {
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
       findUniqueOrThrow: vi.fn(),
       update: vi.fn(),
       updateMany: vi.fn(),
@@ -325,7 +326,7 @@ describe("Database Integrity & Concurrency Race Guards", () => {
         tier: SubscriptionTier.FEATURED,
         priceETB: 1500,
       });
-      mockDb.subscriptionPayment.findUnique.mockResolvedValueOnce(null);
+      mockDb.subscriptionPayment.findFirst.mockResolvedValueOnce(null);
       mockDb.subscriptionPayment.create.mockResolvedValueOnce({
         id: "sub-1",
         referenceCode: "TX-TEST-NORMALIZED",
@@ -339,7 +340,7 @@ describe("Database Integrity & Concurrency Race Guards", () => {
         referenceCode: "  tx-test-normalized  ",
       });
 
-      expect(mockDb.subscriptionPayment.findUnique).toHaveBeenCalledWith({
+      expect(mockDb.subscriptionPayment.findFirst).toHaveBeenCalledWith({
         where: { referenceCode: "TX-TEST-NORMALIZED" },
         select: { status: true },
       });
@@ -355,7 +356,7 @@ describe("Database Integrity & Concurrency Race Guards", () => {
         tier: SubscriptionTier.FEATURED,
         priceETB: 1500,
       });
-      mockDb.subscriptionPayment.findUnique.mockResolvedValueOnce({
+      mockDb.subscriptionPayment.findFirst.mockResolvedValueOnce({
         status: WalletTxStatus.PENDING,
       });
 
@@ -377,7 +378,7 @@ describe("Database Integrity & Concurrency Race Guards", () => {
 
       const existingReferences = new Set<string>();
 
-      mockDb.subscriptionPayment.findUnique.mockImplementation(async ({ where }) => {
+      mockDb.subscriptionPayment.findFirst.mockImplementation(async ({ where }) => {
         if (existingReferences.has(where.referenceCode)) {
           return { status: WalletTxStatus.PENDING };
         }

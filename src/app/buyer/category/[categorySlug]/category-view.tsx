@@ -15,7 +15,6 @@ import {
   Search,
   ChevronRight,
   Users,
-  SlidersHorizontal,
   Store,
   ArrowUpDown,
   X,
@@ -237,54 +236,13 @@ export function CategoryView({
         </form>
 
         {/* Filter row */}
+        {/* Sort only — brand chips removed (brands visible on product detail) */}
         <div className="flex items-center gap-2 flex-wrap">
-          {availableBrands.length > 0 && (
-            <div className="flex items-center gap-1.5">
-              <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">Brand:</span>
-              <div className="flex flex-wrap gap-1">
-                <Link
-                  href={`/buyer/category/${categorySlug}?${new URLSearchParams({
-                    ...(searchQuery ? { search: searchQuery } : {}),
-                    ...(sortBy && sortBy !== "supplier_count" ? { sort: sortBy } : {}),
-                  }).toString()}`}
-                  className={cn(
-                    "rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition",
-                    !brandFilter || brandFilter === "all"
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border text-muted-foreground hover:border-primary/50"
-                  )}
-                >
-                  All
-                </Link>
-                {availableBrands.slice(0, 8).map((brand) => (
-                  <Link
-                    key={brand}
-                    href={`/buyer/category/${categorySlug}?${new URLSearchParams({
-                      ...(searchQuery ? { search: searchQuery } : {}),
-                      brand,
-                      ...(sortBy && sortBy !== "supplier_count" ? { sort: sortBy } : {}),
-                    }).toString()}`}
-                    className={cn(
-                      "rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition",
-                      brandFilter === brand
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border text-muted-foreground hover:border-primary/50"
-                    )}
-                  >
-                    {brand}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Sort */}
           <div className="ml-auto flex items-center gap-1.5">
             <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">Sort:</span>
             {[
-              { key: "supplier_count", label: "Most suppliers" },
+              { key: "newest", label: "Newest" },
               { key: "price_asc", label: "Price ↑" },
               { key: "price_desc", label: "Price ↓" },
             ].map(({ key, label }) => (
@@ -292,12 +250,11 @@ export function CategoryView({
                 key={key}
                 href={`/buyer/category/${categorySlug}?${new URLSearchParams({
                   ...(searchQuery ? { search: searchQuery } : {}),
-                  ...(brandFilter && brandFilter !== "all" ? { brand: brandFilter } : {}),
                   sort: key,
                 }).toString()}`}
                 className={cn(
                   "rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition",
-                  (sortBy || "supplier_count") === key
+                  (sortBy || "newest") === key
                     ? "border-primary bg-primary/10 text-primary"
                     : "border-border text-muted-foreground hover:border-primary/50"
                 )}

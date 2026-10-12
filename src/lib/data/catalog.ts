@@ -216,6 +216,11 @@ async function _fetchCatalogListings(
   const whereClause: Record<string, unknown> = {
     active: true,
     isDeleted: false,
+    priceTiers: {
+      some: {
+        validUntil: { gt: now },
+      },
+    },
     seller: {
       OR: [
         { sellerProfile: null },
@@ -799,6 +804,8 @@ export interface ProductCatalogRow {
   title: string;
   unit: ProductUnit;
   imageUrl: string | null;
+  brand?: string | null;
+  latestPostDate?: string | null;
   specs: Record<string, string>;
   category: {
     id: string;
@@ -823,7 +830,7 @@ export async function fetchProductsCatalog(
   categorySlug?: string,
   searchQuery?: string,
   brandFilter?: string,
-  sortBy: string = "supplier_count"
+  sortBy: string = "newest"
 ): Promise<ProductCatalogRow[]> {
   return withDbFallback(
     "fetchProductsCatalog",
@@ -836,14 +843,18 @@ async function _fetchProductsCatalog(
   categorySlug?: string,
   searchQuery?: string,
   brandFilter?: string,
-  sortBy: string = "supplier_count"
+  sortBy: string = "newest"
 ): Promise<ProductCatalogRow[]> {
   const now = new Date();
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
   const whereClause: Record<string, unknown> = {
     listings: {
       some: {
         active: true,
+        isDeleted: false,
+        updatedAt: { gte: sixMonthsAgo },
         seller: {
           OR: [
             { sellerProfile: null },
@@ -858,9 +869,13 @@ async function _fetchProductsCatalog(
     whereClause.category = { slug: categorySlug };
   }
 
+  // When searching, match across product title or listings
   if (searchQuery && searchQuery.trim()) {
     const q = searchQuery.trim();
-    whereClause.title = { contains: q, mode: "insensitive" };
+    whereClause.OR = [
+      { title: { contains: q, mode: "insensitive" } },
+      { listings: { some: { brand: { contains: q, mode: "insensitive" } } } },
+    ];
   }
 
   const products = await db.product.findMany({
@@ -872,6 +887,8 @@ async function _fetchProductsCatalog(
       listings: {
         where: {
           active: true,
+          isDeleted: false,
+          updatedAt: { gte: sixMonthsAgo },
           seller: {
             OR: [
               { sellerProfile: null },
@@ -898,12 +915,23 @@ async function _fetchProductsCatalog(
       const lowestPrice = allPrices.length > 0 ? Math.min(...allPrices) : null;
       const highestPrice = allPrices.length > 0 ? Math.max(...allPrices) : null;
 
+      const specs = (p.specs as Record<string, string>) || {};
+      const listingBrand = p.listings.find((l) => l.brand)?.brand;
+      const brand = listingBrand || specs.brand || null;
+
+      // Calculate latest post/adjustment date
+      const listingDates = p.listings.map((l) => new Date(l.updatedAt || l.createdAt).getTime());
+      const latestTimestamp = listingDates.length > 0 ? Math.max(...listingDates) : null;
+      const latestPostDate = latestTimestamp ? new Date(latestTimestamp).toISOString() : null;
+
       return {
         productId: p.id,
         title: p.title,
         unit: p.unit as ProductUnit,
         imageUrl: p.imageUrl || null,
-        specs: (p.specs as Record<string, string>) || {},
+        brand,
+        latestPostDate,
+        specs,
         category: p.category,
         supplierCount: p.listings.length,
         lowestPrice,
@@ -911,11 +939,12 @@ async function _fetchProductsCatalog(
       };
     });
 
-  // Brand filter (applied after loading since brand is in specs JSON)
+  // Client brand query refinement
   if (brandFilter && brandFilter !== "all") {
     const target = brandFilter.toLowerCase();
     rows = rows.filter(
       (r) =>
+        r.brand?.toLowerCase().includes(target) ||
         r.specs?.brand?.toLowerCase().includes(target) ||
         r.title.toLowerCase().includes(target)
     );
@@ -926,9 +955,15 @@ async function _fetchProductsCatalog(
     rows.sort((a, b) => (a.lowestPrice ?? Infinity) - (b.lowestPrice ?? Infinity));
   } else if (sortBy === "price_desc") {
     rows.sort((a, b) => (b.lowestPrice ?? 0) - (a.lowestPrice ?? 0));
-  } else {
-    // Default: most suppliers first (gives buyers most choice at top)
+  } else if (sortBy === "supplier_count") {
     rows.sort((a, b) => b.supplierCount - a.supplierCount);
+  } else {
+    // Default: Newest / Date of Post first
+    rows.sort((a, b) => {
+      const timeA = a.latestPostDate ? new Date(a.latestPostDate).getTime() : 0;
+      const timeB = b.latestPostDate ? new Date(b.latestPostDate).getTime() : 0;
+      return timeB - timeA;
+    });
   }
 
   return rows;
@@ -961,15 +996,21 @@ export interface SellerStoreProfile {
   completedDealsCount: number;
   responseTimeAvgMinutes: number;
   subscriptionStatus: string;
+  isSubscribed: boolean;
+  directPhone: string | null;
+  whatsappNumber: string | null;
+  address: string | null;
+  workingHours: string | null;
+  latitude: number | null;
+  longitude: number | null;
   directChatEnabled: boolean;
   listings: SellerStoreListing[];
 }
 
 /**
- * Fetches a seller's public store profile — company name, verification badge,
- * and all their active product listings. Company name is intentionally public
- * (this is the seller's chosen storefront). Contact details (phone) remain
- * server-side only until the introduction fee is paid.
+ * Fetches a seller's public store profile.
+ * Privacy rule: Contact details (directPhone, whatsapp, address, coordinates)
+ * and unmasked branding are strictly stripped for non-subscribed/expired suppliers.
  */
 export async function fetchSellerStore(
   sellerId: string
@@ -990,6 +1031,8 @@ async function _fetchSellerStore(
     where: { id: sellerId, role: "SELLER" },
     select: {
       id: true,
+      name: true,
+      phone: true,
       companyName: true,
       sellerProfile: {
         select: {
@@ -1000,6 +1043,12 @@ async function _fetchSellerStore(
           responseTimeAvgMinutes: true,
           subscriptionStatus: true,
           subscriptionExpiresAt: true,
+          directPhone: true,
+          whatsappNumber: true,
+          address: true,
+          workingHours: true,
+          latitude: true,
+          longitude: true,
         },
       },
       sellerListings: {
@@ -1025,16 +1074,41 @@ async function _fetchSellerStore(
   if (!seller) return null;
 
   const profile = seller.sellerProfile;
+  const isSubscribed =
+    profile?.subscriptionStatus === "ACTIVE" &&
+    (profile.subscriptionExpiresAt === null || profile.subscriptionExpiresAt > now);
+
+  const directPhone = isSubscribed
+    ? profile?.directPhone || seller.phone || null
+    : null;
+  const whatsappNumber = isSubscribed
+    ? profile?.whatsappNumber || profile?.directPhone || seller.phone || null
+    : null;
+  const address = isSubscribed ? profile?.address || null : null;
+  const workingHours = isSubscribed
+    ? profile?.workingHours || "Mon–Sat: 8:00 AM – 6:00 PM"
+    : null;
+  const latitude = isSubscribed ? profile?.latitude ?? null : null;
+  const longitude = isSubscribed ? profile?.longitude ?? null : null;
 
   return {
     sellerId: seller.id,
-    companyName: seller.companyName ?? "Verified Supplier",
+    companyName: isSubscribed
+      ? seller.companyName ?? "Verified Supplier"
+      : getMaskedSellerLabel(seller.id),
     sellerType: profile?.sellerType ?? "RETAILER",
     verificationStatus: profile?.verificationStatus ?? "UNVERIFIED",
     vatRegistered: profile?.vatRegistered ?? false,
     completedDealsCount: profile?.completedDealsCount ?? 0,
     responseTimeAvgMinutes: profile?.responseTimeAvgMinutes ?? 60,
     subscriptionStatus: profile?.subscriptionStatus ?? "FREE",
+    isSubscribed,
+    directPhone,
+    whatsappNumber,
+    address,
+    workingHours,
+    latitude,
+    longitude,
     directChatEnabled: isDirectChatEntitled(profile, now),
     listings: seller.sellerListings.map((l) => ({
       listingId: l.id,
@@ -1042,7 +1116,7 @@ async function _fetchSellerStore(
       productTitle: l.product.title,
       productUnit: l.product.unit as ProductUnit,
       imageUrl: l.imageUrl || l.product.imageUrl || null,
-      location: coarsenLocation(l.location),
+      location: isSubscribed && profile?.address ? profile.address : coarsenLocation(l.location),
       lowestPrice:
         l.priceTiers.length > 0 ? Number(l.priceTiers[0].unitPrice) : null,
       tierCount: l.priceTiers.length,

@@ -139,6 +139,7 @@ export async function updateGuidedLeadStatus(params: {
   agentId?: string;
   status: GuidedLeadStatus;
   closeReason?: string;
+  visitOutcome?: string;
 }) {
   const currentLead = await db.guidedLead.findUnique({
     where: { id: params.leadId },
@@ -162,6 +163,7 @@ export async function updateGuidedLeadStatus(params: {
     data: {
       status: params.status,
       closeReason: params.closeReason || null,
+      visitOutcome: params.visitOutcome || null,
       ...(params.agentId && { assignedAgentId: params.agentId }),
     },
   });

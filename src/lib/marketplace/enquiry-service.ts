@@ -69,21 +69,55 @@ export interface RaiseDisputeResult {
   disputeId: string;
 }
 
-type Caller = { id: string; role: string; name?: string | null };
+export type AuthenticatedCaller = { id: string; role: string; name?: string | null };
+export type Caller = AuthenticatedCaller | null;
 
 /**
  * Determines whose enquiry this is.
  *
- * Field agents raise requests for contractors who walked into a depot. Those
- * contractors get a profile with no `authId`, so they cannot sign in until
- * they register themselves. Matching is restricted to those offline profiles:
- * without that restriction an agent could file enquiries in the name of any
- * registered buyer simply by knowing their phone number.
+ * Supports:
+ * 1. Frictionless guest buyers (unauthenticated or guest submission with phone & name)
+ * 2. Field agents raising requests for offline contractors
+ * 3. Registered buyers submitting directly
  */
 export async function resolveEnquiryBuyer(
   caller: Caller,
-  data: { onBehalfOfBuyerPhone?: string; onBehalfOfBuyerName?: string }
+  data: {
+    onBehalfOfBuyerPhone?: string;
+    onBehalfOfBuyerName?: string;
+    guestPhone?: string;
+    guestName?: string;
+  }
 ): Promise<{ buyerId: string; agentId: string | null }> {
+  // Frictionless guest buyer flow (no login required)
+  if (data.guestPhone || !caller) {
+    const phone = (data.guestPhone || "").trim();
+    if (!phone) {
+      throw new DomainError("Please enter your phone number to submit a purchase request.");
+    }
+    const name = (data.guestName || "Guest Buyer").trim();
+
+    let buyer = await db.user.findFirst({
+      where: { phone },
+      select: { id: true },
+    });
+
+    if (!buyer) {
+      buyer = await db.user.create({
+        data: {
+          authId: null,
+          role: "BUYER",
+          name,
+          phone,
+          companyName: `${name} (Direct)`,
+        },
+        select: { id: true },
+      });
+    }
+
+    return { buyerId: buyer.id, agentId: null };
+  }
+
   const isAssistedCapture =
     Boolean(data.onBehalfOfBuyerPhone) &&
     (caller.role === "FIELD_AGENT" || caller.role === "ADMIN");
@@ -181,6 +215,8 @@ export async function submitPurchaseEnquiry(
         ? filterLeakedContactText(data.accessConstraints)
         : null,
       requiredDate: data.requiredDate ? new Date(data.requiredDate) : undefined,
+      guestName: data.guestName?.trim() || null,
+      guestPhone: data.guestPhone?.trim() || null,
       status: EnquiryStatus.PENDING,
     },
     select: { id: true, referenceCode: true },
@@ -213,7 +249,7 @@ export async function submitPurchaseEnquiry(
  * Accepts an enquiry, debits the supplier unlock fee, and reveals contact details.
  */
 export async function sellerAcceptEnquiry(
-  caller: Caller,
+  caller: AuthenticatedCaller,
   enquiryId: string
 ): Promise<UnlockResult> {
   const enquiry = await db.enquiry.findUnique({
@@ -284,7 +320,7 @@ export async function sellerAcceptEnquiry(
  * Declines an enquiry. Transition is only valid from PENDING.
  */
 export async function sellerDeclineEnquiry(
-  caller: Caller,
+  caller: AuthenticatedCaller,
   enquiryId: string
 ): Promise<void> {
   const enquiry = await db.enquiry.findUnique({
@@ -328,7 +364,7 @@ export async function sellerDeclineEnquiry(
  * Reports the outcome of an unlocked deal (SUCCESS or FAILURE).
  */
 export async function reportDealOutcome(
-  caller: Caller,
+  caller: AuthenticatedCaller,
   input: DealOutcomeInput
 ): Promise<DealOutcomeResult> {
   const { enquiryId, outcome, reason } = input;
@@ -441,7 +477,7 @@ export async function reportDealOutcome(
  * Triggers the deal failure refund credit for the seller's wallet.
  */
 export async function buyerConfirmDealFailure(
-  caller: Caller,
+  caller: AuthenticatedCaller,
   enquiryId: string,
   reason?: string
 ): Promise<DealFailureConfirmResult> {
@@ -498,7 +534,7 @@ export async function buyerConfirmDealFailure(
  * Raises a dispute against an unlocked enquiry.
  */
 export async function raiseEnquiryDispute(
-  caller: Caller,
+  caller: AuthenticatedCaller,
   input: RaiseDisputeInput
 ): Promise<RaiseDisputeResult> {
   const { enquiryId, claimType, description, evidenceUrls } = input;

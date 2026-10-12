@@ -131,6 +131,7 @@ export function AgentLeadsView({
   // Modals state
   const [deliveringLead, setDeliveringLead] = useState<GuidedLeadItem | null>(null);
   const [commissionFee, setCommissionFee] = useState<number>(200);
+  const [visitOutcome, setVisitOutcome] = useState("");
 
   const [closingLead, setClosingLead] = useState<GuidedLeadItem | null>(null);
   const [closeReason, setCloseReason] = useState("");
@@ -245,6 +246,7 @@ export function AgentLeadsView({
         leadId: deliveringLead.id,
         status: GuidedLeadStatus.DELIVERED,
         commissionFee,
+        visitOutcome: visitOutcome.trim() || undefined,
       });
       if (!res.success) {
         setActionError(res.error);
@@ -255,6 +257,7 @@ export function AgentLeadsView({
           )
         );
         setDeliveringLead(null);
+        setVisitOutcome("");
       }
     } catch {
       setActionError("Failed to mark delivery.");
@@ -323,7 +326,7 @@ export function AgentLeadsView({
       case GuidedLeadStatus.DELIVERED:
         return (
           <Badge variant="outline" className="text-emerald-600 border-emerald-500/30 bg-emerald-500/5">
-            {locale === "am" ? "የተሳካ ሽያጭ" : "Delivered"}
+            {locale === "am" ? "ጉብኝት ተጠናቋል" : "Visit Completed"}
           </Badge>
         );
       case GuidedLeadStatus.CLOSED:
@@ -725,7 +728,7 @@ export function AgentLeadsView({
               { id: GuidedLeadStatus.NEW, label: locale === "am" ? "አዳዲስ" : "New" },
               { id: GuidedLeadStatus.ASSIGNED, label: locale === "am" ? "የተመደቡ" : "Assigned" },
               { id: GuidedLeadStatus.GUIDING, label: locale === "am" ? "በመመራት ላይ" : "Guiding" },
-              { id: GuidedLeadStatus.DELIVERED, label: locale === "am" ? "የተሳኩ" : "Delivered" },
+              { id: GuidedLeadStatus.DELIVERED, label: locale === "am" ? "ጉብኝት የተጠናቀቁ" : "Visit Completed" },
               { id: GuidedLeadStatus.CLOSED, label: locale === "am" ? "የተዘጉ" : "Closed" },
             ].map((tab) => (
               <button
@@ -965,23 +968,34 @@ export function AgentLeadsView({
         </div>
       </div>
 
-      {/* Record Delivery Dialog */}
-      <Dialog open={!!deliveringLead} onOpenChange={(open) => !open && setDeliveringLead(null)}>
+      {/* Confirm Visit Completed Dialog */}
+      <Dialog open={!!deliveringLead} onOpenChange={(open) => { if (!open) { setDeliveringLead(null); setVisitOutcome(""); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-base font-bold flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-              <span>Record Deal Delivery & Earn Commission</span>
+              <span>{locale === "am" ? "ጉብኝት ያረጋግጡ — ኮሚሽን ያስቀምጡ" : "Confirm Visit Completed & Earn Commission"}</span>
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Confirm that you accompanied buyer {deliveringLead?.buyerName || "customer"} to inspect and
-              order materials.
+              {locale === "am"
+                ? `ገዢ ${deliveringLead?.buyerName || "ደንበኛ"} ወደ መጋዘኑ አስጎብኝቻለሁ ወይም ትዕዛዙ ተጠናቋል።`
+                : `Confirm you guided buyer ${deliveringLead?.buyerName || "customer"} to inspect and order materials at the depot.`}
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleConfirmDelivery} className="space-y-4 pt-2">
             <div className="space-y-1.5">
-              <Label className="text-xs">Commission Fee Earned (ETB)</Label>
+              <Label className="text-xs font-semibold">{locale === "am" ? "የጉብኝት ውጤት (አማራጭ)" : "Visit Outcome Note (optional)"}</Label>
+              <Input
+                placeholder={locale === "am" ? "ምሳሌ: ትዕዛዝ ተጠናቋል — 50 ሲሚንቶ" : "e.g. Order placed – 50 bags cement"}
+                value={visitOutcome}
+                onChange={(e) => setVisitOutcome(e.target.value)}
+                className="text-xs"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">{locale === "am" ? "የኮሚሽን ክፍያ (ብር)" : "Commission Fee Earned (ETB)"}</Label>
               <Input
                 type="number"
                 min="0"
@@ -991,29 +1005,33 @@ export function AgentLeadsView({
                 className="text-xs font-mono font-bold"
               />
               <span className="text-[10px] text-muted-foreground">
-                Credited to your agent commission ledger upon confirmation.
+                {locale === "am" ? "ማረጋገጫ ሲሰጥ ወደ ኮሚሽን መዝገብዎ ይዛወራል።" : "Credited to your commission ledger upon confirmation."}
               </span>
             </div>
+
+            {actionError && (
+              <p className="text-xs text-destructive">{actionError}</p>
+            )}
 
             <div className="flex justify-end gap-2 pt-2">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setDeliveringLead(null)}
+                onClick={() => { setDeliveringLead(null); setVisitOutcome(""); }}
               >
-                Cancel
+                {locale === "am" ? "ሰርዝ" : "Cancel"}
               </Button>
               <Button
                 type="submit"
                 size="sm"
                 disabled={actionLoadingId === deliveringLead?.id}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1.5"
               >
                 {actionLoadingId === deliveringLead?.id && (
-                  <Loader2 className="h-3 w-3 animate-spin mr-1.5" />
+                  <Loader2 className="h-3 w-3 animate-spin" />
                 )}
-                Confirm Delivery
+                {locale === "am" ? "ጉብኝት ያረጋግጡ" : "Confirm Visit Completed"}
               </Button>
             </div>
           </form>

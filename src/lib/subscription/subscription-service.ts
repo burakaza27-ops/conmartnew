@@ -125,7 +125,7 @@ export async function submitSubscriptionPayment(params: {
   const normalizedRef = params.referenceCode.trim().toUpperCase();
 
   // Enforce global reference uniqueness to prevent duplicate submission floods or cross-seller reuse
-  const existing = await db.subscriptionPayment.findUnique({
+  const existing = await db.subscriptionPayment.findFirst({
     where: { referenceCode: normalizedRef },
     select: { status: true },
   });

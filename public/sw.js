@@ -1,8 +1,8 @@
 // =============================================================================
-// ECON — Progressive Web App Service Worker (PWA & Google Play TWA)
+// ConMart — Progressive Web App Service Worker (PWA & Google Play TWA)
 // =============================================================================
 
-const CACHE_NAME = "econ-pwa-v2";
+const CACHE_NAME = "conmart-pwa-v3";
 const OFFLINE_URL = "/offline";
 
 // Essential assets cached upfront for instant offline loading

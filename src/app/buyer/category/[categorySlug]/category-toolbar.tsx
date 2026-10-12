@@ -12,7 +12,7 @@
 
 import React, { useState, useTransition } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { Search, MapPin, X, ArrowUpDown, Tag } from "lucide-react";
+import { Search, MapPin, X, ArrowUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -31,18 +31,14 @@ const ETHIOPIAN_LOCATIONS = [
 ];
 
 interface CategoryToolbarProps {
-  availableBrands: string[];
   initialSearch?: string;
   initialLocation?: string;
-  initialBrand?: string;
   initialSort?: string;
 }
 
 export function CategoryToolbar({
-  availableBrands,
   initialSearch = "",
   initialLocation = "",
-  initialBrand = "",
   initialSort = "newest",
 }: CategoryToolbarProps) {
   const { t, locale } = useLanguage();
@@ -52,7 +48,6 @@ export function CategoryToolbar({
   const [isPending, startTransition] = useTransition();
 
   const [search, setSearch] = useState(initialSearch);
-  const [selectedBrand, setSelectedBrand] = useState(initialBrand);
   const [selectedLocation, setSelectedLocation] = useState(initialLocation);
   const [sortBy, setSortBy] = useState(initialSort);
 
@@ -108,7 +103,6 @@ export function CategoryToolbar({
 
   const handleClear = () => {
     setSearch("");
-    setSelectedBrand("");
     setSelectedLocation("");
     setSortBy("newest");
     startTransition(() => {
@@ -117,7 +111,7 @@ export function CategoryToolbar({
   };
 
   const hasActiveFilters = Boolean(
-    search || selectedBrand || selectedLocation || (sortBy && sortBy !== "newest")
+    search || selectedLocation || (sortBy && sortBy !== "newest")
   );
 
   return (
@@ -212,55 +206,6 @@ export function CategoryToolbar({
           )}
         </div>
       </div>
-
-      {/* Bottom row: Brand Facet Chips (if available) */}
-      {availableBrands.length > 0 && (
-        <div className="pt-2 border-t border-border/40 flex items-center gap-1.5 flex-wrap">
-          <span className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1 mr-1">
-            <Tag className="h-3 w-3" />
-            {t("catalog_brands_label")}
-          </span>
-
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedBrand("");
-              updateFilters({ brand: null });
-            }}
-            className={cn(
-              "rounded-lg px-2.5 py-1 text-xs font-medium transition-colors",
-              !selectedBrand
-                ? "bg-primary text-primary-foreground font-semibold shadow-sm"
-                : "border border-border/60 bg-muted/20 text-muted-foreground hover:border-primary/40 hover:text-foreground"
-            )}
-          >
-            {t("catalog_all_brands")}
-          </button>
-
-          {availableBrands.map((b) => {
-            const isSelected = selectedBrand.toLowerCase() === b.toLowerCase();
-            return (
-              <button
-                key={b}
-                type="button"
-                onClick={() => {
-                  const next = isSelected ? "" : b;
-                  setSelectedBrand(next);
-                  updateFilters({ brand: next ? b : null });
-                }}
-                className={cn(
-                  "rounded-lg px-2.5 py-1 text-xs font-medium transition-colors",
-                  isSelected
-                    ? "bg-primary text-primary-foreground font-semibold shadow-sm"
-                    : "border border-border/60 bg-muted/20 text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                )}
-              >
-                {b}
-              </button>
-            );
-          })}
-        </div>
-      )}
 
       {isPending && (
         <div className="h-0.5 w-full bg-primary/20 overflow-hidden rounded-full">

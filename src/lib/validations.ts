@@ -269,6 +269,13 @@ export const purchaseEnquirySchema = z.object({
     .min(2, "Contractor name must be at least 2 characters")
     .max(100, "Contractor name must be less than 100 characters")
     .optional(),
+  // Guest buyer capture (frictionless buyer flow)
+  guestName: z
+    .string()
+    .min(2, "Name must be at least 2 characters")
+    .max(100, "Name must be less than 100 characters")
+    .optional(),
+  guestPhone: ethiopianPhoneSchema.optional(),
 });
 export type PurchaseEnquiryData = z.infer<typeof purchaseEnquirySchema>;
 /** Caller-facing shape: fields with defaults are optional. */
@@ -473,6 +480,7 @@ export const updateGuidedLeadStatusSchema = z.object({
   leadId: z.string().min(1, "Lead ID is required"),
   status: z.enum(["NEW", "ASSIGNED", "GUIDING", "DELIVERED", "CLOSED"]),
   closeReason: z.string().trim().max(500).optional(),
+  visitOutcome: z.string().trim().max(200).optional(),
 });
 export type UpdateGuidedLeadStatusInput = z.infer<typeof updateGuidedLeadStatusSchema>;
 

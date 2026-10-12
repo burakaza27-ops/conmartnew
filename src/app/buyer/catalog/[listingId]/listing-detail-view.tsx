@@ -270,24 +270,15 @@ export function ListingDetailView({
               }))}
             />
 
-            {/* Send Verified Purchase Enquiry Button */}
-            <AuthGateButton
-              isAuthenticated={isAuthenticated}
-              redirectTo={`/buyer/catalog/${listing.id}`}
-              fallbackLabel={t("buyer_request_enquiry_btn")}
-              fallbackIcon={<SendHorizontal className="h-4 w-4" />}
-              fallbackSize="lg"
-              fallbackClassName="w-full gap-2 font-bold shadow-md bg-primary hover:bg-primary/90 text-primary-foreground"
+            {/* Send Verified Purchase Enquiry Button (Frictionless / No mandatory registration) */}
+            <Button
+              size="lg"
+              onClick={() => setIsEnquiryOpen(true)}
+              className="w-full gap-2 font-bold shadow-md bg-primary hover:bg-primary/90 text-primary-foreground"
             >
-              <Button
-                size="lg"
-                onClick={() => setIsEnquiryOpen(true)}
-                className="w-full gap-2 font-bold shadow-md bg-primary hover:bg-primary/90 text-primary-foreground"
-              >
-                <SendHorizontal className="h-4 w-4" />
-                {t("buyer_request_enquiry_btn")}
-              </Button>
-            </AuthGateButton>
+              <SendHorizontal className="h-4 w-4" />
+              {t("buyer_request_enquiry_btn")}
+            </Button>
 
             <AuthGateButton
               isAuthenticated={isAuthenticated}
@@ -357,22 +348,13 @@ export function ListingDetailView({
             </div>
           </div>
 
-          <AuthGateButton
-            isAuthenticated={isAuthenticated}
-            redirectTo={`/buyer/catalog/${listing.id}`}
-            fallbackLabel={t("buyer_request_enquiry_btn")}
-            fallbackIcon={<SendHorizontal className="h-4 w-4" />}
-            fallbackSize="default"
-            fallbackClassName="gap-1.5 font-bold shadow-md bg-primary text-primary-foreground text-xs"
+          <Button
+            onClick={() => setIsEnquiryOpen(true)}
+            className="gap-1.5 font-bold shadow-md bg-primary text-primary-foreground text-xs h-9 px-3.5"
           >
-            <Button
-              onClick={() => setIsEnquiryOpen(true)}
-              className="gap-1.5 font-bold shadow-md bg-primary text-primary-foreground text-xs h-9 px-3.5"
-            >
-              <SendHorizontal className="h-3.5 w-3.5" />
-              {t("buyer_request_enquiry_btn")}
-            </Button>
-          </AuthGateButton>
+            <SendHorizontal className="h-3.5 w-3.5" />
+            {t("buyer_request_enquiry_btn")}
+          </Button>
         </div>
       </div>
     </div>

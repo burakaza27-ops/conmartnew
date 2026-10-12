@@ -187,9 +187,23 @@ export async function toggleAgentAvailability(
   });
 }
 
+function extractLocalityTokens(text?: string | null): string[] {
+  if (!text) return [];
+  const cleaned = text
+    .replace(/sub-city|subcity|zone|corridor|area|depot|yard|addis ababa|ethiopia/gi, " ")
+    .replace(/[\/,\-\(\)]/g, " ")
+    .trim();
+  const words = cleaned
+    .split(/\s+/)
+    .map((w) => w.trim().toLowerCase())
+    .filter((w) => w.length >= 3);
+  return Array.from(new Set(words));
+}
+
 /**
  * Retrieves nearby visit requests for an approved agent (01B Screen 6).
- * Enforces privacy masking: Buyer phone is masked until assigned to the agent.
+ * Enforces intelligent proximity matching and privacy masking:
+ * Buyer phone is masked until assigned to this agent.
  */
 export async function getAgentNearbyRequests(userId: string) {
   const profile = await getAgentProfile(userId);
@@ -207,22 +221,19 @@ export async function getAgentNearbyRequests(userId: string) {
     };
   }
 
-  // Find requests in or near the agent's service area or unassigned leads
+  const rawTokens = [
+    ...extractLocalityTokens(profile.serviceArea),
+    ...extractLocalityTokens(profile.subCity),
+    ...extractLocalityTokens(profile.city),
+  ];
+  const localityTokens = Array.from(new Set(rawTokens));
+
+  // Find requests: assigned to this agent OR any new unassigned leads
   const leads = await db.guidedLead.findMany({
     where: {
       OR: [
         { assignedAgentId: userId },
-        {
-          status: GuidedLeadStatus.NEW,
-          ...(profile.serviceArea
-            ? {
-                areaLocation: {
-                  contains: profile.serviceArea.trim(),
-                  mode: "insensitive",
-                },
-              }
-            : {}),
-        },
+        { status: GuidedLeadStatus.NEW },
       ],
     },
     include: {
@@ -234,11 +245,16 @@ export async function getAgentNearbyRequests(userId: string) {
       },
     },
     orderBy: { createdAt: "desc" },
-    take: 30,
+    take: 50,
   });
 
   const formattedRequests = leads.map((lead) => {
     const isAssignedToMe = lead.assignedAgentId === userId;
+    const leadAreaLower = (lead.areaLocation || "").toLowerCase();
+    const isNearby =
+      localityTokens.length > 0 &&
+      localityTokens.some((token) => leadAreaLower.includes(token));
+
     return {
       id: lead.id,
       referenceCode: lead.referenceCode,
@@ -255,8 +271,18 @@ export async function getAgentNearbyRequests(userId: string) {
       closeReason: lead.closeReason,
       targetSeller: lead.targetSeller,
       assignedAgent: lead.assignedAgent,
+      isNearby,
       createdAt: lead.createdAt.toISOString(),
     };
+  });
+
+  // Sort: assigned to me first, then nearby leads, then others
+  formattedRequests.sort((a, b) => {
+    if (a.isPhoneRevealed && !b.isPhoneRevealed) return -1;
+    if (!a.isPhoneRevealed && b.isPhoneRevealed) return 1;
+    if (a.isNearby && !b.isNearby) return -1;
+    if (!a.isNearby && b.isNearby) return 1;
+    return 0;
   });
 
   return {

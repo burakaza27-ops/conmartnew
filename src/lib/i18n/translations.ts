@@ -1544,7 +1544,7 @@ export function getCategoryTitle(slug: string, fallback: string, locale: Locale)
   if (normalized.includes("glass")) return "Glass";
   if (normalized.includes("roof")) return dict.cat_roofing ?? fallback;
   if (normalized.includes("tile") || normalized.includes("finish")) return "Finishing Tiles";
-  if (normalized.includes("paint") || normalized.includes("gypsum")) return "Paints & Gypsum Work";
+  if (normalized.includes("paint") || normalized.includes("gypsum")) return "Paints";
   if (normalized.includes("admixture") || normalized.includes("chem")) return "Admixture & Chemicals";
   if (normalized.includes("block") || normalized.includes("hcb")) return "HCB";
   if (normalized.includes("sanitary")) return "Sanitary Materials";

@@ -19,6 +19,8 @@ import {
   HardHat,
   ShieldCheck,
   Zap,
+  User,
+  Phone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,7 +69,9 @@ export function PurchaseRequestModal({
   onSuccess,
 }: PurchaseRequestModalProps) {
   const router = useRouter();
-  const { t, locale } = useLanguage();
+  const { locale, t } = useLanguage();
+  const [buyerName, setBuyerName] = useState("");
+  const [buyerPhone, setBuyerPhone] = useState("");
   const [qty, setQty] = useState("50");
   const [deliveryPref, setDeliveryPref] = useState<DeliveryPreference>(
     DeliveryPreference.SELLER_DELIVERED
@@ -101,6 +105,25 @@ export function PurchaseRequestModal({
     e.preventDefault();
     if (isPending) return;
     setErrorMsg(null);
+
+    if (!buyerName.trim()) {
+      setErrorMsg(
+        locale === "am"
+          ? "እባክዎ ስምዎትን ወይም የተቋራጭ ድርጅትዎን ስም ያስገቡ።"
+          : "Please enter your name or company name."
+      );
+      return;
+    }
+
+    const cleanPhone = buyerPhone.trim();
+    if (!cleanPhone || cleanPhone.length < 9) {
+      setErrorMsg(
+        locale === "am"
+          ? "እባክዎ ትክክለኛ የኢትዮጵያ ስልክ ቁጥር ያስገቡ (ለምሳሌ፦ 09... ወይም 07...)።"
+          : "Please enter a valid Ethiopian phone number (e.g. 09... or 07...)."
+      );
+      return;
+    }
 
     const parsedQty = parseFloat(qty);
     if (isNaN(parsedQty) || parsedQty <= 0) {
@@ -145,6 +168,8 @@ export function PurchaseRequestModal({
         deliveryAddress: fullAddress,
         accessConstraints: constraintsText,
         requiredDate: requiredDate || undefined,
+        guestName: buyerName.trim(),
+        guestPhone: cleanPhone,
       });
 
       if (res.success) {
@@ -152,10 +177,6 @@ export function PurchaseRequestModal({
         if (onSuccess) {
           onSuccess(res.data.enquiryId, res.data.referenceCode);
         }
-        setTimeout(() => {
-          onClose();
-          router.push("/buyer/enquiries");
-        }, 2000);
       } else {
         setErrorMsg(res.error || (locale === "am" ? "ጥያቄውን መላክ አልተሳካም።" : "Failed to submit enquiry."));
       }
@@ -197,19 +218,44 @@ export function PurchaseRequestModal({
         </div>
 
         {successCode ? (
-          <div className="py-8 text-center space-y-3">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
-              <CheckCircle2 className="h-6 w-6" />
+          <div className="py-8 text-center space-y-4">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
+              <CheckCircle2 className="h-8 w-8" />
             </div>
-            <h4 className="text-lg font-bold text-foreground">
-              {locale === "am" ? "የግዢ ጥያቄዎ በተሳካ ሁኔታ ተልኳል!" : "Purchase Request Submitted!"}
-            </h4>
-            <p className="text-xs text-muted-foreground font-mono">
-              {locale === "am" ? "የማጣቀሻ ቁጥር፦" : "Reference Code:"} <span className="font-bold text-primary">{successCode}</span>
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {t("modal_redirecting")}
-            </p>
+            <div className="space-y-1">
+              <h4 className="text-lg font-bold text-foreground">
+                {locale === "am" ? "የግዢ ጥያቄዎ በተሳካ ሁኔታ ተልኳል!" : "Purchase Request Submitted!"}
+              </h4>
+              <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                {locale === "am"
+                  ? "አቅራቢው ክምችትና የትራንስፖርት ዋጋ እንዳረጋገጠ ቀጥታ ይደውሉልዎታል ወይም ማረጋገጫ ይደርስዎታል።"
+                  : "The verified supplier is reviewing your order. You will be contacted directly upon confirmation."}
+              </p>
+            </div>
+            <div className="inline-flex items-center gap-2 rounded-lg bg-muted px-4 py-2 border font-mono text-sm">
+              <span className="text-xs text-muted-foreground">{locale === "am" ? "የማጣቀሻ ኮድ፦" : "Ref Code:"}</span>
+              <span className="font-bold text-primary">{successCode}</span>
+            </div>
+            <div className="pt-2 flex justify-center gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onClose}
+              >
+                {locale === "am" ? "ዝጋ" : "Close"}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  onClose();
+                  router.push(`/buyer/enquiries?code=${encodeURIComponent(successCode)}`);
+                }}
+              >
+                {locale === "am" ? "ጥያቄውን ተከታተል" : "Track Request"}
+              </Button>
+            </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -225,6 +271,54 @@ export function PurchaseRequestModal({
                     ? "አቅራቢው ክምችትና ትክክለኛ ዋጋ እንዳረጋገጠ የስልክ ቁጥርና የመጋዘን አድራሻ ወዲያውኑ ይገለጻል።"
                     : "Direct supplier phone & depot yard address unlock immediately upon request acceptance."}
                 </p>
+              </div>
+            </div>
+
+            {/* Direct Contact Info (Frictionless / No mandatory registration) */}
+            <div className="rounded-xl border border-border/80 bg-muted/20 p-3.5 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <User className="h-3.5 w-3.5 text-primary" />
+                  {locale === "am" ? "የእርስዎ መረጃ (ያለ ምዝገባ)" : "Your Contact Details (No Registration Needed)"}
+                </span>
+                <span className="text-[10px] bg-primary/10 text-primary font-medium px-2 py-0.5 rounded-full">
+                  {locale === "am" ? "ቀጥታ ግንኙነት" : "Direct Connect"}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="req-buyer-name" className="text-xs font-semibold">
+                    {locale === "am" ? "ስምዎ / የድርጅት ስም *" : "Contact / Company Name *"}
+                  </Label>
+                  <div className="relative">
+                    <User className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                    <Input
+                      id="req-buyer-name"
+                      placeholder={locale === "am" ? "ምሳሌ፦ አበበ ከበደ ወይም ABC ኮንስትራክሽን" : "e.g. Abebe Kebede or ABC Const."}
+                      value={buyerName}
+                      onChange={(e) => setBuyerName(e.target.value)}
+                      className="pl-8 text-xs h-9"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="req-buyer-phone" className="text-xs font-semibold">
+                    {locale === "am" ? "ስልክ ቁጥር *" : "Phone Number (ET) *"}
+                  </Label>
+                  <div className="relative">
+                    <Phone className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                    <Input
+                      id="req-buyer-phone"
+                      type="tel"
+                      placeholder="0911 23 45 67"
+                      value={buyerPhone}
+                      onChange={(e) => setBuyerPhone(e.target.value)}
+                      className="pl-8 text-xs h-9 font-mono"
+                      required
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 

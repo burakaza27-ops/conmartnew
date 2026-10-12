@@ -67,9 +67,7 @@ export async function submitPurchaseEnquiryAction(
   input: PurchaseEnquiryInput
 ): Promise<ActionResult<{ enquiryId: string; referenceCode: string }>> {
   const auth = await authorize(["BUYER", "FIELD_AGENT", "ADMIN"]);
-  if (!auth.ok) {
-    return { success: false, error: auth.error };
-  }
+  const caller = auth.ok ? auth.user : null;
 
   const parsed = purchaseEnquirySchema.safeParse(input);
   if (!parsed.success) {
@@ -80,20 +78,36 @@ export async function submitPurchaseEnquiryAction(
   }
 
   const data = parsed.data;
-  const caller = auth.user;
 
-  const clientId = await getClientIdentifier();
-  const [byUser, byIp] = await Promise.all([
-    rateLimit(`enquiry:user:${caller.id}`, { limit: 20, windowSeconds: 3600 }),
-    rateLimit(`enquiry:ip:${clientId}`, { limit: 40, windowSeconds: 3600 }),
-  ]);
-
-  if (!byUser.allowed || !byIp.allowed) {
+  // If not authenticated, guest details are mandatory
+  if (!caller && (!data.guestPhone || !data.guestName)) {
     return {
       success: false,
-      error: rateLimitMessage(
-        Math.max(byUser.retryAfterSeconds, byIp.retryAfterSeconds)
-      ),
+      error: "Please provide your contact name and phone number to submit a purchase request.",
+    };
+  }
+
+  const clientId = await getClientIdentifier();
+  const rateLimits = [
+    rateLimit(`enquiry:ip:${clientId}`, { limit: 40, windowSeconds: 3600 }),
+  ];
+
+  if (caller) {
+    rateLimits.push(
+      rateLimit(`enquiry:user:${caller.id}`, { limit: 20, windowSeconds: 3600 })
+    );
+  } else if (data.guestPhone) {
+    rateLimits.push(
+      rateLimit(`enquiry:guest:${data.guestPhone}`, { limit: 10, windowSeconds: 3600 })
+    );
+  }
+
+  const results = await Promise.all(rateLimits);
+  const blocked = results.find((r) => !r.allowed);
+  if (blocked) {
+    return {
+      success: false,
+      error: rateLimitMessage(blocked.retryAfterSeconds),
     };
   }
 

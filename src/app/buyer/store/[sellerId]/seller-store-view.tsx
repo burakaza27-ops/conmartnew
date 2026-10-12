@@ -16,6 +16,9 @@ import {
   Star,
   Receipt,
   Layers,
+  Phone,
+  MessageCircle,
+  ExternalLink,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -151,6 +154,45 @@ export function SellerStoreView({ store }: SellerStoreViewProps) {
                 </span>
               </div>
             </div>
+
+            {/* Subscribed Supplier Direct Contacts vs Privacy Protected Badge */}
+            {store.isSubscribed && (store.directPhone || store.whatsappNumber) ? (
+              <div className="flex flex-wrap items-center gap-2.5 pt-2">
+                {store.directPhone && (
+                  <a
+                    href={`tel:${store.directPhone.replace(/\s+/g, "")}`}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-xs font-bold text-primary-foreground shadow-xs hover:bg-primary/90 transition-colors"
+                  >
+                    <Phone className="h-3.5 w-3.5" />
+                    <span>Call Supplier ({store.directPhone})</span>
+                  </a>
+                )}
+                {store.whatsappNumber && (
+                  <a
+                    href={`https://wa.me/${store.whatsappNumber.replace(/[^\d]/g, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 transition-colors"
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" />
+                    <span>WhatsApp</span>
+                  </a>
+                )}
+                {store.address && (
+                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground ml-1">
+                    <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
+                    {store.address}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <div className="pt-2">
+                <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-md border border-border/60">
+                  <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground" />
+                  Protected Direct Supplier — Contact unlocked upon enquiry introduction or agent guided visit.
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>

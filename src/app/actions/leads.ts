@@ -201,7 +201,7 @@ export async function assignGuidedLeadAction(leadId: string, targetAgentId?: str
  * When DELIVERED, automatically calculates and records agent commission.
  */
 export async function updateGuidedLeadStatusAction(
-  params: UpdateGuidedLeadStatusInput & { commissionFee?: number }
+  params: UpdateGuidedLeadStatusInput & { commissionFee?: number; visitOutcome?: string }
 ) {
   const auth = await authorize(["FIELD_AGENT", "ADMIN"]);
   if (!auth.ok) {
@@ -221,6 +221,7 @@ export async function updateGuidedLeadStatusAction(
       leadId: parsed.data.leadId,
       status: parsed.data.status,
       closeReason: parsed.data.closeReason,
+      visitOutcome: parsed.data.visitOutcome || params.visitOutcome,
       agentId: auth.user.role === "FIELD_AGENT" ? auth.user.id : undefined,
     });
 
@@ -234,7 +235,9 @@ export async function updateGuidedLeadStatusAction(
         guidedLeadId: updated.id,
         agentId,
         feeAmount: fee,
-        notes: `Delivery recorded for lead ${updated.referenceCode}`,
+        notes: params.visitOutcome
+          ? `Visit completed for ${updated.referenceCode} — ${params.visitOutcome}`
+          : `Visit completed for lead ${updated.referenceCode}`,
       });
     }
 

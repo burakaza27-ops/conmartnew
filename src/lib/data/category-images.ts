@@ -56,7 +56,9 @@ export const CATEGORY_IMAGES: Record<string, string> = {
   finishes:
     "https://images.unsplash.com/photo-1595428774223-ef52624120d2?auto=format&fit=crop&w=800&q=80",
 
-  // 10. Paints & Gypsum Work
+  // 10. Paints
+  paints:
+    "https://images.unsplash.com/photo-1562259949-e8e7689d7828?auto=format&fit=crop&w=800&q=80",
   "paints-gypsum":
     "https://images.unsplash.com/photo-1562259949-e8e7689d7828?auto=format&fit=crop&w=800&q=80",
   paint:
@@ -141,7 +143,7 @@ export function normalizeCategorySlug(input?: string | null): string {
   if (cleaned.includes("glass")) return "glass";
   if (cleaned.includes("roof") || cleaned.includes("ega")) return "roofing";
   if (cleaned.includes("tile") || cleaned.includes("finish")) return "finishing-tiles";
-  if (cleaned.includes("paint") || cleaned.includes("gypsum")) return "paints-gypsum";
+  if (cleaned.includes("paint") || cleaned.includes("gypsum")) return "paints";
   if (cleaned.includes("admixture") || cleaned.includes("chemical")) return "admixtures-chemicals";
   if (cleaned.includes("block") || cleaned.includes("hcb")) return "blocks";
   if (cleaned.includes("sanitary") || cleaned.includes("toilet") || cleaned.includes("basin")) return "sanitary-materials";

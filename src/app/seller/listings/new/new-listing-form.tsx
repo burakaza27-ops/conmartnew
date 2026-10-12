@@ -8,7 +8,7 @@
 // Validation: react-hook-form + Zod (createListingSchema).
 // =============================================================================
 
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -30,7 +30,10 @@ import {
   CheckCircle,
   AlertCircle,
   Upload,
+  Layers,
+  Sparkles,
 } from "lucide-react";
+import { BatchListingForm } from "./batch-listing-form";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -101,6 +104,7 @@ export function NewListingForm({
 }: NewListingFormProps) {
   const { t, locale } = useLanguage();
   const router = useRouter();
+  const [mode, setMode] = useState<"BATCH" | "SINGLE">("BATCH");
 
   const {
     register,
@@ -218,23 +222,72 @@ export function NewListingForm({
         {t("seller_form_back")}
       </Link>
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-border/60 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/60 pb-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            {t("seller_form_create_title")}
+            {mode === "BATCH"
+              ? locale === "am"
+                ? "ፈጣን ባች እቃዎች መመዝገቢያ"
+                : "Batch Material Inventory Listing"
+              : t("seller_form_create_title")}
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {t("seller_form_create_subtitle")}
+            {mode === "BATCH"
+              ? locale === "am"
+                ? "ብዙ የግንባታ እቃዎችን (ስም፣ መግለጫ፣ መለኪያ፣ ዋጋ፣ ብዛት፣ ብራንድ እና ፎቶ) በአንድ ጊዜ ይመዝግቡ"
+                : "Rapidly add multiple construction materials with rates, quantities, and specifications in one go."
+              : t("seller_form_create_subtitle")}
           </p>
+        </div>
+
+        {/* Mode Switcher Tabs */}
+        <div className="flex items-center gap-1.5 p-1 bg-muted/60 rounded-xl border border-border/60 self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={() => setMode("BATCH")}
+            className={cn(
+              "flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all",
+              mode === "BATCH"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Layers className="h-3.5 w-3.5 text-primary" />
+            <span>{locale === "am" ? "ባች መመዝገቢያ" : "Batch Listing"}</span>
+            <Badge variant="secondary" className="text-[10px] py-0 px-1 font-mono bg-primary/10 text-primary">
+              {locale === "am" ? "ፈጣን" : "Fast"}
+            </Badge>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("SINGLE")}
+            className={cn(
+              "flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all",
+              mode === "SINGLE"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Package className="h-3.5 w-3.5" />
+            <span>{locale === "am" ? "ነጠላ እቃ በደረጃ" : "Single Detailed"}</span>
+          </button>
         </div>
       </div>
 
-      {errors.root?.message && (
-        <div className="flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive font-medium">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          <span>{errors.root.message}</span>
-        </div>
-      )}
+      {mode === "BATCH" ? (
+        <BatchListingForm
+          categories={categories}
+          curatedProducts={curatedProducts}
+          sellerCompanyName={sellerCompanyName}
+        />
+      ) : (
+        <>
+          {errors.root?.message && (
+            <div className="flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive font-medium">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{errors.root.message}</span>
+            </div>
+          )}
 
       <form
         onSubmit={handleSubmit(onSubmit)}
@@ -710,6 +763,8 @@ export function NewListingForm({
           </div>
         </div>
       </form>
+      </>
+      )}
     </div>
   );
 }

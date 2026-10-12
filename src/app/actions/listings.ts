@@ -34,6 +34,9 @@ export interface CreateListingInput {
   specs: Record<string, string>;
   location: string;
   imageUrl?: string;
+  brand?: string;
+  description?: string;
+  availableQty?: number;
   existingProductId?: string;
   priceTiers: CreatePriceTierInput[];
 }
@@ -148,6 +151,9 @@ export async function createSellerListing(input: CreateListingInput) {
           active: true,
           location: input.location.trim(),
           imageUrl: input.imageUrl || null,
+          brand: input.brand?.trim() || null,
+          description: input.description?.trim() || null,
+          availableQty: input.availableQty ?? null,
         },
       });
 
@@ -200,6 +206,172 @@ export async function createSellerListing(input: CreateListingInput) {
   } catch (error) {
     console.error("Error creating listing:", error);
     return { error: "An unexpected error occurred while saving your listing." };
+  }
+}
+
+export interface BatchListingItemInput {
+  title: string;
+  categoryId: string;
+  description?: string;
+  unit: ProductUnit;
+  unitPrice: number;
+  availableQty?: number;
+  brand?: string;
+  imageUrl?: string;
+  existingProductId?: string;
+}
+
+export interface CreateBatchListingsInput {
+  location: string;
+  items: BatchListingItemInput[];
+}
+
+/**
+ * Creates multiple seller listings in a single atomic batch transaction.
+ * Designed for rapid inventory entry (Item / Description / Unit / Rate / Available Quantity / Brand / Image).
+ */
+export async function createBatchSellerListingsAction(input: CreateBatchListingsInput) {
+  try {
+    const auth = await authorize(["SELLER", "ADMIN"]);
+    if (!auth.ok) {
+      return { error: auth.error };
+    }
+    const dbUser = auth.user;
+
+    const clientId = await getClientIdentifier();
+    const rl = await rateLimit(`listing:batch-create:${dbUser.id}`, { limit: 20, windowSeconds: 3600 });
+    if (!rl.allowed) {
+      return { error: rateLimitMessage(rl.retryAfterSeconds) };
+    }
+
+    if (!input.location || input.location.trim().length < 2) {
+      return { error: "Please specify your yard or warehouse location." };
+    }
+
+    if (!input.items || input.items.length === 0) {
+      return { error: "Please include at least one material item to list." };
+    }
+
+    if (input.items.length > 50) {
+      return { error: "A maximum of 50 items can be listed in a single batch." };
+    }
+
+    // Validate each item
+    for (let i = 0; i < input.items.length; i++) {
+      const item = input.items[i];
+      const rowNum = i + 1;
+      if (!item.title || item.title.trim().length < 2) {
+        return { error: `Item #${rowNum}: Please provide a valid material name (at least 2 characters).` };
+      }
+      if (!item.categoryId) {
+        return { error: `Item #${rowNum} ("${item.title}"): Please select a category.` };
+      }
+      if (!item.unitPrice || item.unitPrice <= 0) {
+        return { error: `Item #${rowNum} ("${item.title}"): Rate (unit price) must be greater than zero ETB.` };
+      }
+      if (item.availableQty !== undefined && item.availableQty !== null && item.availableQty < 0) {
+        return { error: `Item #${rowNum} ("${item.title}"): Available quantity cannot be negative.` };
+      }
+    }
+
+    const defaultValidUntil = new Date();
+    defaultValidUntil.setMonth(defaultValidUntil.getMonth() + 6); // 6 months active validity
+
+    const createdListingIds: string[] = [];
+
+    await db.$transaction(async (tx) => {
+      // 0. Ensure SellerProfile and Wallet exist
+      const existingProfile = await tx.sellerProfile.findUnique({
+        where: { userId: dbUser.id },
+      });
+      if (!existingProfile) {
+        await tx.sellerProfile.create({
+          data: {
+            userId: dbUser.id,
+            verificationStatus: "UNVERIFIED",
+            sellerType: "RETAILER",
+          },
+        });
+      }
+
+      const existingWallet = await tx.wallet.findUnique({
+        where: { sellerId: dbUser.id },
+      });
+      if (!existingWallet) {
+        await tx.wallet.create({
+          data: {
+            sellerId: dbUser.id,
+            cashBalance: 0,
+            creditBalance: 0,
+          },
+        });
+      }
+
+      // Process each item
+      for (const item of input.items) {
+        let targetProductId = item.existingProductId;
+
+        if (!targetProductId) {
+          const product = await tx.product.create({
+            data: {
+              categoryId: item.categoryId,
+              title: item.title.trim(),
+              unit: item.unit,
+              imageUrl: item.imageUrl || null,
+              specs: item.brand ? { brand: item.brand.trim() } : {},
+            },
+          });
+          targetProductId = product.id;
+        }
+
+        const listing = await tx.listing.create({
+          data: {
+            sellerId: dbUser.id,
+            productId: targetProductId,
+            active: true,
+            location: input.location.trim(),
+            imageUrl: item.imageUrl || null,
+            brand: item.brand?.trim() || null,
+            description: item.description?.trim() || null,
+            availableQty: item.availableQty ?? null,
+          },
+        });
+
+        createdListingIds.push(listing.id);
+
+        await tx.priceTier.create({
+          data: {
+            listingId: listing.id,
+            minQty: 1,
+            maxQty: item.availableQty && item.availableQty > 1 ? item.availableQty : 999999,
+            unitPrice: item.unitPrice,
+            validUntil: defaultValidUntil,
+          },
+        });
+      }
+    });
+
+    revalidatePath("/seller/dashboard");
+    revalidatePath("/seller/listings");
+    revalidatePath("/buyer");
+    revalidatePath("/buyer/catalog");
+    revalidatePath("/buyer/category/all");
+    revalidatePath("/", "layout");
+
+    try {
+      await qualifyReferralIfApplicable(dbUser.id);
+    } catch (err) {
+      console.error("[createBatchSellerListingsAction:referral]", err);
+    }
+
+    return {
+      success: true,
+      count: createdListingIds.length,
+      listingIds: createdListingIds,
+    };
+  } catch (error) {
+    console.error("Error creating batch listings:", error);
+    return { error: "An unexpected error occurred while saving your batch listings." };
   }
 }
 
@@ -270,6 +442,9 @@ export interface UpdateListingInput {
   title?: string;
   location: string;
   imageUrl?: string;
+  brand?: string;
+  description?: string;
+  availableQty?: number;
   priceTiers: CreatePriceTierInput[];
 }
 
@@ -365,6 +540,9 @@ export async function updateSellerListing(input: UpdateListingInput) {
         data: {
           location: input.location.trim(),
           imageUrl: input.imageUrl !== undefined ? input.imageUrl : listing.imageUrl,
+          brand: input.brand !== undefined ? (input.brand?.trim() || null) : listing.brand,
+          description: input.description !== undefined ? (input.description?.trim() || null) : listing.description,
+          availableQty: input.availableQty !== undefined ? (input.availableQty ?? null) : listing.availableQty,
           ...(targetProductId !== listing.productId ? { productId: targetProductId } : {}),
         },
       });
@@ -459,5 +637,83 @@ export async function deleteSellerListing(listingId: string) {
   } catch (error) {
     console.error("Error deleting listing:", error);
     return { error: "Failed to delete material listing." };
+  }
+}
+
+/**
+ * Admin / System Maintenance:
+ * Automatically identifies and archives listings inactive for > 6 months
+ * or whose price tiers have all expired > 6 months ago. Sets active = false.
+ */
+export async function archiveStaleListingsAction() {
+  try {
+    const auth = await authorize(["ADMIN"]);
+    if (!auth.ok) {
+      return { success: false, error: auth.error };
+    }
+
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    // Find active listings that have been stale > 6 months
+    const staleListings = await db.listing.findMany({
+      where: {
+        active: true,
+        OR: [
+          // All price tiers expired before 6 months ago
+          {
+            priceTiers: {
+              none: {
+                validUntil: { gt: sixMonthsAgo },
+              },
+            },
+          },
+          // Updated more than 6 months ago with no currently valid price tier
+          {
+            updatedAt: { lt: sixMonthsAgo },
+            priceTiers: {
+              none: {
+                validUntil: { gt: new Date() },
+              },
+            },
+          },
+        ],
+      },
+      select: { id: true },
+    });
+
+    if (staleListings.length === 0) {
+      return {
+        success: true,
+        archivedCount: 0,
+        message: "No stale listings older than 6 months found.",
+      };
+    }
+
+    const ids = staleListings.map((l) => l.id);
+
+    const updateRes = await db.listing.updateMany({
+      where: { id: { in: ids } },
+      data: { active: false },
+    });
+
+    revalidatePath("/seller/dashboard");
+    revalidatePath("/seller/listings");
+    revalidatePath("/buyer");
+    revalidatePath("/buyer/catalog");
+    revalidatePath("/buyer/category/all");
+    revalidatePath("/", "layout");
+
+    return {
+      success: true,
+      archivedCount: updateRes.count,
+      message: `Archived ${updateRes.count} stale listings inactive for more than 6 months.`,
+    };
+  } catch (error) {
+    console.error("Error archiving stale listings:", error);
+    return {
+      success: false,
+      error: "An unexpected error occurred while archiving stale listings.",
+    };
   }
 }

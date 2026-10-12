@@ -108,13 +108,13 @@ export const DEFAULT_CATEGORIES = [
     sortOrder: 9,
   },
   {
-    name: "Paints & Gypsum Work",
-    slug: "paints-gypsum",
+    name: "Paints",
+    slug: "paints",
     iconName: "Paintbrush",
     imageUrl:
       "https://images.unsplash.com/photo-1562259949-e8e7689d7828?auto=format&fit=crop&w=800&q=80",
     description:
-      "Kadisco & Super Mega paints, quartz plaster, gypsum boards, framing studs & putty.",
+      "Kadisco, Super Mega, wall paints, primers, varnishes, quartz and coating materials.",
     unlockFee: 200,
     sortOrder: 10,
   },

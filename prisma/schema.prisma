@@ -298,7 +298,7 @@ model User {
   authId      String?  @unique @map("auth_id")
   role        UserRole
   name        String
-  phone       String   @unique
+  phone       String
   companyName String   @map("company_name")
   createdAt   DateTime @default(now()) @map("created_at")
 
@@ -332,6 +332,7 @@ model User {
   assignedLeads        GuidedLead[]            @relation("AssignedAgentLeads")
   agentCommissions     AgentCommissionRecord[]
 
+  @@index([phone])
   @@map("users")
 }
 
@@ -356,6 +357,7 @@ model SellerProfile {
   subscriptionExpiresAt  DateTime?                @map("subscription_expires_at")
   workingHours           String?                  @default("Mon - Sat: 8:00 AM - 6:00 PM") @map("working_hours")
   address                String?
+  branches               Json?                    @default("[]")
   latitude               Float?
   longitude              Float?
   whatsappNumber         String?                  @map("whatsapp_number")
@@ -367,6 +369,8 @@ model SellerProfile {
   referralMilestone      Int                      @default(0) @map("referral_milestone")
   createdAt              DateTime                 @default(now()) @map("created_at")
   updatedAt              DateTime                 @updatedAt @map("updated_at")
+
+  @@index([tinNumber])
 
   @@map("seller_profiles")
 }
@@ -415,13 +419,14 @@ model TopUpRequest {
   wallet        Wallet         @relation(fields: [walletId], references: [id], onDelete: Cascade)
   amount        Decimal        @db.Decimal(12, 2)
   paymentMethod PaymentMethod  @default(TELEBIRR) @map("payment_method")
-  referenceCode String         @unique @map("reference_code")
+  referenceCode String         @map("reference_code")
   slipUrl       String?        @map("slip_url")
   status        WalletTxStatus @default(PENDING)
   reviewedBy    String?        @map("reviewed_by")
   reviewedAt    DateTime?      @map("reviewed_at")
   createdAt     DateTime       @default(now()) @map("created_at")
 
+  @@index([referenceCode])
   @@index([sellerId, createdAt(sort: Desc)])
   @@index([status, createdAt(sort: Desc)])
   @@map("top_up_requests")
@@ -481,6 +486,10 @@ model Listing {
   stockState           StockState        @default(IN_STOCK) @map("stock_state")
   availableQty         Int?              @map("available_qty")
   isDeleted            Boolean           @default(false) @map("is_deleted")
+  brand                String?
+  description          String?
+  createdAt            DateTime          @default(now()) @map("created_at")
+  updatedAt            DateTime          @default(now()) @updatedAt @map("updated_at")
 
   // --- Relations ---
   seller     User        @relation("SellerListings", fields: [sellerId], references: [id], onDelete: Cascade)
@@ -494,6 +503,7 @@ model Listing {
 
   @@index([sellerId, active, isDeleted])
   @@index([productId, active, isDeleted])
+  @@index([updatedAt(sort: Desc)])
   @@map("listings")
 }
 
@@ -532,6 +542,8 @@ model Enquiry {
   status             EnquiryStatus      @default(PENDING)
   agentId            String?            @map("agent_id")
   agent              User?              @relation("AgentEnquiries", fields: [agentId], references: [id], onDelete: SetNull)
+  guestName          String?            @map("guest_name")
+  guestPhone         String?            @map("guest_phone")
   createdAt          DateTime           @default(now()) @map("created_at")
   respondedAt        DateTime?          @map("responded_at")
 
@@ -681,6 +693,7 @@ model AgentProfile {
   // Personal Details & Education
   city                       String?             @default("Addis Ababa")
   subCity                    String?             @map("sub_city")
+  photoUrl                   String?             @map("photo_url")
   grade12DocUrl              String?             @map("grade12_doc_url")
   identityDocUrl             String?             @map("identity_doc_url")
 
@@ -900,7 +913,7 @@ model SubscriptionPayment {
   tier          SubscriptionTier
   amount        Decimal          @db.Decimal(12, 2)
   paymentMethod PaymentMethod    @default(TELEBIRR) @map("payment_method")
-  referenceCode String           @unique @map("reference_code")
+  referenceCode String           @map("reference_code")
   slipUrl       String?          @map("slip_url")
   status        WalletTxStatus   @default(PENDING)
   reviewedBy    String?          @map("reviewed_by")
@@ -908,6 +921,7 @@ model SubscriptionPayment {
   notes         String?
   createdAt     DateTime         @default(now()) @map("created_at")
 
+  @@index([referenceCode])
   @@index([sellerId, status])
   @@map("subscription_payments")
 }
@@ -943,6 +957,7 @@ model GuidedLead {
   assignedAgentId    String?          @map("assigned_agent_id")
   assignedAgent      User?            @relation("AssignedAgentLeads", fields: [assignedAgentId], references: [id], onDelete: SetNull)
   status             GuidedLeadStatus @default(NEW)
+  visitOutcome       String?          @map("visit_outcome")
   closeReason        String?          @map("close_reason")
   createdAt          DateTime         @default(now()) @map("created_at")
   updatedAt          DateTime         @updatedAt @map("updated_at")
