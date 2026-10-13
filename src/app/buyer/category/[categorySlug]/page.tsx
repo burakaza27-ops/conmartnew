@@ -31,7 +31,7 @@ export default async function FocusedCategoryCatalogPage({
 
   const searchQuery = sParams.search;
   const brandFilter = sParams.brand;
-  const sortBy = sParams.sort || "supplier_count";
+  const sortBy = sParams.sort || "newest";
 
   const isAll = categorySlug === "all";
 

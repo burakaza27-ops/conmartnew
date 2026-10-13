@@ -112,6 +112,7 @@ export async function submitAgentApplication(
     subCity: input.subCity.trim(),
     grade12DocUrl: input.grade12DocUrl.trim(),
     identityDocUrl: input.identityDocUrl.trim(),
+    photoUrl: input.photoUrl?.trim() || null,
     serviceArea: input.serviceArea.trim(),
     latitude: input.latitude ?? null,
     longitude: input.longitude ?? null,

@@ -126,6 +126,7 @@ export const registerSchema = z.object({
   role: z.enum(SELF_REGISTERABLE_ROLES, {
     error: "Please select your account type",
   }),
+  tinNumber: z.string().trim().max(30, "Invalid TIN number").optional(),
   referralCode: z.string().max(20, "Invalid referral code").optional(),
 })
   .refine((data) => data.password === data.confirmPassword, {
@@ -496,6 +497,8 @@ export const submitAgentApplicationSchema = z.object({
   subCity: z.string().trim().min(2, "Sub-city / woreda is required"),
   grade12DocUrl: z.string().trim().min(1, "Grade 12 completion document is required"),
   identityDocUrl: z.string().trim().min(1, "National identity document (ID) is required"),
+  photoUrl: z.string().trim().optional(),
+  nationalIdNumber: z.string().trim().max(50).optional(),
 
   // Work Area & Availability (Screen 3)
   serviceArea: z.string().trim().min(2, "Service area is required"),

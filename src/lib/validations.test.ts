@@ -38,6 +38,14 @@ describe("registerSchema", () => {
     ).toBe(true);
   });
 
+  it("accepts a supplier registration with valid TIN number", () => {
+    expect(
+      registerSchema.safeParse(
+        validRegistration({ role: "SELLER", tinNumber: "0012345678" })
+      ).success
+    ).toBe(true);
+  });
+
   it("refuses to let a visitor register themselves as an administrator", () => {
     const result = registerSchema.safeParse(validRegistration({ role: "ADMIN" }));
     expect(result.success).toBe(false);

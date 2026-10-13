@@ -41,6 +41,8 @@ export interface ExistingAgentProfile {
   notes?: string | null;
   rejectionReason?: string | null;
   correctionNote?: string | null;
+  photoUrl?: string | null;
+  nationalIdNumber?: string | null;
   grade12DocUrl?: string | null;
   identityDocUrl?: string | null;
   guarantorLetterDocUrl?: string | null;
@@ -111,8 +113,13 @@ export function AgentApplyWizard({ user, existingProfile }: AgentApplyWizardProp
   const [phoneVerified, setPhoneVerified] = useState(!!user.phone);
   const [city, setCity] = useState(existingProfile?.city || "Addis Ababa");
   const [subCity, setSubCity] = useState(existingProfile?.subCity || "Bole");
+  const [nationalIdNumber, setNationalIdNumber] = useState(
+    (existingProfile?.nationalIdNumber as string | undefined) || ""
+  );
+  const [photoUrl, setPhotoUrl] = useState(existingProfile?.photoUrl || "");
   const [grade12DocUrl, setGrade12DocUrl] = useState(existingProfile?.grade12DocUrl || "");
   const [identityDocUrl, setIdentityDocUrl] = useState(existingProfile?.identityDocUrl || "");
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [uploadingGrade12, setUploadingGrade12] = useState(false);
   const [uploadingId, setUploadingId] = useState(false);
 
@@ -224,6 +231,8 @@ export function AgentApplyWizard({ user, existingProfile }: AgentApplyWizardProp
         phone,
         city,
         subCity,
+        photoUrl: photoUrl || undefined,
+        nationalIdNumber: nationalIdNumber || undefined,
         grade12DocUrl,
         identityDocUrl,
         serviceArea,
@@ -657,6 +666,86 @@ export function AgentApplyWizard({ user, existingProfile }: AgentApplyWizardProp
                   {identityDocUrl && (
                     <p className="text-[10px] font-mono text-muted-foreground truncate">
                       {identityDocUrl}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* National ID Number */}
+              <div className="space-y-2">
+                <Label htmlFor="agent-nid" className="text-xs font-bold">
+                  National ID / FAYDA / Kebele ID Number
+                </Label>
+                <Input
+                  id="agent-nid"
+                  value={nationalIdNumber}
+                  onChange={(e) => setNationalIdNumber(e.target.value)}
+                  placeholder="e.g. 1048291048 / ET-ID-9921"
+                  className="text-xs font-mono"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  Official Ethiopian identification number for agent registry verification.
+                </p>
+              </div>
+
+              {/* Agent Photo (Passport / Face Photo) */}
+              <div className="space-y-2">
+                <Label className="text-xs font-bold flex items-center justify-between">
+                  <span>Recent Agent Photo (የወኪሉ ፎቶ)</span>
+                  {photoUrl && (
+                    <span className="text-[11px] text-emerald-600 flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" /> Uploaded
+                    </span>
+                  )}
+                </Label>
+                <div className="rounded-xl border border-dashed border-border p-4 text-center space-y-2 bg-muted/10 hover:bg-muted/20 transition-colors">
+                  {photoUrl ? (
+                    <div className="flex items-center justify-center gap-3">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={photoUrl}
+                        alt="Agent"
+                        className="h-12 w-12 rounded-full object-cover border border-primary/40 shadow-xs"
+                      />
+                      <label
+                        htmlFor="agent-photo-upload"
+                        className="cursor-pointer text-xs font-bold text-primary hover:underline"
+                      >
+                        Change photo
+                      </label>
+                    </div>
+                  ) : (
+                    <>
+                      <Users className="h-6 w-6 text-muted-foreground mx-auto" />
+                      <div className="text-xs text-muted-foreground">
+                        <label
+                          htmlFor="agent-photo-upload"
+                          className="cursor-pointer font-bold text-primary hover:underline"
+                        >
+                          {uploadingPhoto ? "Uploading..." : "Upload photo"}
+                        </label>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          JPG or PNG (Passport size, Max 5 MB)
+                        </p>
+                      </div>
+                    </>
+                  )}
+                  <input
+                    id="agent-photo-upload"
+                    type="file"
+                    accept="image/jpeg,image/png"
+                    className="hidden"
+                    disabled={uploadingPhoto}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        handleFileUpload(file, "id", setPhotoUrl, setUploadingPhoto);
+                      }
+                    }}
+                  />
+                  {photoUrl && (
+                    <p className="text-[10px] font-mono text-muted-foreground truncate">
+                      {photoUrl}
                     </p>
                   )}
                 </div>

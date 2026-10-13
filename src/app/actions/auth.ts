@@ -138,8 +138,8 @@ export async function signUp(
     confirmPassword: formData.get("confirmPassword"),
     name: formData.get("name"),
     phone: formData.get("phone"),
-    companyName: formData.get("companyName"),
     role: formData.get("role"),
+    tinNumber: formData.get("tinNumber") || undefined,
     referralCode: formData.get("referralCode") || undefined,
   });
 
@@ -151,8 +151,23 @@ export async function signUp(
   }
 
   const { email, password, name, companyName, role } = parsed.data;
+  const tinNumber = parsed.data.tinNumber?.trim() || undefined;
   const phone = normalizeEthiopianPhone(parsed.data.phone);
   const referralCode = role === "SELLER" ? parsed.data.referralCode : undefined;
+
+  // Supplier TIN uniqueness check to prevent duplicate accounts under different emails
+  if (role === "SELLER" && tinNumber) {
+    const existingSellerWithTin = await db.sellerProfile.findFirst({
+      where: { tinNumber: { equals: tinNumber, mode: "insensitive" } },
+      select: { id: true },
+    });
+    if (existingSellerWithTin) {
+      return {
+        success: false,
+        error: `A supplier with TIN '${tinNumber}' is already registered in ConMart. Please sign in to your existing account or contact support.`,
+      };
+    }
+  }
 
   const clientId = await getClientIdentifier();
   const emailKey = email.toLowerCase();
@@ -236,6 +251,7 @@ export async function signUp(
                 create: {
                   verificationStatus: "UNVERIFIED" as const,
                   sellerType: "RETAILER" as const,
+                  tinNumber: tinNumber || null,
                 },
               },
             }

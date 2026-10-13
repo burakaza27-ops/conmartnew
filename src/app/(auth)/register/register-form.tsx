@@ -48,6 +48,7 @@ export function RegisterForm() {
       phone: "",
       companyName: "",
       role: referralCode ? "SELLER" : "BUYER",
+      tinNumber: "",
       referralCode: referralCode || "",
     },
   });
@@ -70,6 +71,9 @@ export function RegisterForm() {
       formData.set("phone", data.phone);
       formData.set("companyName", data.companyName);
       formData.set("role", data.role);
+      if (data.tinNumber) {
+        formData.set("tinNumber", data.tinNumber);
+      }
       if (data.referralCode) {
         formData.set("referralCode", data.referralCode);
       }
@@ -194,6 +198,36 @@ export function RegisterForm() {
             <p className="text-xs text-destructive">{errors.companyName.message}</p>
           )}
         </div>
+
+        {selectedRole === "SELLER" && (
+          <div className="space-y-2 rounded-xl border border-primary/20 bg-primary/5 p-3.5">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="reg-tin" className="font-semibold text-foreground">
+                {t("auth_tin_label", "TIN Number (የግብር ከፋይ ቁጥር)")}{" "}
+                <span className="text-destructive">*</span>
+              </Label>
+              <span className="text-[11px] font-mono text-muted-foreground">10-digit TIN</span>
+            </div>
+            <Input
+              id="reg-tin"
+              type="text"
+              placeholder="e.g. 0012345678"
+              disabled={isPending}
+              {...register("tinNumber")}
+              aria-invalid={!!errors.tinNumber}
+              className="font-mono bg-background text-xs"
+            />
+            {errors.tinNumber && (
+              <p className="text-xs text-destructive">{errors.tinNumber.message}</p>
+            )}
+            <p className="text-[11px] text-muted-foreground">
+              {t(
+                "auth_tin_helper",
+                "Required for suppliers to trace and verify business identity and prevent duplicate listings."
+              )}
+            </p>
+          </div>
+        )}
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">

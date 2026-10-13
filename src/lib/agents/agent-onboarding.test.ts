@@ -37,6 +37,16 @@ describe("01B — Online Agent Registration & Vetting Tests", () => {
     expect(res.success).toBe(true);
   });
 
+  it("validates application with photo and national ID number", () => {
+    const withPhotoAndNid = {
+      ...validApp,
+      photoUrl: "https://example.com/photos/agent.jpg",
+      nationalIdNumber: "FAYDA-9810283",
+    };
+    const res = submitAgentApplicationSchema.safeParse(withPhotoAndNid);
+    expect(res.success).toBe(true);
+  });
+
   it("validates a community/other guarantee application", () => {
     const communityApp = {
       ...validApp,

@@ -109,6 +109,7 @@ export function BatchListingForm({
   const [isPending, startTransition] = useTransition();
 
   const [location, setLocation] = useState(COMMON_DEPOT_LOCATIONS[0]);
+  const [branchName, setBranchName] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successCount, setSuccessCount] = useState<number | null>(null);
 
@@ -251,8 +252,12 @@ export function BatchListingForm({
     }
 
     startTransition(async () => {
+      const finalLocation = branchName.trim()
+        ? `${branchName.trim()} — ${location.trim()}`
+        : location.trim();
+
       const res = await createBatchSellerListingsAction({
-        location: location.trim(),
+        location: finalLocation,
         items: payloadItems,
       });
 
@@ -339,16 +344,29 @@ export function BatchListingForm({
           </CardHeader>
 
           <CardContent className="p-5 space-y-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">
-                {locale === "am" ? "የመጋዘኑ አድራሻ" : "Depot / Yard Address"}
-              </Label>
-              <Input
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder="e.g. Addis Ababa, Kaliti Industrial Zone"
-                className="text-xs"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">
+                  {locale === "am" ? "የቅርንጫፍ ስም (አማራጭ)" : "Branch Name / Store Branch (Optional)"}
+                </Label>
+                <Input
+                  value={branchName}
+                  onChange={(e) => setBranchName(e.target.value)}
+                  placeholder="e.g. Branch 2 - Bole Bulbula Yard, Main Yard"
+                  className="text-xs"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">
+                  {locale === "am" ? "የመጋዘኑ / የቅርንጫፉ አድራሻ *" : "Depot / Yard Address *"}
+                </Label>
+                <Input
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="e.g. Addis Ababa, Kaliti Industrial Zone"
+                  className="text-xs"
+                />
+              </div>
             </div>
 
             {/* Quick Location Shortcuts */}

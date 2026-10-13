@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { getCategoryImage } from "@/lib/data/category-images";
 import type { CategoryWithCount } from "@/lib/data/catalog";
+import { useLanguage } from "@/lib/i18n/language-context";
 import { cn } from "@/lib/utils";
 
 interface CategoryGlanceViewProps {
@@ -67,9 +68,8 @@ function getCategoryIcon(slug: string) {
 }
 
 export function CategoryGlanceView({ categories, totalOffers }: CategoryGlanceViewProps) {
+  const { locale } = useLanguage();
   const [filterQuery, setFilterQuery] = useState("");
-  // "dense" fits all 20 categories on a single screen/glance on both mobile & desktop
-  // "cards" provides a larger visual showcase
   const [viewMode, setViewMode] = useState<"dense" | "cards">("cards");
 
   const filteredCategories = useMemo(() => {
@@ -124,36 +124,35 @@ export function CategoryGlanceView({ categories, totalOffers }: CategoryGlanceVi
             )}
           </div>
 
-          {/* View Mode Toggle: Dense Glance vs Visual Cards */}
+          {/* View Mode Toggle: List vs Grid */}
           <div className="inline-flex rounded-lg border border-border bg-card p-0.5 text-xs shadow-xs">
             <button
               type="button"
               onClick={() => setViewMode("dense")}
               className={cn(
-                "inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors",
+                "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
                 viewMode === "dense"
-                  ? "bg-primary text-primary-foreground shadow-xs"
+                  ? "bg-primary text-primary-foreground shadow-xs font-semibold"
                   : "text-muted-foreground hover:text-foreground"
               )}
-              title="Dense view: see all 20 categories at one glance"
+              title={locale === "am" ? "የዝርዝር እይታ" : "List view: compact directory"}
             >
               <LayoutList className="size-3.5" />
-              <span className="hidden sm:inline">1-Glance</span>
-              <span className="sm:hidden">Glance</span>
+              <span>{locale === "am" ? "ዝርዝር" : "List"}</span>
             </button>
             <button
               type="button"
               onClick={() => setViewMode("cards")}
               className={cn(
-                "inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors",
+                "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
                 viewMode === "cards"
-                  ? "bg-primary text-primary-foreground shadow-xs"
+                  ? "bg-primary text-primary-foreground shadow-xs font-semibold"
                   : "text-muted-foreground hover:text-foreground"
               )}
-              title="Visual cards view"
+              title={locale === "am" ? "የካርድ / ሰንጠረዥ እይታ" : "Grid view: visual cards"}
             >
               <Grid2X2 className="size-3.5" />
-              <span>Cards</span>
+              <span>{locale === "am" ? "ሰንጠረዥ" : "Grid"}</span>
             </button>
           </div>
         </div>

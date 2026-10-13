@@ -493,21 +493,25 @@ export function NewListingForm({
                 </Label>
                 <Input
                   id="location"
-                  placeholder={t("seller_form_location_placeholder")}
+                  placeholder={
+                    locale === "am"
+                      ? "ምሳሌ፦ ዋናው መጋዘን (ቃሊቲ) ወይም ቅርንጫፍ 2 (ቦሌ ቡልቡላ)"
+                      : "e.g. Main Yard (Kaliti), or Branch 2 (Bole Bulbula Depot)"
+                  }
                   {...register("location")}
                   className={cn("h-9 text-xs", errors.location && "border-destructive focus-visible:ring-destructive")}
                 />
                 <FieldError locale={locale} message={errors.location?.message} />
                 <div className="flex flex-wrap items-center gap-1.5 pt-1">
                   <span className="text-[10px] font-medium text-muted-foreground mr-0.5">
-                    {locale === "am" ? "የተለመዱ ዞኖች፦" : "Popular zones:"}
+                    {locale === "am" ? "የቅርንጫፍ / ዞን ፈጣን ምርጫዎች፦" : "Branch / zone presets:"}
                   </span>
                   {[
-                    "Kaliti Industrial Zone",
-                    "Akaki Depot Yard",
+                    "Main Yard — Kaliti",
+                    "Branch 2 — Bole Bulbula",
+                    "Branch 3 — Megenagna Depot",
+                    "Akaki Yard",
                     "Gotera Warehouse",
-                    "CMC / Ayat Corridor",
-                    "Legetafo Depot",
                     "Sebeta Industrial Hub",
                   ].map((hub) => (
                     <button

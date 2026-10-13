@@ -355,6 +355,13 @@ function ProductCard({
 
       {/* Content */}
       <div className="flex flex-1 flex-col p-3">
+        {product.brand && (
+          <div className="mb-1">
+            <span className="inline-flex items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary tracking-wide">
+              {product.brand}
+            </span>
+          </div>
+        )}
         <h3 className="text-sm font-bold text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors mb-2">
           {product.title}
         </h3>
