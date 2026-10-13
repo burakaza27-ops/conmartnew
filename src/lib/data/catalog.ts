@@ -19,7 +19,7 @@ import { ensureDefaultCategories, DEFAULT_CATEGORIES } from "@/lib/data/default-
 function maskedSupplier(sellerId: string) {
   return {
     id: sellerId,
-    name: "ConMart Verified Supplier",
+    name: "Econ Verified Supplier Depot",
     companyName: getMaskedSellerLabel(sellerId),
   };
 }

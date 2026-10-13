@@ -20,6 +20,7 @@ import {
   ArrowRight,
   Building2,
   Users,
+  Recycle,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,20 +32,23 @@ import { getGuidedLeadsAction } from "@/app/actions/leads";
 import { getAdminDisputesAction } from "@/app/actions/enquiries";
 import { getAdminSellersAction } from "@/app/actions/sellers";
 import { getAdminAgentApplicationsAction } from "@/app/actions/agents";
+import { fetchAllSiteWastages } from "@/lib/data/wastage";
 import { OrdersTable } from "./orders-table";
 import { DisputesTable } from "./disputes-table";
 import { SellerVerificationTable } from "./seller-verification-table";
+import { WastageModerationTable } from "./wastage-moderation-table";
 
 export default async function CommandCenterPage() {
   await requireRole(["ADMIN"], "/admin/command-center");
 
-  const [orders, subscriptionsRes, guidedLeadsRes, disputesRes, sellersRes, agentsRes] = await Promise.all([
+  const [orders, subscriptionsRes, guidedLeadsRes, disputesRes, sellersRes, agentsRes, wastages] = await Promise.all([
     fetchAllOrders(),
     getPendingSubscriptionPaymentsAction(),
     getGuidedLeadsAction(),
     getAdminDisputesAction(),
     getAdminSellersAction(),
     getAdminAgentApplicationsAction(),
+    fetchAllSiteWastages(),
   ]);
 
   const pendingPayments = subscriptionsRes.success && subscriptionsRes.data ? subscriptionsRes.data : [];
@@ -53,6 +57,7 @@ export default async function CommandCenterPage() {
   const sellers = sellersRes.success && sellersRes.data ? sellersRes.data : [];
   const agentApps = agentsRes.success && agentsRes.data ? agentsRes.data : [];
   const pendingAgents = agentApps.filter((a) => a.approvalStatus === "UNDER_REVIEW" || a.approvalStatus === "SUBMITTED");
+  const pendingWastages = wastages.filter((w) => w.status === "PENDING");
 
   return (
     <div className="space-y-8">
@@ -108,6 +113,11 @@ export default async function CommandCenterPage() {
           icon={<Inbox className="h-5 w-5 text-amber-500" />}
           label="Bank Proformas"
           value={orders.length.toString()}
+        />
+        <StatCard
+          icon={<Recycle className="h-5 w-5 text-emerald-500" />}
+          label="Site Wastages"
+          value={pendingWastages.length.toString()}
         />
       </div>
 
@@ -189,7 +199,10 @@ export default async function CommandCenterPage() {
         </Card>
       </div>
 
-      {/* 1. Supplier Verification & Document Compliance Queue */}
+      {/* 1. Site Wastages Community Moderation Queue */}
+      <WastageModerationTable initialItems={wastages} />
+
+      {/* 2. Supplier Verification & Document Compliance Queue */}
       <SellerVerificationTable initialSellers={sellers} />
 
       {/* 2. Trade Disputes & Mediation Queue */}

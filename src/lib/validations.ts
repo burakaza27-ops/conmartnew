@@ -329,7 +329,7 @@ export const createListingSchema = z.object({
   location: z
     .string()
     .trim()
-    .min(2, "Please enter your warehouse or yard location")
+    .min(2, "Please select your warehouse zone or sub-city (e.g. Jemo, Tulu Dimtu, Urael, Kaliti) for transport cost comparison")
     .max(150),
   imageUrl: z.string().url("Must be a valid image URL").optional().or(z.literal("")),
   brand: z.string().trim().max(80).optional(),

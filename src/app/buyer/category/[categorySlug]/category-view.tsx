@@ -8,6 +8,7 @@
 
 "use client";
 
+import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -18,9 +19,13 @@ import {
   Store,
   ArrowUpDown,
   X,
+  Camera,
+  Phone,
+  MapPin,
+  CheckCircle2,
 } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatETB } from "@/lib/types";
 import { useLanguage } from "@/lib/i18n/language-context";
@@ -30,6 +35,8 @@ import {
   getLocalizedUnit,
 } from "@/lib/i18n/translations";
 import type { ProductCatalogRow } from "@/lib/data/catalog";
+import type { SiteWastageItem } from "@/lib/data/wastage";
+import { GuestWastageModal } from "@/components/wastage/guest-wastage-modal";
 import { CategoryToolbar } from "./category-toolbar";
 
 import { getProductFallback } from "@/lib/data/category-images";
@@ -55,6 +62,7 @@ interface CategoryViewProps {
   searchQuery?: string;
   brandFilter?: string;
   sortBy?: string;
+  approvedWastages?: SiteWastageItem[];
 }
 
 export function CategoryView({
@@ -66,10 +74,13 @@ export function CategoryView({
   searchQuery,
   brandFilter,
   sortBy,
+  approvedWastages = [],
 }: CategoryViewProps) {
   const { t, locale } = useLanguage();
   const router = useRouter();
   const isAll = categorySlug === "all";
+  const isWastage = categorySlug === "reusable-site-wastage";
+  const [isWastageModalOpen, setIsWastageModalOpen] = React.useState(false);
 
   const rawTitle = isAll ? "All Construction Materials" : categoryDetail?.name || "";
   const activeCategoryTitle = isAll
@@ -267,9 +278,121 @@ export function CategoryView({
       </div>
 
       {/* ============================================================
+          3B. SITE WASTAGES COMMUNITY HERO BANNER (When on Site Wastages or All)
+      ============================================================ */}
+      {(isWastage || isAll) && (
+        <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-card to-card p-4 sm:p-5 shadow-xs mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="space-y-1 max-w-xl">
+              <div className="flex items-center gap-2">
+                <span className="flex size-7 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-xs">
+                  <Camera className="size-4" />
+                </span>
+                <h3 className="text-base font-bold text-foreground">
+                  {locale === "am"
+                    ? "የሳይት ተረፈ ምርት ይሽጡ (መመዝገብ አያስፈልግም)"
+                    : "Have Leftover Scrap or Materials? Snap & Sell Freely"}
+                </h3>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {locale === "am"
+                  ? "በግንባታ ሳይትዎ ላይ የተረፈ የሳንቃ ፎርምዎርክ፣ የፌሮ ብረት ቁራጭ፣ ብሎኬት ወይም ስክራፕ አለዎት? ፎቶ በማንሳት ብቻ ያለምንም ምዝገባ ይለጥፉ። አስተዳዳሪ ሲያጸድቅ እዚህ ይለጠፋል።"
+                  : "Have leftover formwork timber, rebar offcuts, scrap metal, or surplus blocks? Snap a photo to list freely without registering. Admin reviews and approves before publishing."}
+              </p>
+            </div>
+            <Button
+              onClick={() => setIsWastageModalOpen(true)}
+              size="default"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2 shrink-0 shadow-xs"
+            >
+              <Camera className="size-4" />
+              <span>{locale === "am" ? "ፎቶ አንስተው ይለጥፉ (ነፃ)" : "Snap & Post Wastage"}</span>
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================
+          3C. APPROVED GUEST SITE WASTAGES (Direct Foreman Contact)
+      ============================================================ */}
+      {approvedWastages.length > 0 && (isWastage || isAll) && (
+        <div className="mb-8 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold flex items-center gap-2 text-foreground">
+              <CheckCircle2 className="size-4 text-emerald-600" />
+              <span>{locale === "am" ? "የተረጋገጡ የሳይት ተረፈ ምርቶች" : "Verified Site Wastages & Scrap Lots"}</span>
+              <span className="text-xs text-muted-foreground font-normal">
+                ({approvedWastages.length} lots)
+              </span>
+            </h2>
+          </div>
+
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {approvedWastages.map((w) => (
+              <div
+                key={w.id}
+                className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xs hover:border-emerald-500/40 hover:shadow-md transition-all duration-200"
+              >
+                <div className="relative aspect-square w-full overflow-hidden bg-muted">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={w.imageUrl}
+                    alt={w.title}
+                    className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute top-2 left-2">
+                    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-600/90 backdrop-blur-xs px-2 py-0.5 text-[10px] font-bold text-white shadow-xs">
+                      <CheckCircle2 className="size-3" />
+                      Verified Lot
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-1 flex-col p-3.5 space-y-2">
+                  <h3 className="text-sm font-bold text-foreground leading-snug line-clamp-2">
+                    {w.title}
+                  </h3>
+
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-muted-foreground">
+                      {w.quantity} {w.unit}
+                    </span>
+                    <span className="font-mono font-bold text-primary">
+                      {w.askingPrice > 0 ? formatETB(w.askingPrice, locale) : "Negotiable"}
+                    </span>
+                  </div>
+
+                  <div className="text-xs text-muted-foreground flex items-center gap-1 truncate pt-0.5">
+                    <MapPin className="size-3 text-primary shrink-0" />
+                    <span>{w.location}</span>
+                  </div>
+
+                  {w.description && (
+                    <p className="text-[11px] text-muted-foreground line-clamp-2">
+                      {w.description}
+                    </p>
+                  )}
+
+                  <div className="pt-2 mt-auto border-t border-border/60">
+                    <a
+                      href={`tel:${w.contactPhone.replace(/\s+/g, "")}`}
+                      className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 px-3 py-2 text-xs font-bold text-white shadow-2xs transition-colors"
+                    >
+                      <Phone className="size-3.5" />
+                      <span>{locale === "am" ? "ለፎርማኑ ይደውሉ" : "Call Foreman"} ({w.contactPhone})</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================
           4. PRODUCT GRID
       ============================================================ */}
-      {products.length === 0 ? (
+      {products.length === 0 && approvedWastages.length === 0 ? (
         <EmptyState
           icon={Package}
           title={t("catalog_empty_title")}
@@ -290,13 +413,18 @@ export function CategoryView({
           }
           className="rounded-2xl border border-dashed border-border bg-card/40"
         />
-      ) : (
+      ) : products.length > 0 ? (
         <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {products.map((product) => (
             <ProductCard key={product.productId} product={product} categorySlug={categorySlug} />
           ))}
         </div>
-      )}
+      ) : null}
+
+      <GuestWastageModal
+        isOpen={isWastageModalOpen}
+        onClose={() => setIsWastageModalOpen(false)}
+      />
     </div>
   );
 }

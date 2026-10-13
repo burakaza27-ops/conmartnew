@@ -11,6 +11,7 @@ import {
   fetchCategoriesWithCounts,
   fetchCategoryBySlug,
 } from "@/lib/data/catalog";
+import { fetchApprovedSiteWastages } from "@/lib/data/wastage";
 import { CategoryView } from "./category-view";
 
 interface CategoryPageProps {
@@ -34,11 +35,13 @@ export default async function FocusedCategoryCatalogPage({
   const sortBy = sParams.sort || "newest";
 
   const isAll = categorySlug === "all";
+  const isWastage = categorySlug === "reusable-site-wastage";
 
-  const [allCategories, categoryDetail, products] = await Promise.all([
+  const [allCategories, categoryDetail, products, approvedWastages] = await Promise.all([
     fetchCategoriesWithCounts(),
     isAll ? null : fetchCategoryBySlug(categorySlug),
     fetchProductsCatalog(categorySlug, searchQuery, brandFilter, sortBy),
+    isWastage || isAll ? fetchApprovedSiteWastages() : Promise.resolve([]),
   ]);
 
   if (!isAll && !categoryDetail) {
@@ -63,6 +66,7 @@ export default async function FocusedCategoryCatalogPage({
       searchQuery={searchQuery}
       brandFilter={brandFilter}
       sortBy={sortBy}
+      approvedWastages={approvedWastages}
     />
   );
 }

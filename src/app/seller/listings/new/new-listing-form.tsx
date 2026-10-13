@@ -55,6 +55,7 @@ import {
   translateZodError,
 } from "@/lib/i18n/translations";
 import { getProductFallback } from "@/lib/data/category-images";
+import { STANDARD_LOCATION_ZONES } from "@/lib/data/location-zones";
 import {
   createListingSchema,
   type CreateListingFormData,
@@ -505,53 +506,102 @@ export function NewListingForm({
           {/* ─── Location ─── */}
           <Card className="border-border/60">
             <CardHeader className="pb-3 border-b border-border/40">
-              <CardTitle className="text-sm font-bold flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-primary" />
-                <span>3. {t("seller_form_location_label")}</span>
+              <CardTitle className="text-sm font-bold flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-primary" />
+                  <span>3. {t("seller_form_location_label")} *</span>
+                </span>
+                <span className="text-[10px] text-muted-foreground font-normal">
+                  {locale === "am" ? "ለትራንስፖርት ወጪ ንጽጽር" : "Mandatory for transport logistics"}
+                </span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 pt-4">
+            <CardContent className="space-y-3.5 pt-4">
               <div className="space-y-1.5">
-                <Label htmlFor="location" className="text-xs font-semibold">
-                  {t("seller_form_location_label")} *
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="location" className="text-xs font-semibold">
+                    {locale === "am"
+                      ? "የመጋዘኑ ዞን / ክፍለ ከተማ (ግዴታ) *"
+                      : "Depot Zone / Sub-City (Mandatory) *"}
+                  </Label>
+                  <span className="text-[10px] text-muted-foreground">
+                    {locale === "am"
+                      ? "ገዢዎች የትራንስፖርት ወጪን ከዕቃው ዋጋ ጋር እንዲያወዳድሩ"
+                      : "Buyers compare material price + truck transport"}
+                  </span>
+                </div>
+
+                {/* Zone selector dropdown */}
+                <select
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setValue("location", e.target.value, { shouldValidate: true });
+                    }
+                  }}
+                  className="w-full h-9 rounded-md border border-border bg-background px-3 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary mb-1.5"
+                >
+                  <option value="">
+                    {locale === "am" ? "-- ይፋዊ ዞን ወይም ክፍለ ከተማ ይምረጡ --" : "-- Select Recognized Transport Zone --"}
+                  </option>
+                  {STANDARD_LOCATION_ZONES.map((z) => (
+                    <option key={z.id} value={`${z.region}, ${z.name}`}>
+                      {z.name} ({z.subCity})
+                    </option>
+                  ))}
+                </select>
+
                 <Input
                   id="location"
                   placeholder={
                     locale === "am"
-                      ? "ምሳሌ፦ ዋናው መጋዘን (ቃሊቲ) ወይም ቅርንጫፍ 2 (ቦሌ ቡልቡላ)"
-                      : "e.g. Main Yard (Kaliti), or Branch 2 (Bole Bulbula Depot)"
+                      ? "ምሳሌ፦ Addis Ababa, Jemo ወይም Kaliti (ልዩ ቦታ መጠቀስ የለበትም)"
+                      : "e.g. Addis Ababa, Jemo or Kaliti (exact street landmark optional)"
                   }
                   {...register("location")}
                   className={cn("h-9 text-xs", errors.location && "border-destructive focus-visible:ring-destructive")}
                 />
                 <FieldError locale={locale} message={errors.location?.message} />
-                <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                  <span className="text-[10px] font-medium text-muted-foreground mr-0.5">
-                    {locale === "am" ? "የቅርንጫፍ / ዞን ፈጣን ምርጫዎች፦" : "Branch / zone presets:"}
-                  </span>
-                  {[
-                    "Main Yard — Kaliti",
-                    "Branch 2 — Bole Bulbula",
-                    "Branch 3 — Megenagna Depot",
-                    "Akaki Yard",
-                    "Gotera Warehouse",
-                    "Sebeta Industrial Hub",
-                  ].map((hub) => (
-                    <button
-                      key={hub}
-                      type="button"
-                      onClick={() =>
-                        setValue("location", `Addis Ababa, ${hub}`, {
-                          shouldValidate: true,
-                        })
-                      }
-                      className="px-2 py-0.5 rounded-md text-[10px] border border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-all"
-                    >
-                      {hub}
-                    </button>
-                  ))}
+
+                {/* Quick transport zone presets specifically featuring Jemo, Tulu Dimtu, Urael, Kaliti */}
+                <div className="space-y-1 pt-1.5">
+                  <div className="flex items-center justify-between text-[10px] text-muted-foreground font-medium">
+                    <span>{locale === "am" ? "ዋና ዋና የትራንስፖርት ዞኖች (ፈጣን ምርጫ)፦" : "Primary Transport Logistics Hubs (Quick Pick):"}</span>
+                    <span className="text-primary font-bold">Jemo · Tulu Dimtu · Urael · Kaliti</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {[
+                      { label: "Jemo", val: "Addis Ababa, Jemo (Nifas Silk-Lafto)" },
+                      { label: "Tulu Dimtu", val: "Addis Ababa, Tulu Dimtu (Akaki Kaliti)" },
+                      { label: "Urael / Bambis", val: "Addis Ababa, Urael / Bambis (Bole/Kirkos)" },
+                      { label: "Kaliti", val: "Addis Ababa, Kaliti Industrial Corridor" },
+                      { label: "Akaki", val: "Addis Ababa, Akaki Logistics Hub" },
+                      { label: "Bole Bulbula", val: "Addis Ababa, Bole Bulbula Yard" },
+                      { label: "Merkato", val: "Addis Ababa, Merkato Trading Hub" },
+                      { label: "CMC / Ayat", val: "Addis Ababa, CMC / Ayat Corridor" },
+                      { label: "Gelan", val: "Gelan Logistics & Dry Port Zone" },
+                      { label: "Sebeta", val: "Sebeta Industrial Hub" },
+                    ].map((hub) => (
+                      <button
+                        key={hub.label}
+                        type="button"
+                        onClick={() =>
+                          setValue("location", hub.val, {
+                            shouldValidate: true,
+                          })
+                        }
+                        className="px-2 py-0.5 rounded-md text-[10px] font-medium border border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-all"
+                      >
+                        {hub.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+
+                <p className="text-[11px] text-muted-foreground leading-relaxed pt-1 border-t border-border/40">
+                  💡 {locale === "am"
+                    ? "ማሳሰቢያ፦ የዞኑ መገኛ ግዴታ ሲሆን ትክክለኛ የበር ቁጥር ወይም የሰፈር ውስጥ አድራሻ ማስገባት አያስፈልግም። ገዢዎች ዋጋና የትራንስፖርት ርቀትን ለማነጻጸር ዞኑን ብቻ ይጠቀማሉ።"
+                    : "Notice: Zone/sub-city is mandatory so contractors can estimate truck freight (Sino/Isuzu). Exact gate or interior street addresses are not needed."}
+                </p>
               </div>
             </CardContent>
           </Card>

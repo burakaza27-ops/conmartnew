@@ -182,7 +182,7 @@ export default async function BuyerCategoryHubPage() {
           />
           <Guarantee
             icon={Coins}
-            title="Direct phone unlock"
+            title="Direct supplier contact"
             body="Subscribers share their phone number with you instantly — no middleman, no markup."
           />
           <Guarantee

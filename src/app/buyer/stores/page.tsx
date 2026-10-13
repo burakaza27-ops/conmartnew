@@ -67,7 +67,7 @@ export default async function AllStoresPage() {
         </div>
         <p className="text-sm text-muted-foreground max-w-2xl">
           Browse by supplier. Each store shows the company&apos;s complete product range
-          and wholesale prices. Contact details unlock after submitting a purchase enquiry.
+          and wholesale prices. Connect directly with suppliers upon submitting a purchase enquiry.
         </p>
         <p className="text-sm">
           <span className="font-semibold text-foreground">{stores.length}</span>{" "}

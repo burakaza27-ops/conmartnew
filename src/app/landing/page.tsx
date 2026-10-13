@@ -88,7 +88,7 @@ export default function LandingPage() {
             <Feature
               icon={ShoppingCart}
               title="Zero transaction fees"
-              description="ConMart does not handle buyer payments or take a percentage. Buyers pay suppliers directly."
+              description="Econ does not handle buyer payments or take a percentage. Buyers pay suppliers directly."
             />
             <Feature
               icon={Building2}

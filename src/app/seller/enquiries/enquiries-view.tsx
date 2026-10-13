@@ -477,14 +477,16 @@ export function SellerEnquiriesView({
                       </div>
 
                       <p className="text-xs text-muted-foreground leading-relaxed">
-                        The contractor’s direct phone number, company name, and exact construction site address are protected under ConMart zero-leakage security. Unlock this introduction to initiate direct phone contact and finalize logistics.
+                        {locale === "am"
+                          ? "የተቋራጩ ቀጥተኛ ስልክ፣ የድርጅት ስም እና የግንባታ ቦታ አድራሻ በEcon የተረጋገጡ ናቸው። በቀጥታ በስልክ ለመነጋገርና የትራንስፖርት ሁኔታዎችን ለማጠናቀቅ ይህንን ጥያቄ ይቀበሉ።"
+                          : "The contractor's direct phone number, company name, and delivery site address are verified under Econ. Accept this enquiry to initiate direct contact and finalize logistics."}
                       </p>
 
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2 border-t border-primary/20">
                         <div className="text-xs">
                           {canAfford ? (
                             <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                              ✓ Spendable wallet balance covers this unlock fee.
+                              {locale === "am" ? "✓ ጥያቄውን ለመቀበል ዝግጁ ነው" : "✓ Verified enquiry ready to connect."}
                             </span>
                           ) : (
                             <span className="text-destructive font-medium flex items-center gap-1">
@@ -638,12 +640,12 @@ export function SellerEnquiriesView({
             <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3.5 space-y-1.5 text-xs">
               <div className="font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
                 <ShieldCheck className="h-4 w-4" />
-                {locale === "am" ? "የኮንማርት አቅራቢ ጥቅማጥቅም (0 ETB)" : "ConMart Supplier Benefit (0 ETB Commission)"}
+                {locale === "am" ? "የEcon አቅራቢ ጥቅማጥቅም (0 ETB ኮሚሽን)" : "Econ Supplier Benefit (0 ETB Commission)"}
               </div>
               <p className="text-muted-foreground text-[11px] leading-relaxed">
                 {locale === "am"
-                  ? "ይህን ጥያቄ ሲቀበሉ የገዢውን ሙሉ ስልክ እና አድራሻ ያገኛሉ። ምንም የኮሚሽን ወይም የዋሌት ክፍያ አይቆረጥም።"
-                  : "Accepting this enquiry immediately connects you directly with the buyer with full contact details and delivery location. Zero sales commission or unlock fees."}
+                  ? "ይህን ጥያቄ ሲቀበሉ የገዢውን ሙሉ ስልክ እና አድራሻ ያገኛሉ። ምንም የሽያጭ ኮሚሽን አይከፍሉም።"
+                  : "Accepting this enquiry immediately connects you directly with the contractor with verified contact details and delivery location. Zero sales commission."}
               </p>
             </div>
 

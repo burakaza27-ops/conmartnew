@@ -74,14 +74,18 @@ interface BatchItemRow {
 }
 
 const COMMON_DEPOT_LOCATIONS = [
+  "Addis Ababa, Jemo (Nifas Silk-Lafto)",
+  "Addis Ababa, Tulu Dimtu (Akaki Kaliti)",
+  "Addis Ababa, Urael / Bambis (Bole/Kirkos)",
   "Addis Ababa, Kaliti Industrial Zone",
-  "Addis Ababa, Megenagna Materials Depot",
-  "Addis Ababa, Gofa Warehouse Corridor",
   "Addis Ababa, Akaki-Kaliti Logistics Hub",
-  "Addis Ababa, Kolfe Keranio Depot",
   "Addis Ababa, Bole Bulbula Yard",
-  "Dukem / Gelan Industrial Zone",
-  "Sebeta / Burayu Depot",
+  "Addis Ababa, Merkato Trading Hub",
+  "Addis Ababa, CMC / Ayat Corridor",
+  "Addis Ababa, Megenagna Materials Depot",
+  "Gelan Logistics & Dry Port Zone",
+  "Sebeta Industrial Hub",
+  "Dukem / Eastern Industrial Zone",
 ];
 
 const POPULAR_BRANDS = [
@@ -386,13 +390,20 @@ export function BatchListingForm({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">
-                  {locale === "am" ? "የመጋዘኑ / የቅርንጫፉ አድራሻ *" : "Depot / Yard Address *"}
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold">
+                    {locale === "am"
+                      ? "የመጋዘኑ ዞን / ክፍለ ከተማ (ግዴታ) *"
+                      : "Depot Transport Zone / Sub-City (Mandatory) *"}
+                  </Label>
+                  <span className="text-[10px] text-muted-foreground">
+                    {locale === "am" ? "ለትራንስፖርት ወጪ ንጽጽር" : "For transport freight calculation"}
+                  </span>
+                </div>
                 <Input
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  placeholder="e.g. Addis Ababa, Kaliti Industrial Zone"
+                  placeholder="e.g. Addis Ababa, Jemo or Kaliti (exact street landmark optional)"
                   className="text-xs"
                 />
               </div>
@@ -401,10 +412,10 @@ export function BatchListingForm({
             {/* Quick Location Shortcuts */}
             <div className="space-y-1">
               <span className="text-[10px] text-muted-foreground font-medium">
-                {locale === "am" ? "ፈጣን ምርጫዎች፡" : "Quick Location Presets:"}
+                {locale === "am" ? "ዋና ዋና ዞኖች (ፈጣን ምርጫ)፦" : "Primary Transport Hubs (Jemo, Tulu Dimtu, Urael, Kaliti):"}
               </span>
               <div className="flex flex-wrap gap-1.5 pt-0.5">
-                {COMMON_DEPOT_LOCATIONS.slice(0, 5).map((loc) => (
+                {COMMON_DEPOT_LOCATIONS.map((loc) => (
                   <button
                     key={loc}
                     type="button"
@@ -420,6 +431,11 @@ export function BatchListingForm({
                   </button>
                 ))}
               </div>
+              <p className="text-[10px] text-muted-foreground pt-1">
+                💡 {locale === "am"
+                  ? "የመጋዘኑ ዞን መመረጥ ያለበት ገዢዎች የትራንስፖርት ወጪን ከዕቃው ዋጋ ጋር እንዲያወዳድሩ ነው። ትክክለኛ የሰፈር ውስጥ አድራሻ አያስፈልግም።"
+                  : "Zone is required so contractors can calculate truck transport cost against material price. Exact interior street addresses are not needed."}
+              </p>
             </div>
           </CardContent>
         </Card>
