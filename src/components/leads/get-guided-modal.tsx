@@ -30,6 +30,7 @@ import {
   Package,
   AlertCircle,
   Loader2,
+  SendHorizontal,
 } from "lucide-react";
 import { submitGuidedLeadAction } from "@/app/actions/leads";
 import { SYSTEM_CONTACTS } from "@/lib/config/system-contacts";
@@ -132,8 +133,8 @@ export function GetGuidedModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleResetAndClose}>
-      <DialogContent className="max-w-lg p-0 overflow-hidden border border-border shadow-2xl">
-        <DialogHeader className="bg-gradient-to-r from-amber-600/10 via-primary/10 to-amber-500/5 p-6 border-b border-border/60">
+      <DialogContent className="max-w-lg p-0 max-h-[92svh] flex flex-col overflow-hidden border border-border shadow-2xl">
+        <DialogHeader className="shrink-0 bg-gradient-to-r from-amber-600/10 via-primary/10 to-amber-500/5 p-5 sm:p-6 border-b border-border/60">
           <div className="flex items-center gap-2 mb-1">
             <Badge className="bg-amber-600 text-white font-semibold text-xs gap-1">
               <UserCheck className="h-3 w-3" />
@@ -141,24 +142,24 @@ export function GetGuidedModal({
             </Badge>
             {targetSellerName && (
               <Badge variant="outline" className="text-xs">
-                {targetSellerName}
+                {targetSellerName.replace(/ConMart/gi, "Econ")}
               </Badge>
             )}
           </div>
           <DialogTitle className="text-xl font-bold text-foreground">
             {locale === "am"
-              ? "የኮንማርት የመስክ ወኪል ድጋፍ ይጠይቁ"
-              : "Request a ConMart Agent Visit"}
+              ? "የEcon የመስክ ወኪል ድጋፍ ይጠይቁ"
+              : "Request an Econ Agent Visit"}
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground mt-1">
             {locale === "am"
-              ? "በአካባቢዎ የሚገኝ ህጋዊ የኮንማርት ወኪል ዋጋዎችን እንዲያነጻጽሩ፣ መጋዘኖችን እንዲጎበኙ እና ትዕዛዝዎን እንዲያቀላጥፉ ያግዝዎታል። ለገዢዎች ፍጹም ነፃ ነው!"
+              ? "በአካባቢዎ የሚገኝ ህጋዊ የEcon ወኪል ዋጋዎችን እንዲያነጻጽሩ፣ መጋዘኖችን እንዲጎበኙ እና ትዕዛዝዎን እንዲያቀላጥፉ ያግዝዎታል። ለገዢዎች ፍጹም ነፃ ነው!"
               : "A verified local commission agent will assist you with verified pricing, depot yard visits, and order coordination — 100% free for buyers."}
           </DialogDescription>
         </DialogHeader>
 
         {result ? (
-          <div className="p-6 space-y-6 text-center">
+          <div className="flex-1 overflow-y-auto p-6 space-y-6 text-center">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
               <CheckCircle2 className="h-8 w-8" />
             </div>
@@ -209,7 +210,7 @@ export function GetGuidedModal({
             </Button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto overscroll-contain p-5 sm:p-6 space-y-4">
             {error && (
               <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 shrink-0" />
@@ -325,7 +326,7 @@ export function GetGuidedModal({
 
             {/* Direct hotline callouts */}
             <div className="rounded-lg bg-muted/40 p-3 border border-border/60 flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
-              <span>{locale === "am" ? "የኮንማርት ዋና ስልክ:" : "ConMart Help Hotline:"}</span>
+              <span>{locale === "am" ? "የEcon ዋና ስልክ:" : "Econ Help Hotline:"}</span>
               <div className="flex items-center gap-3">
                 <a
                   href={`tel:${SYSTEM_CONTACTS.primaryPhone}`}
@@ -345,13 +346,13 @@ export function GetGuidedModal({
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="sticky bottom-0 -mx-5 sm:-mx-6 -mb-5 sm:-mb-6 p-4 bg-background/95 backdrop-blur-sm border-t border-border flex items-center justify-end gap-2 mt-4 z-10">
               <Button type="button" variant="outline" onClick={handleResetAndClose} disabled={loading}>
                 {locale === "am" ? "ሰርዝ" : "Cancel"}
               </Button>
-              <Button type="submit" disabled={loading} className="gap-2 font-semibold">
-                {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                {locale === "am" ? "ወኪል ይጠይቁ (ነፃ)" : "Request Agent Guide (Free)"}
+              <Button type="submit" disabled={loading} className="gap-2 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm">
+                {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <SendHorizontal className="h-4 w-4" />}
+                {locale === "am" ? "ጥያቄውን ላክ (ነፃ ወኪል)" : "Send Request (Free Agent)"}
               </Button>
             </div>
           </form>

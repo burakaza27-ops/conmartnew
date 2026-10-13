@@ -50,7 +50,7 @@ export default async function BuyerCategoryHubPage() {
                 href="/landing"
                 className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
-                How ConMart works
+                How Econ works
                 <ArrowRight className="size-3" />
               </Link>
             )}
@@ -172,7 +172,7 @@ export default async function BuyerCategoryHubPage() {
           How introductions work
         </h2>
         <p className="mx-auto mt-1 max-w-lg text-center text-xs sm:text-sm text-muted-foreground">
-          You never pay to browse listings. The supplier pays to unlock your purchase request.
+          You never pay to browse. If the supplier subscribes, you get their direct phone number — otherwise our agents take you to their shop at no extra cost.
         </p>
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
           <Guarantee
@@ -182,13 +182,13 @@ export default async function BuyerCategoryHubPage() {
           />
           <Guarantee
             icon={Coins}
-            title="Prepaid unlock"
-            body="The supplier pays the introduction fee from their wallet to unlock your proforma."
+            title="Direct phone unlock"
+            body="Subscribers share their phone number with you instantly — no middleman, no markup."
           />
           <Guarantee
-            icon={ShieldCheck}
-            title="80% credit if deal fails"
-            body="If a deal does not close, 80% of the fee returns to the supplier's wallet as credit."
+            icon={Store}
+            title="Free agent-guided visit"
+            body="If a deal is agent-led, our local agent takes you to the supplier's shop. You pay nothing extra."
           />
         </div>
       </section>

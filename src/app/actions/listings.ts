@@ -98,6 +98,17 @@ export async function createSellerListing(input: CreateListingInput) {
       select: { slug: true },
     });
 
+    if (category) {
+      const catSlug = category.slug.toLowerCase();
+      const titleLower = input.title.toLowerCase();
+      if (catSlug.includes("rebar") && (titleLower.includes("cement") || titleLower.includes("ሲሚንቶ"))) {
+        return { error: "Cement products cannot be listed under the Rebar category." };
+      }
+      if (catSlug.includes("cement") && (titleLower.includes("rebar") || titleLower.includes("steel bar") || titleLower.includes("ብረት"))) {
+        return { error: "Steel/rebar products cannot be listed under the Cement category." };
+      }
+    }
+
     // Execute in a single transaction
     const result = await db.$transaction(async (tx) => {
       // 0. Ensure SellerProfile and Wallet exist for this seller
@@ -256,6 +267,14 @@ export async function createBatchSellerListingsAction(input: CreateBatchListings
       return { error: "A maximum of 50 items can be listed in a single batch." };
     }
 
+    // Fetch referenced categories to prevent category mismatches
+    const catIds = Array.from(new Set(input.items.map((it) => it.categoryId)));
+    const dbCats = await db.category.findMany({
+      where: { id: { in: catIds } },
+      select: { id: true, slug: true, name: true },
+    });
+    const catMap = new Map(dbCats.map((c) => [c.id, c]));
+
     // Validate each item
     for (let i = 0; i < input.items.length; i++) {
       const item = input.items[i];
@@ -265,6 +284,17 @@ export async function createBatchSellerListingsAction(input: CreateBatchListings
       }
       if (!item.categoryId) {
         return { error: `Item #${rowNum} ("${item.title}"): Please select a category.` };
+      }
+      const matchedCat = catMap.get(item.categoryId);
+      if (matchedCat) {
+        const catSlug = matchedCat.slug.toLowerCase();
+        const titleLower = item.title.toLowerCase();
+        if (catSlug.includes("rebar") && (titleLower.includes("cement") || titleLower.includes("ሲሚንቶ"))) {
+          return { error: `Item #${rowNum} ("${item.title}"): Cement products cannot be listed under the "${matchedCat.name}" category.` };
+        }
+        if (catSlug.includes("cement") && (titleLower.includes("rebar") || titleLower.includes("steel bar") || titleLower.includes("ብረት"))) {
+          return { error: `Item #${rowNum} ("${item.title}"): Steel/rebar products cannot be listed under the "${matchedCat.name}" category.` };
+        }
       }
       if (!item.unitPrice || item.unitPrice <= 0) {
         return { error: `Item #${rowNum} ("${item.title}"): Rate (unit price) must be greater than zero ETB.` };

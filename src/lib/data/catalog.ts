@@ -908,6 +908,18 @@ async function _fetchProductsCatalog(
 
   let rows: ProductCatalogRow[] = products
     .filter((p) => p.listings.length > 0)
+    .filter((p) => {
+      // Category mismatch guard: exclude products whose title clearly contradicts the category
+      const catSlug = (p.category?.slug || categorySlug || "").toLowerCase();
+      const titleLower = p.title.toLowerCase();
+      if (catSlug.includes("rebar") && (titleLower.includes("cement") || titleLower.includes("ሲሚንቶ"))) {
+        return false;
+      }
+      if (catSlug.includes("cement") && (titleLower.includes("rebar") || titleLower.includes("steel bar") || titleLower.includes("ብረት"))) {
+        return false;
+      }
+      return true;
+    })
     .map((p) => {
       const allPrices = p.listings.flatMap((l) =>
         l.priceTiers.map((t) => Number(t.unitPrice))

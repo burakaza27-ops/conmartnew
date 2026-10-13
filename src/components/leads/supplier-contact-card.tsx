@@ -194,7 +194,7 @@ export function SupplierContactCard({
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
               <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-              {companyName || sellerName || (locale === "am" ? "የኮንማርት አቅራቢ" : "ConMart Partner Depot")}
+              {companyName || sellerName || (locale === "am" ? "የEcon አቅራቢ" : "Econ Partner Depot")}
             </span>
             <Badge variant="outline" className="text-[10px] text-muted-foreground">
               {locale === "am" ? "በወኪል የሚመራ" : "Agent Guided"}
@@ -203,7 +203,7 @@ export function SupplierContactCard({
 
           <p className="text-xs text-muted-foreground leading-relaxed">
             {locale === "am"
-              ? "የዚህ አቅራቢ ቀጥተኛ ስልክ አልተገናኘም። የኮንማርት የመስክ ወኪል ወደ ቦታው እንዲመራዎት ወይም በስልክ እንዲያስተናግድዎት መጠየቅ ይችላሉ።"
+              ? "የዚህ አቅራቢ ቀጥተኛ ስልክ አልተገናኘም። የEcon የመስክ ወኪል ወደ ቦታው እንዲመራዎት ወይም በስልክ እንዲያስተናግድዎት መጠየቅ ይችላሉ።"
               : "Direct supplier contact is handled via our free agent team. Request a local visit or call our hotline directly."}
           </p>
 
@@ -219,7 +219,7 @@ export function SupplierContactCard({
 
           <div className="rounded-lg bg-background p-2.5 border border-border/60 text-[11px] space-y-1">
             <div className="text-muted-foreground font-medium">
-              {locale === "am" ? "ወይም በቀጥታ ይደውሉልን:" : "Or call ConMart directly:"}
+              {locale === "am" ? "ወይም በቀጥታ ይደውሉልን:" : "Or call Econ directly:"}
             </div>
             <div className="flex items-center gap-3 font-mono font-bold text-foreground">
               <a href={`tel:${SYSTEM_CONTACTS.primaryPhone}`} className="hover:text-primary flex items-center gap-1">

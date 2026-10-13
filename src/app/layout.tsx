@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "ConMart",
+    title: "Econ",
   },
   icons: {
     icon: [
@@ -46,8 +46,8 @@ export const metadata: Metadata = {
     ],
   },
   title: {
-    default: "ConMart — B2B Construction Marketplace Ethiopia",
-    template: "%s | ConMart",
+    default: "Econ — B2B Construction Marketplace Ethiopia",
+    template: "%s | Econ",
   },
   description:
     "Ethiopia's B2B marketplace for depot-direct construction materials. Compare wholesale prices, send purchase requests, and connect with verified suppliers in Addis Ababa and beyond.",
@@ -66,14 +66,14 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    siteName: "ConMart",
-    title: "ConMart — B2B Construction Marketplace Ethiopia",
+    siteName: "Econ",
+    title: "Econ — B2B Construction Marketplace Ethiopia",
     description:
       "Ethiopia's B2B marketplace for depot-direct construction materials. Verified suppliers. Transparent wholesale pricing.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "ConMart — B2B Construction Marketplace",
+    title: "Econ — B2B Construction Marketplace",
     description: "Ethiopia's B2B marketplace for depot-direct construction materials.",
   },
   robots: {

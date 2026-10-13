@@ -97,7 +97,7 @@ export function coarsenLocation(location?: string | null): string {
 /** Stable pseudonym for a supplier, derived from their ID. */
 export function getMaskedSellerLabel(sellerId: string): string {
   const shortId = sellerId.slice(-4).toUpperCase();
-  return `ConMart Verified Supplier Depot (#DEPOT-${shortId})`;
+  return `Econ Verified Supplier Depot (#DEPOT-${shortId})`;
 }
 
 export interface MaskedSeller {

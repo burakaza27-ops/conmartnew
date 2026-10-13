@@ -190,6 +190,14 @@ export function BatchListingForm({
     // Validation
     const payloadItems: BatchListingItemInput[] = [];
 
+    // Category–keyword mismatch guard: prevent cement appearing under rebar, etc.
+    const CATEGORY_KEYWORD_MAP: Record<string, { keywords: string[]; conflictKeywords: string[] }> = {
+      rebar: { keywords: ["rebar", "steel bar", "deformed bar", "heb", "zuquala", "akaki"], conflictKeywords: ["cement", "ሲሚንቶ", "paint", "tile", "sand", "glass"] },
+      cement: { keywords: ["cement", "ሲሚንቶ", "opc", "ppc", "pozzolanic", "portland"], conflictKeywords: ["rebar", "steel bar", "deformed", "pipe", "tile", "paint"] },
+      paint: { keywords: ["paint", "primer", "coating", "varnish", "putty"], conflictKeywords: ["cement", "ሲሚንቶ", "rebar", "steel"] },
+      tile: { keywords: ["tile", "ceramic", "porcelain", "floor", "wall cladding"], conflictKeywords: ["cement", "rebar", "steel bar"] },
+    };
+
     for (let i = 0; i < items.length; i++) {
       const it = items[i];
       const rowNum = i + 1;
@@ -210,6 +218,27 @@ export function BatchListingForm({
             : `Item #${rowNum}: Please select a category.`
         );
         return;
+      }
+
+      // Check for category–product mismatch
+      const matchedCat = categories.find((c) => c.id === it.categoryId);
+      if (matchedCat) {
+        const catSlug = matchedCat.slug.toLowerCase();
+        const titleLower = it.title.toLowerCase();
+        for (const [slug, { conflictKeywords }] of Object.entries(CATEGORY_KEYWORD_MAP)) {
+          if (catSlug.includes(slug)) {
+            const conflict = conflictKeywords.find((kw) => titleLower.includes(kw));
+            if (conflict) {
+              setErrorMsg(
+                locale === "am"
+                  ? `እቃ #${rowNum} ("${it.title}")፡ ይህ ምርት ለ "${matchedCat.name}" ምድብ አይስማማም። ትክክለኛ ምድብ ይምረጡ።`
+                  : `Item #${rowNum} ("${it.title}"): This product does not belong to the "${matchedCat.name}" category. Please select the correct category.`
+              );
+              return;
+            }
+            break;
+          }
+        }
       }
 
       const rate = typeof it.unitPrice === "number" ? it.unitPrice : parseFloat(it.unitPrice || "0");

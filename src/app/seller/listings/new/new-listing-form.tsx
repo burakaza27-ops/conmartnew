@@ -173,6 +173,30 @@ export function NewListingForm({
   };
 
   const onSubmit: SubmitHandler<CreateListingFormData> = async (data) => {
+    // Category mismatch check
+    if (selectedCategory) {
+      const catSlug = selectedCategory.slug.toLowerCase();
+      const titleLower = data.title.toLowerCase();
+      if (catSlug.includes("rebar") && (titleLower.includes("cement") || titleLower.includes("ሲሚንቶ"))) {
+        setError("title", {
+          message:
+            locale === "am"
+              ? "ይህ ምርት ከብረት ምድብ ጋር አይስማማም። እባክዎ ትክክለኛ ምድብ ይምረጡ።"
+              : "This product appears to be cement and cannot be listed under the Rebar category.",
+        });
+        return;
+      }
+      if (catSlug.includes("cement") && (titleLower.includes("rebar") || titleLower.includes("steel bar") || titleLower.includes("ብረት"))) {
+        setError("title", {
+          message:
+            locale === "am"
+              ? "ይህ ምርት ከሲሚንቶ ምድብ ጋር አይስማማም። እባክዎ ትክክለኛ ምድብ ይምረጡ።"
+              : "This product appears to be steel/rebar and cannot be listed under the Cement category.",
+        });
+        return;
+      }
+    }
+
     const specs: Record<string, string> = {};
     if (data.brand?.trim()) specs.brand = data.brand.trim();
     if (data.grade?.trim()) specs.grade = data.grade.trim();
