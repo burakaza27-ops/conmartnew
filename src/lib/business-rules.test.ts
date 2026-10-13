@@ -179,7 +179,7 @@ describe("Contact Masking: Pre-Unlock Leak Prevention", () => {
 
     expect(masked.seller?.name).toBe("Verified Depot Coordinator");
     expect(masked.seller?.phone).toBeUndefined(); // Phone completely stripped!
-    expect(masked.seller?.companyName).toContain("ConMart Verified Supplier Depot");
+    expect(masked.seller?.companyName).toContain("Econ Verified Supplier Depot");
   });
 
   it("enforces strict identity withholding prior to introduction unlock", () => {
