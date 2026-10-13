@@ -116,7 +116,7 @@ export function BatchListingForm({
   const createInitialRow = (index: number): BatchItemRow => {
     const defaultCat = categories[0]?.id || "";
     return {
-      id: `row-${Date.now()}-${index}`,
+      id: `row-${crypto.randomUUID()}-${index}`,
       title: "",
       categoryId: defaultCat,
       description: "",
