@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Currency Rounding
+// ECON — Currency Rounding
 // =============================================================================
 // One rounding rule for the whole application. Every birr amount that is
 // stored, displayed, or compared passes through here.

@@ -74,7 +74,7 @@ describe("Subscription & Guided Lead Schemas", () => {
     expect(closedWithReason.success).toBe(true);
   });
 
-  it("contains official ConMart system contact phone numbers", () => {
+  it("contains official ECON system contact phone numbers", () => {
     expect(SYSTEM_CONTACTS.primaryPhone).toBe("0911122226");
     expect(SYSTEM_CONTACTS.secondaryPhone).toBe("0961622226");
     expect(SYSTEM_CONTACTS.displayPhone).toContain("0911122226");

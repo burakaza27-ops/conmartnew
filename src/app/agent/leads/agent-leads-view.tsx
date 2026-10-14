@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Commission Agent Guided Leads & 01B Dashboard View
+// ECON — Commission Agent Guided Leads & 01B Dashboard View
 // =============================================================================
 // Implements the complete Yakob Dan 01B specification:
 // 1. Screen 5: Applicant status holding view for agents UNDER_REVIEW.
@@ -352,7 +352,7 @@ export function AgentLeadsView({
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="font-mono text-xs font-black tracking-widest text-primary uppercase">
-                CONMART 01B
+                ECON 01B
               </span>
               <span className="text-muted-foreground">•</span>
               <span className="text-xs font-semibold text-muted-foreground">
@@ -428,7 +428,7 @@ export function AgentLeadsView({
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   {agentProfile?.rejectionReason ||
-                    "Your application was not approved or your agent privileges have been suspended. Please contact ConMart support for assistance."}
+                    "Your application was not approved or your agent privileges have been suspended. Please contact ECON support for assistance."}
                 </p>
               </div>
             </div>
@@ -449,7 +449,7 @@ export function AgentLeadsView({
                     Applicant status (what the agent sees)
                   </CardTitle>
                   <p className="text-xs text-muted-foreground">
-                    CONMART reviews your application and documents.
+                    ECON reviews your application and documents.
                   </p>
                 </div>
               </div>

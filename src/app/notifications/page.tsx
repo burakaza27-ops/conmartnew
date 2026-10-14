@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Notifications Page
+// ECON — Notifications Page
 // =============================================================================
 // Shows all in-app notifications for the authenticated user.
 // Marks all as read on load. Realtime updates come via NotificationBell.

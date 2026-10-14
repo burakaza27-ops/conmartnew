@@ -1,9 +1,9 @@
 // =============================================================================
-// ConMart — "Get Guided / Request a Visit" Modal
+// ECON — "Get Guided / Request a Visit" Modal
 // =============================================================================
 // Allows any buyer (registered or anonymous) to request a local Commission Agent
 // to assist with finding materials, inspecting depot yards, or negotiating.
-// Also displays ConMart's official system contacts: 0911122226 / 0961622226.
+// Also displays ECON's official system contacts: 0911122226 / 0961622226.
 // =============================================================================
 
 "use client";
@@ -142,7 +142,7 @@ export function GetGuidedModal({
             </Badge>
             {targetSellerName && (
               <Badge variant="outline" className="text-xs">
-                {targetSellerName.replace(/ConMart/gi, "Econ")}
+                {targetSellerName.replace(/ECON/gi, "Econ")}
               </Badge>
             )}
           </div>

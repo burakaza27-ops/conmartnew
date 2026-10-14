@@ -1,7 +1,7 @@
 "use client";
 
 // =============================================================================
-// ConMart — Listing Status Toggle Button
+// ECON — Listing Status Toggle Button
 // =============================================================================
 
 import { useState, useTransition } from "react";

@@ -1,7 +1,7 @@
 "use client";
 
 // =============================================================================
-// ConMart — Cancel Order Button (Client Component)
+// ECON — Cancel Order Button (Client Component)
 // =============================================================================
 // Allows a buyer to cancel a proforma inquiry while it is still in GENERATED status.
 // =============================================================================

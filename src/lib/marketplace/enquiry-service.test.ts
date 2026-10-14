@@ -142,7 +142,7 @@ describe("Enquiry Domain Service", () => {
           { id: "buyer-123", role: "BUYER" },
           { onBehalfOfBuyerPhone: "+251911223344" }
         )
-      ).rejects.toThrow(/Only ConMart field agents can raise a request/);
+      ).rejects.toThrow(/Only ECON field agents can raise a request/);
     });
 
     it("throws if assisted phone matches an existing registered user", async () => {
@@ -155,7 +155,7 @@ describe("Enquiry Domain Service", () => {
           { id: "agent-1", role: "FIELD_AGENT" },
           { onBehalfOfBuyerPhone: "+251911223344" }
         )
-      ).rejects.toThrow(/belongs to a registered ConMart account/);
+      ).rejects.toThrow(/belongs to a registered ECON account/);
     });
 
     it("reuses existing offline buyer profile when available", async () => {

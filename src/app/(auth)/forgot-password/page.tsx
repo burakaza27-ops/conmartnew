@@ -4,7 +4,7 @@ import { ForgotPasswordForm } from "./forgot-password-form";
 
 export const metadata: Metadata = {
   title: "Reset Password",
-  description: "Request a ConMart password reset email.",
+  description: "Request a ECON password reset email.",
 };
 
 interface ForgotPasswordPageProps {

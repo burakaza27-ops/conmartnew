@@ -1,7 +1,7 @@
 "use client";
 
 // =============================================================================
-// ConMart — Category Catalog Interactive Toolbar (Stage 2)
+// ECON — Category Catalog Interactive Toolbar (Stage 2)
 // =============================================================================
 // Provides instant client filtering by:
 // - Search keyword (product title, brand, supplier)
@@ -20,15 +20,7 @@ import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n/language-context";
 import { getLocalizedLocation } from "@/lib/i18n/translations";
 
-const ETHIOPIAN_LOCATIONS = [
-  "Addis Ababa",
-  "Adama (Nazret)",
-  "Bahir Dar",
-  "Hawassa",
-  "Dire Dawa",
-  "Sululta",
-  "Mekelle",
-];
+import { CITIES, MARKET_AREAS } from "@/lib/data/market-areas";
 
 interface CategoryToolbarProps {
   initialSearch?: string;
@@ -167,11 +159,20 @@ export function CategoryToolbar({
               className="h-8 rounded-md border border-border bg-background px-2 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             >
               <option value="">{t("filter_all_locations")}</option>
-              {ETHIOPIAN_LOCATIONS.map((loc) => (
-                <option key={loc} value={loc}>
-                  {getLocalizedLocation(loc, locale)}
-                </option>
-              ))}
+              <optgroup label={locale === "am" ? "የአዲስ አበባ ገበያዎች" : "Addis Ababa Market Areas"}>
+                {MARKET_AREAS.filter((m) => m.cityId === "addis-ababa").map((m) => (
+                  <option key={m.id} value={m.nameEn}>
+                    {locale === "am" ? m.nameAm : m.nameEn}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label={locale === "am" ? "ከተሞች" : "Cities & Surrounding Towns"}>
+                {CITIES.map((c) => (
+                  <option key={c.id} value={c.nameEn}>
+                    {locale === "am" ? c.nameAm : c.nameEn}
+                  </option>
+                ))}
+              </optgroup>
             </select>
           </div>
 

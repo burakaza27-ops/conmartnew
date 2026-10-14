@@ -1,12 +1,12 @@
 // =============================================================================
-// ConMart — Wallet Accounting Rules
+// ECON — Wallet Accounting Rules
 // =============================================================================
 // The arithmetic behind the seller wallet, kept free of database and
 // server-only imports so the rules that move money can be unit tested directly.
 //
 // A wallet holds two balances:
 //   cash   — topped up by the supplier, withdrawable
-//   credit — issued by ConMart as a goodwill refund, not withdrawable
+//   credit — issued by ECON as a goodwill refund, not withdrawable
 // =============================================================================
 
 import { DomainError } from "@/lib/errors";

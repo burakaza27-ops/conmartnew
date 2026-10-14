@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Edge Middleware (Next.js Edge Middleware Convention)
+// ECON — Edge Middleware (Next.js Edge Middleware Convention)
 // =============================================================================
 // Runs before every matched request and is responsible for three things:
 //

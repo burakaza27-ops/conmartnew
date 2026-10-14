@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Purchase Enquiry Domain Service
+// ECON — Purchase Enquiry Domain Service
 // =============================================================================
 // Encapsulates the core domain logic for enquiry lifecycle operations:
 //   - Assisted/direct buyer resolution
@@ -125,7 +125,7 @@ export async function resolveEnquiryBuyer(
   if (!isAssistedCapture) {
     if (data.onBehalfOfBuyerPhone) {
       throw new DomainError(
-        "Only ConMart field agents can raise a request on behalf of another contractor."
+        "Only ECON field agents can raise a request on behalf of another contractor."
       );
     }
     return { buyerId: caller.id, agentId: null };
@@ -149,7 +149,7 @@ export async function resolveEnquiryBuyer(
 
   if (registeredHolder) {
     throw new DomainError(
-      "That phone number belongs to a registered ConMart account. Ask them to sign in and submit the request themselves."
+      "That phone number belongs to a registered ECON account. Ask them to sign in and submit the request themselves."
     );
   }
 
@@ -445,7 +445,7 @@ export async function reportDealOutcome(
       userId: enquiry.buyerId,
       type: "DEAL_STATUS_CHANGED",
       title: "Supplier Reported Deal Incomplete",
-      body: "The supplier reported that this deal did not materialize. Please confirm or raise a dispute with ConMart.",
+      body: "The supplier reported that this deal did not materialize. Please confirm or raise a dispute with ECON.",
       meta: { enquiryId: enquiry.id },
     });
 
@@ -566,7 +566,7 @@ export async function raiseEnquiryDispute(
 
   if (existingOpenCase) {
     throw new DomainError(
-      "A dispute for this deal is already open with the ConMart mediation desk."
+      "A dispute for this deal is already open with the ECON mediation desk."
     );
   }
 
@@ -641,14 +641,14 @@ export async function resolveEnquiryDispute(
       userId: dispute.unlockRecord.buyerId,
       type: "DEAL_FAILURE_REFUND",
       title: "Dispute Resolved",
-      body: `ConMart mediation resolved your dispute. The deal has been closed.`,
+      body: `ECON mediation resolved your dispute. The deal has been closed.`,
       meta: { enquiryId: dispute.enquiryId },
     });
     await createNotification({
       userId: dispute.unlockRecord.sellerId,
       type: "DEAL_FAILURE_REFUND",
       title: "Dispute Resolved — Wallet Credited",
-      body: `ConMart mediation resolved the dispute for enquiry #${dispute.enquiryId}. Your wallet has been credited.`,
+      body: `ECON mediation resolved the dispute for enquiry #${dispute.enquiryId}. Your wallet has been credited.`,
       meta: { enquiryId: dispute.enquiryId },
     });
   }

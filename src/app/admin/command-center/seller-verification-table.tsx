@@ -1,7 +1,7 @@
 "use client";
 
 // =============================================================================
-// ConMart — Seller Document Verification & Compliance Queue
+// ECON — Seller Document Verification & Compliance Queue
 // =============================================================================
 // Platform operations queue to review business licenses, TIN numbers,
 // VAT certificates, expiry status, and verify or suspend suppliers.

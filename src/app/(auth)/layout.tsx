@@ -7,7 +7,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 export const metadata: Metadata = {
   title: "Sign In",
-  description: "Sign in to ConMart, Ethiopia’s B2B construction marketplace.",
+  description: "Sign in to ECON, Ethiopia’s B2B construction marketplace.",
 };
 
 export default function AuthLayout({
@@ -31,7 +31,7 @@ export default function AuthLayout({
             </h1>
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
               Contractors compare wholesale tiers. Suppliers unlock a verified
-              introduction from a prepaid wallet. ConMart mediates if the deal
+              introduction from a prepaid wallet. ECON mediates if the deal
               does not close.
             </p>
           </div>

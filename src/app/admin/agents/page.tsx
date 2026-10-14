@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Admin Agent Vetting & Approval Queue (01B Specification)
+// ECON — Admin Agent Vetting & Approval Queue (01B Specification)
 // =============================================================================
 
 import { Metadata } from "next";

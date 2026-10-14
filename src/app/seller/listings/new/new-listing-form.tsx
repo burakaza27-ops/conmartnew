@@ -1,7 +1,7 @@
 "use client";
 
 // =============================================================================
-// ConMart — Seller New Listing Form (Interactive)
+// ECON — Seller New Listing Form (Interactive)
 // =============================================================================
 // Full-featured material creation with drag-and-drop image upload,
 // technical specifications, warehouse yard location, and volume pricing tiers.
@@ -56,6 +56,7 @@ import {
 } from "@/lib/i18n/translations";
 import { getProductFallback } from "@/lib/data/category-images";
 import { STANDARD_LOCATION_ZONES } from "@/lib/data/location-zones";
+import { MARKET_AREAS, CITIES } from "@/lib/data/market-areas";
 import {
   createListingSchema,
   type CreateListingFormData,
@@ -85,6 +86,7 @@ interface NewListingFormProps {
   categories: CategoryOption[];
   curatedProducts?: CuratedProductOption[];
   sellerCompanyName: string;
+  savedLocations?: string[];
 }
 
 // Helper component to display a Zod field error, translated to current locale
@@ -102,6 +104,7 @@ export function NewListingForm({
   categories,
   curatedProducts = [],
   sellerCompanyName,
+  savedLocations = [],
 }: NewListingFormProps) {
   const { t, locale } = useLanguage();
   const router = useRouter();
@@ -304,6 +307,7 @@ export function NewListingForm({
           categories={categories}
           curatedProducts={curatedProducts}
           sellerCompanyName={sellerCompanyName}
+          savedLocations={savedLocations}
         />
       ) : (
         <>
@@ -541,13 +545,23 @@ export function NewListingForm({
                   className="w-full h-9 rounded-md border border-border bg-background px-3 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary mb-1.5"
                 >
                   <option value="">
-                    {locale === "am" ? "-- ይፋዊ ዞን ወይም ክፍለ ከተማ ይምረጡ --" : "-- Select Recognized Transport Zone --"}
+                    {locale === "am" ? "-- ይፋዊ የገበያ ቦታ ወይም ዞን ይምረጡ --" : "-- Select Recognized Market Area or Zone --"}
                   </option>
-                  {STANDARD_LOCATION_ZONES.map((z) => (
-                    <option key={z.id} value={`${z.region}, ${z.name}`}>
-                      {z.name} ({z.subCity})
-                    </option>
-                  ))}
+                  <optgroup label={locale === "am" ? "የአዲስ አበባ ገበያዎች" : "Addis Ababa Market Areas"}>
+                    {MARKET_AREAS.filter((m) => m.cityId === "addis-ababa").map((m) => (
+                      <option key={m.id} value={`Addis Ababa, ${m.nameEn}`}>
+                        {locale === "am" ? m.nameAm : m.nameEn}
+                        {m.isBoundaryArea ? (locale === "am" ? " (ድንበር)" : " (Boundary)") : ""}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label={locale === "am" ? "የዙሪያ እና ሌሎች ከተሞች" : "Surrounding Towns & Regional Cities"}>
+                    {CITIES.filter((c) => c.id !== "addis-ababa").map((c) => (
+                      <option key={c.id} value={c.nameEn}>
+                        {locale === "am" ? c.nameAm : c.nameEn}
+                      </option>
+                    ))}
+                  </optgroup>
                 </select>
 
                 <Input

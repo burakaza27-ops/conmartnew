@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Focused Category Catalog Page (Stage 2 — Product-Grouped)
+// ECON — Focused Category Catalog Page (Stage 2 — Product-Grouped)
 // =============================================================================
 // Shows ONE card per product type. Clicking a product reveals all suppliers
 // competing on price. No more duplicate [Bar, Bar, Bar] entries.
@@ -20,6 +20,8 @@ interface CategoryPageProps {
     search?: string;
     brand?: string;
     sort?: string;
+    city?: string;
+    marketArea?: string;
   }>;
 }
 
@@ -33,6 +35,8 @@ export default async function FocusedCategoryCatalogPage({
   const searchQuery = sParams.search;
   const brandFilter = sParams.brand;
   const sortBy = sParams.sort || "newest";
+  const cityFilter = sParams.city;
+  const marketAreaFilter = sParams.marketArea;
 
   const isAll = categorySlug === "all";
   const isWastage = categorySlug === "reusable-site-wastage";
@@ -40,7 +44,14 @@ export default async function FocusedCategoryCatalogPage({
   const [allCategories, categoryDetail, products, approvedWastages] = await Promise.all([
     fetchCategoriesWithCounts(),
     isAll ? null : fetchCategoryBySlug(categorySlug),
-    fetchProductsCatalog(categorySlug, searchQuery, brandFilter, sortBy),
+    fetchProductsCatalog(
+      categorySlug,
+      searchQuery,
+      brandFilter,
+      sortBy,
+      cityFilter,
+      marketAreaFilter
+    ),
     isWastage || isAll ? fetchApprovedSiteWastages() : Promise.resolve([]),
   ]);
 
@@ -66,6 +77,8 @@ export default async function FocusedCategoryCatalogPage({
       searchQuery={searchQuery}
       brandFilter={brandFilter}
       sortBy={sortBy}
+      cityFilter={cityFilter}
+      marketAreaFilter={marketAreaFilter}
       approvedWastages={approvedWastages}
     />
   );

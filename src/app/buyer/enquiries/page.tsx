@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Buyer Purchase Enquiries Tracker Page
+// ECON — Buyer Purchase Enquiries Tracker Page
 // =============================================================================
 
 import { redirect } from "next/navigation";
@@ -8,7 +8,7 @@ import { getBuyerEnquiriesAction } from "@/app/actions/enquiries";
 import { BuyerEnquiriesView } from "./buyer-enquiries-view";
 
 export const metadata = {
-  title: "My Purchase Enquiries | ConMart Ethiopia",
+  title: "My Purchase Enquiries | ECON Ethiopia",
   description: "Track your purchase requests sent to verified Ethiopian construction suppliers.",
 };
 

@@ -1,7 +1,7 @@
 "use client";
 
 // =============================================================================
-// ConMart — Buyer Catalog Interactive Filters & Category Showcase
+// ECON — Buyer Catalog Interactive Filters & Category Showcase
 // =============================================================================
 // Rich visual Category Showcase Grid + Instant Search & Location Filtering.
 // =============================================================================
@@ -46,15 +46,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Zap,
 };
 
-const ETHIOPIAN_LOCATIONS = [
-  "Addis Ababa",
-  "Adama (Nazret)",
-  "Bahir Dar",
-  "Hawassa",
-  "Dire Dawa",
-  "Sululta",
-  "Mekelle",
-];
+import { MARKET_AREAS, CITIES } from "@/lib/data/market-areas";
 
 interface CatalogFiltersProps {
   categories: CategoryWithCount[];
@@ -311,11 +303,20 @@ export function CatalogFilters({
             className="h-8 rounded-md border border-border bg-background px-2 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
           >
             <option value="">{t("filter_all_cities")}</option>
-            {ETHIOPIAN_LOCATIONS.map((loc) => (
-              <option key={loc} value={loc}>
-                {getLocalizedLocation(loc, locale)}
-              </option>
-            ))}
+            <optgroup label={locale === "am" ? "የአዲስ አበባ ገበያዎች" : "Addis Ababa Market Areas"}>
+              {MARKET_AREAS.filter((m) => m.cityId === "addis-ababa").map((m) => (
+                <option key={m.id} value={m.nameEn}>
+                  {locale === "am" ? m.nameAm : m.nameEn}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label={locale === "am" ? "ከተሞች" : "Cities & Surrounding Towns"}>
+              {CITIES.map((c) => (
+                <option key={c.id} value={c.nameEn}>
+                  {locale === "am" ? c.nameAm : c.nameEn}
+                </option>
+              ))}
+            </optgroup>
           </select>
 
           {hasActiveFilters && (

@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Location → Zone Matching
+// ECON — Location → Zone Matching
 // =============================================================================
 // Listings store a free-text depot address ("Addis Ababa, Merkato Yard").
 // Agents register against a Zone. Routing picks the most specific alias hit

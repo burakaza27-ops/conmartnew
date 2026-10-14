@@ -57,6 +57,18 @@ enum ProductUnit {
   TON
   PIECE
   M3
+  KG
+  METRE
+  SQM
+  LITRE
+  SHEET
+  ROLL
+  BOX
+  BUNDLE
+  PAIR
+  BUCKET
+  DRUM
+  TRUCKLOAD
 
   @@map("product_unit")
 }
@@ -108,6 +120,7 @@ enum StockState {
   IN_STOCK
   LIMITED
   ON_ORDER
+  OUT_OF_STOCK
 
   @@map("stock_state")
 }

@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Catalog Data Fetchers (Server-Side)
+// ECON — Catalog Data Fetchers (Server-Side)
 // =============================================================================
 // Data fetching functions for the buyer catalog and listing detail pages.
 // These are plain async functions called from Server Components.
@@ -11,6 +11,7 @@ import { coarsenLocation, getMaskedSellerLabel } from "@/lib/security/masking";
 import { isDirectChatEntitled } from "@/lib/marketplace/subscription";
 import { unstable_cache } from "next/cache";
 import { ensureDefaultCategories, DEFAULT_CATEGORIES } from "@/lib/data/default-categories";
+import { extractMarketAreaFromLocation } from "@/lib/data/market-areas";
 
 /**
  * Buyer-facing pseudonym for a supplier. Every catalog surface uses this so a
@@ -64,6 +65,7 @@ export interface CatalogListing {
 export interface ListingDetail {
   id: string;
   location: string;
+  marketArea?: string;
   active: boolean;
   imageUrl: string | null;
   product: {
@@ -102,6 +104,10 @@ export interface ListingDetail {
     validUntil: Date;
     isExpired: boolean;
   }>;
+  updatedAt?: Date;
+  stockState?: string;
+  availableQty?: number | null;
+  description?: string | null;
 }
 
 
@@ -432,6 +438,7 @@ async function _fetchListingDetail(
   return {
     id: listing.id,
     location: isSubscribed && profile?.address ? profile.address : coarsenLocation(listing.location),
+    marketArea: extractMarketAreaFromLocation(listing.location),
     active: listing.active,
     imageUrl: listing.imageUrl || listing.product.imageUrl || null,
     product: {
@@ -466,6 +473,10 @@ async function _fetchListingDetail(
       validUntil: tier.validUntil,
       isExpired: tier.validUntil < now,
     })),
+    updatedAt: listing.updatedAt,
+    stockState: listing.stockState,
+    availableQty: listing.availableQty,
+    description: listing.description,
   };
 }
 
@@ -755,6 +766,7 @@ export interface CompetingOffer {
   sellerId: string;
   depotName: string;
   location: string;
+  marketArea?: string;
   sellerType: string;
   verificationStatus: string;
   vatRegistered: boolean;
@@ -819,6 +831,8 @@ export interface ProductCatalogRow {
   lowestPrice: number | null;
   /** Highest price across all supplier listings */
   highestPrice: number | null;
+  /** Market areas where this product is available from suppliers */
+  marketAreas: string[];
 }
 
 /**
@@ -830,11 +844,21 @@ export async function fetchProductsCatalog(
   categorySlug?: string,
   searchQuery?: string,
   brandFilter?: string,
-  sortBy: string = "newest"
+  sortBy: string = "newest",
+  locationFilter?: string,
+  marketAreaFilter?: string
 ): Promise<ProductCatalogRow[]> {
   return withDbFallback(
     "fetchProductsCatalog",
-    () => _fetchProductsCatalog(categorySlug, searchQuery, brandFilter, sortBy),
+    () =>
+      _fetchProductsCatalog(
+        categorySlug,
+        searchQuery,
+        brandFilter,
+        sortBy,
+        locationFilter,
+        marketAreaFilter
+      ),
     []
   );
 }
@@ -843,11 +867,20 @@ async function _fetchProductsCatalog(
   categorySlug?: string,
   searchQuery?: string,
   brandFilter?: string,
-  sortBy: string = "newest"
+  sortBy: string = "newest",
+  locationFilter?: string,
+  marketAreaFilter?: string
 ): Promise<ProductCatalogRow[]> {
   const now = new Date();
   const sixMonthsAgo = new Date();
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+  const activeLocation =
+    marketAreaFilter && marketAreaFilter !== "all"
+      ? marketAreaFilter
+      : locationFilter && locationFilter !== "all"
+      ? locationFilter
+      : undefined;
 
   const whereClause: Record<string, unknown> = {
     listings: {
@@ -855,6 +888,14 @@ async function _fetchProductsCatalog(
         active: true,
         isDeleted: false,
         updatedAt: { gte: sixMonthsAgo },
+        ...(activeLocation
+          ? {
+              location: {
+                contains: activeLocation,
+                mode: "insensitive",
+              },
+            }
+          : {}),
         seller: {
           OR: [
             { sellerProfile: null },
@@ -931,6 +972,15 @@ async function _fetchProductsCatalog(
       const listingBrand = p.listings.find((l) => l.brand)?.brand;
       const brand = listingBrand || specs.brand || null;
 
+      // Extract unique market areas across active listings
+      const marketAreas = Array.from(
+        new Set(
+          p.listings
+            .map((l) => extractMarketAreaFromLocation(l.location))
+            .filter((area): area is string => Boolean(area && area.trim()))
+        )
+      );
+
       // Calculate latest post/adjustment date
       const listingDates = p.listings.map((l) => new Date(l.updatedAt || l.createdAt).getTime());
       const latestTimestamp = listingDates.length > 0 ? Math.max(...listingDates) : null;
@@ -948,6 +998,7 @@ async function _fetchProductsCatalog(
         supplierCount: p.listings.length,
         lowestPrice,
         highestPrice,
+        marketAreas,
       };
     });
 
@@ -959,6 +1010,19 @@ async function _fetchProductsCatalog(
         r.brand?.toLowerCase().includes(target) ||
         r.specs?.brand?.toLowerCase().includes(target) ||
         r.title.toLowerCase().includes(target)
+    );
+  }
+
+  // Client market area refinement
+  if (marketAreaFilter && marketAreaFilter !== "all") {
+    const target = marketAreaFilter.toLowerCase();
+    rows = rows.filter((r) =>
+      r.marketAreas.some((ma) => ma.toLowerCase().includes(target))
+    );
+  } else if (locationFilter && locationFilter !== "all") {
+    const target = locationFilter.toLowerCase();
+    rows = rows.filter((r) =>
+      r.marketAreas.some((ma) => ma.toLowerCase().includes(target))
     );
   }
 
@@ -1299,6 +1363,7 @@ async function _fetchProductWithCompetingOffers(
         ? listing.seller.companyName || listing.seller.name
         : getMaskedSellerLabel(listing.seller.id),
       location: isSubscribed && profile?.address ? profile.address : coarsenLocation(listing.location),
+      marketArea: extractMarketAreaFromLocation(listing.location),
       sellerType: profile?.sellerType || "RETAILER",
       verificationStatus: profile?.verificationStatus || "UNVERIFIED",
       vatRegistered: profile?.vatRegistered ?? false,

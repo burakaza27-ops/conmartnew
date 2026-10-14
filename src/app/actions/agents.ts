@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Agent Onboarding & Operations Server Actions
+// ECON — Agent Onboarding & Operations Server Actions
 // =============================================================================
 // Implements the 01B specification actions:
 // 1. Submit / update agent vetting application.

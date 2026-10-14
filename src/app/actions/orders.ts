@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Order Server Actions (LEGACY QUOTES PIPELINE)
+// ECON — Order Server Actions (LEGACY QUOTES PIPELINE)
 // =============================================================================
 // NOTICE: Legacy direct-checkout and proforma invoice path.
 // Active and new commercial workflows go through Purchase Enquiries
@@ -659,15 +659,15 @@ export async function getOrderByReference(
   const sanitizedSeller = isAdmin && order.seller
     ? order.seller
     : {
-        id: order.seller?.id ?? "conmart",
-        name: "ConMart Desk Coordinator",
+        id: order.seller?.id ?? "ECON",
+        name: "ECON Desk Coordinator",
         phone: adminPhone,
         companyName: order.seller
-          ? `ConMart Verified Supplier Depot (#DEPOT-${order.seller.id.slice(-4).toUpperCase()})`
-          : "ConMart Multi-Depot Network",
+          ? `ECON Verified Supplier Depot (#DEPOT-${order.seller.id.slice(-4).toUpperCase()})`
+          : "ECON Multi-Depot Network",
       };
 
-  // If caller is Seller: Buyer's contact info is routed through ConMart Ops
+  // If caller is Seller: Buyer's contact info is routed through ECON Ops
   const sanitizedBuyer = isAdmin
     ? order.buyer
     : isBuyer
@@ -676,7 +676,7 @@ export async function getOrderByReference(
         id: order.buyer.id,
         name: "Commercial Buyer Account",
         phone: adminPhone,
-        companyName: "ConMart Verified Contractor",
+        companyName: "ECON Verified Contractor",
       };
 
   const mappedItems: OrderItemDetail[] =
@@ -694,9 +694,9 @@ export async function getOrderByReference(
             ? item.seller
             : {
                 id: item.seller.id,
-                name: "ConMart Desk Coordinator",
+                name: "ECON Desk Coordinator",
                 phone: adminPhone,
-                companyName: `ConMart Partner Depot (#DEPOT-${item.seller.id.slice(-4).toUpperCase()})`,
+                companyName: `ECON Partner Depot (#DEPOT-${item.seller.id.slice(-4).toUpperCase()})`,
               },
         }))
       : order.listing && order.seller

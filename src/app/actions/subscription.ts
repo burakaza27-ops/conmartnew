@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Subscription Server Actions
+// ECON — Subscription Server Actions
 // =============================================================================
 // Manages the supplier subscription lifecycle:
 // - Suppliers view plans, submit Telebirr/CBE/Bank payment references.
@@ -307,8 +307,8 @@ export async function checkAndSendSubscriptionRemindersAction() {
 
       const message =
         daysRemaining <= 1
-          ? `Urgent: Your ConMart supplier subscription expires tomorrow! Renew now to keep your direct phone and WhatsApp visible to buyers.`
-          : `Reminder: Your ConMart supplier subscription expires in ${daysRemaining} days. Renew now to avoid interruption in direct buyer calls.`;
+          ? `Urgent: Your ECON supplier subscription expires tomorrow! Renew now to keep your direct phone and WhatsApp visible to buyers.`
+          : `Reminder: Your ECON supplier subscription expires in ${daysRemaining} days. Renew now to avoid interruption in direct buyer calls.`;
 
       // Avoid duplicate reminder notifications on the same day
       const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());

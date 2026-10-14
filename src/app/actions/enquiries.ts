@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Purchase Enquiry Server Actions
+// ECON — Purchase Enquiry Server Actions
 // =============================================================================
 // The core workflow:
 //

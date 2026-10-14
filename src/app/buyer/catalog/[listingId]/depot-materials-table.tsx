@@ -1,4 +1,4 @@
-// ConMart — Depot Available Materials Table (Client Component)
+// ECON — Depot Available Materials Table (Client Component)
 // Shows other active materials at the same depot yard so buyers can identify
 // same-trip freight savings. Links to listing detail for enquiry or chat.
 // Fully bilingual English & Amharic.

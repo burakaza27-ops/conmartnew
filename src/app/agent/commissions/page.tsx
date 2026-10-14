@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Agent Commission Ledger Page (Server Component)
+// ECON — Agent Commission Ledger Page (Server Component)
 // =============================================================================
 
 import { redirect } from "next/navigation";

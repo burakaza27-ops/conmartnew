@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Proforma Invoice PDF Document
+// ECON — Proforma Invoice PDF Document
 // =============================================================================
 // Rendered server-side via @react-pdf/renderer and streamed as a PDF download.
 // Mirrors the visual layout of proforma-view.tsx faithfully.

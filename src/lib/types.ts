@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Shared Type Definitions & Constants
+// ECON — Shared Type Definitions & Constants
 // =============================================================================
 // Central type definitions mirroring the Prisma schema enums and domain types.
 // Localized for the Ethiopian construction market.
@@ -88,7 +88,12 @@ export const CHAT_ROOM_TYPES = ["DIRECT", "BUYER_AGENT", "SELLER_AGENT"] as cons
 export type ChatRoomType = (typeof CHAT_ROOM_TYPES)[number];
 
 /** Standard construction material units (Ethiopian market) */
-export const PRODUCT_UNITS = ["BAG", "QUINTAL", "TON", "PIECE", "M3"] as const;
+export const PRODUCT_UNITS = [
+  "BAG", "QUINTAL", "TON", "PIECE", "M3",
+  "KG", "METRE", "SQM", "LITRE", "SHEET",
+  "ROLL", "BOX", "BUNDLE", "PAIR", "BUCKET",
+  "DRUM", "TRUCKLOAD",
+] as const;
 export type ProductUnit = (typeof PRODUCT_UNITS)[number];
 
 /** Human-readable labels for product units */
@@ -98,6 +103,18 @@ export const PRODUCT_UNIT_LABELS: Record<ProductUnit, string> = {
   TON: "Tonnes",
   PIECE: "Pieces",
   M3: "Cubic Meters (m³)",
+  KG: "Kilograms",
+  METRE: "Metres",
+  SQM: "Square Metres (m²)",
+  LITRE: "Litres",
+  SHEET: "Sheets",
+  ROLL: "Rolls",
+  BOX: "Boxes",
+  BUNDLE: "Bundles",
+  PAIR: "Pairs",
+  BUCKET: "Buckets",
+  DRUM: "Drums",
+  TRUCKLOAD: "Truckloads",
 } as const;
 
 /** Singular labels for units (used in per-unit pricing) */
@@ -107,6 +124,18 @@ export const PRODUCT_UNIT_SINGULAR: Record<ProductUnit, string> = {
   TON: "tonne",
   PIECE: "piece",
   M3: "m³",
+  KG: "kg",
+  METRE: "metre",
+  SQM: "m²",
+  LITRE: "litre",
+  SHEET: "sheet",
+  ROLL: "roll",
+  BOX: "box",
+  BUNDLE: "bundle",
+  PAIR: "pair",
+  BUCKET: "bucket",
+  DRUM: "drum",
+  TRUCKLOAD: "truckload",
 } as const;
 
 /** Order lifecycle states — strict forward-only progression */

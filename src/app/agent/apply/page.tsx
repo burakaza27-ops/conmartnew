@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Agent Onboarding Wizard Page (01B Specification)
+// ECON — Agent Onboarding Wizard Page (01B Specification)
 // =============================================================================
 
 import { Metadata } from "next";
@@ -9,9 +9,9 @@ import { getAgentProfile } from "@/lib/agents/agent-onboarding-service";
 import { AgentApplyWizard } from "./agent-apply-wizard";
 
 export const metadata: Metadata = {
-  title: "Apply as Commission Agent | ConMart",
+  title: "Apply as Commission Agent | ECON",
   description:
-    "Apply to become a vetted ConMart field agent. Work part-time, guide buyers, and connect with verified construction suppliers in your area.",
+    "Apply to become a vetted ECON field agent. Work part-time, guide buyers, and connect with verified construction suppliers in your area.",
 };
 
 export const dynamic = "force-dynamic";

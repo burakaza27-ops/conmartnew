@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — 01B Online Agent Onboarding & Privacy Tests
+// ECON — 01B Online Agent Onboarding & Privacy Tests
 // =============================================================================
 
 import { describe, expect, it } from "vitest";

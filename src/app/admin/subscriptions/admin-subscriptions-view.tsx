@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Admin Subscription Approval & Pricing Management View
+// ECON — Admin Subscription Approval & Pricing Management View
 // =============================================================================
 // Allows administrators to:
 // 1. Review and verify incoming offline/mobile subscription payments (Telebirr/CBE).

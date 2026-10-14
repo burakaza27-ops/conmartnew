@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Admin Category & Fee Management Server Actions
+// ECON — Admin Category & Fee Management Server Actions
 // =============================================================================
 
 "use server";

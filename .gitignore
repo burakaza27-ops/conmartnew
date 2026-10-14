@@ -54,3 +54,7 @@ next-env.d.ts
 # android signing (Play Store secret — never commit)
 *.keystore
 *.jks
+
+# local recordings
+*.mp4
+

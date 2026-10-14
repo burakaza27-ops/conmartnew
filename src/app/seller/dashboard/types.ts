@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Seller Dashboard Types
+// ECON — Seller Dashboard Types
 // =============================================================================
 
 export interface PriceTierItem {
@@ -22,6 +22,10 @@ export interface SellerListingItem {
   orderCount: number;
   enquiryCount: number;
   priceTiers: PriceTierItem[];
+  updatedAt?: string;
+  stockState?: string;
+  availableQty?: number | null;
+  description?: string | null;
 }
 
 export interface ReferralData {

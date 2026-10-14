@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Buyer History & Transaction Fetchers
+// ECON — Buyer History & Transaction Fetchers
 // =============================================================================
 // Isolated bounded context for historical buyer orders and purchase enquiries.
 // Keeps catalog listing and product fetchers focused and distinct from user history.
@@ -81,7 +81,7 @@ export async function fetchBuyerOrders(buyerAuthId: string) {
         createdAt: order.createdAt,
         productTitle: title,
         productUnit: unit,
-        sellerCompany: `ConMart Verified Depot (${location})`,
+        sellerCompany: `ECON Verified Depot (${location})`,
       };
     });
   } catch (err) {

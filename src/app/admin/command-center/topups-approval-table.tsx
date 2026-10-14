@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Admin Top-Up Deposit Approval Queue Component
+// ECON — Admin Top-Up Deposit Approval Queue Component
 // =============================================================================
 
 "use client";

@@ -69,7 +69,7 @@ export function StartChatButton({
           <Lock className="size-4" />
         )}
         {directChatEnabled
-          ? t("chat_start_direct", "Message supplier")
+          ? t("chat_start_direct", "Chat now")
           : t("chat_start_agent", "Request local agent")}
       </Button>
       {error ? <p className="text-xs text-destructive">{error}</p> : null}

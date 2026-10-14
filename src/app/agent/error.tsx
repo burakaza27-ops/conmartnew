@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Agent Portal Error Boundary (Client Component)
+// ECON — Agent Portal Error Boundary (Client Component)
 // =============================================================================
 // Isolates render errors to the agent content area without breaking the agent nav.
 // =============================================================================

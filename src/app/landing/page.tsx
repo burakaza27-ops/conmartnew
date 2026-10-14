@@ -21,7 +21,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 // =============================================================================
-// ConMart — Marketing Landing Page (Subscription & Agent Model)
+// ECON — Marketing Landing Page (Subscription & Agent Model)
 // =============================================================================
 
 export default function LandingPage() {

@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Password-recovery session marker
+// ECON — Password-recovery session marker
 // =============================================================================
 // After the email link is exchanged for a session, the callback stamps a short
 // httpOnly cookie. The reset action requires that cookie so a normal signed-in

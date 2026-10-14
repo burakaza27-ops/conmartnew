@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Validated Server Environment
+// ECON — Validated Server Environment
 // =============================================================================
 // Environment access is centralized here so a missing or malformed variable
 // fails at startup with a precise message, rather than surfacing later as a
@@ -88,13 +88,13 @@ export function parseServerEnv(
 function loadServerEnv(): ServerEnv {
   const parsed = parseServerEnv(process.env);
   if (!parsed.success) {
-    console.error("ConMart Environment Configuration Warning:\n" + parsed.error);
+    console.error("ECON Environment Configuration Warning:\n" + parsed.error);
     // In production serverless environments, log the error rather than throwing an
     // unhandled exception that causes an immediate HTTP 500 crash across all pages.
     return {
       DATABASE_URL:
         process.env.DATABASE_URL ||
-        "postgresql://localhost:5432/conmart",
+        "postgresql://localhost:5432/ECON",
       DATABASE_POOLER_URL: process.env.DATABASE_POOLER_URL,
       DATABASE_CA_CERT: process.env.DATABASE_CA_CERT,
       DATABASE_SSL_NO_VERIFY:

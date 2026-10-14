@@ -1,4 +1,4 @@
-// ConMart — Listing Detail View (Bilingual English & Amharic)
+// ECON — Listing Detail View (Bilingual English & Amharic)
 
 "use client";
 
@@ -13,6 +13,7 @@ import {
   Truck,
   CheckCircle2,
   SendHorizontal,
+  Clock,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -123,7 +124,9 @@ export function ListingDetailView({
                 </span>
                 <span className="flex items-center gap-1">
                   <MapPin className="h-3.5 w-3.5 text-primary" />
-                  {localizedLocation}
+                  {listing.marketArea && !listing.location.toLowerCase().includes(listing.marketArea.toLowerCase())
+                    ? `${localizedLocation}, ${listing.marketArea}`
+                    : localizedLocation}
                 </span>
                 <StatusBadge
                   domain="subscription"
@@ -150,6 +153,30 @@ export function ListingDetailView({
               <Truck className="h-4 w-4 text-primary" />
               <span>{t("detail_freight_badge")}</span>
             </div>
+          </div>
+
+          {/* Price Freshness & Availability Card */}
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/60 backdrop-blur-xs p-3.5 text-xs">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-primary shrink-0" />
+              <div>
+                <span className="font-semibold text-foreground">
+                  {locale === "am" ? "የዋጋ እና ክምችት ሁኔታ: " : "Price & Availability: "}
+                </span>
+                <span className="text-muted-foreground">
+                  {listing.updatedAt
+                    ? (locale === "am"
+                        ? `በአቅራቢው የተረጋገጠው: ${new Date(listing.updatedAt).toLocaleDateString("am-ET")}`
+                        : `Verified by supplier: ${new Date(listing.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`)
+                    : (locale === "am" ? "የተረጋገጠ" : "Active & Verified")}
+                </span>
+              </div>
+            </div>
+            {listing.description?.includes("VAT:") && (
+              <Badge variant="outline" className="text-[11px] font-medium border-primary/40 text-primary">
+                {listing.description.split("|").find((s) => s.trim().startsWith("VAT:"))?.trim() || "VAT Info Available"}
+              </Badge>
+            )}
           </div>
 
           {/* Product Specifications */}
@@ -285,18 +312,26 @@ export function ListingDetailView({
               redirectTo={`/buyer/catalog/${listing.id}`}
               fallbackLabel={
                 listing.directChatEnabled
-                  ? t("chat_start_direct", "Message supplier")
+                  ? t("chat_start_direct", "Chat now")
                   : t("chat_start_agent", "Request local agent")
               }
-              fallbackVariant={listing.directChatEnabled ? "secondary" : "outline"}
+              fallbackVariant={listing.directChatEnabled ? "default" : "outline"}
               fallbackSize="lg"
-              fallbackClassName="w-full gap-2 font-semibold"
+              fallbackClassName={
+                listing.directChatEnabled
+                  ? "w-full gap-2 font-bold bg-amber-500 hover:bg-amber-600 text-slate-950"
+                  : "w-full gap-2 font-semibold"
+              }
             >
               <StartChatButton
                 listingId={listing.id}
                 directChatEnabled={listing.directChatEnabled}
-                variant={listing.directChatEnabled ? "secondary" : "outline"}
-                className="w-full gap-2 font-semibold"
+                variant={listing.directChatEnabled ? "default" : "outline"}
+                className={
+                  listing.directChatEnabled
+                    ? "w-full gap-2 font-bold bg-amber-500 hover:bg-amber-600 text-slate-950"
+                    : "w-full gap-2 font-semibold"
+                }
               />
             </AuthGateButton>
 

@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Volume Pricing & Cost Estimator (Client Component)
+// ECON — Volume Pricing & Cost Estimator (Client Component)
 // =============================================================================
 // Interactive quantity estimator based strictly on supplier volume tiers.
 // Previews exact unit price and material subtotal for the desired order volume.

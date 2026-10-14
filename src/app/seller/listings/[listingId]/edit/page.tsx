@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Edit Seller Listing Page (Server Component)
+// ECON — Edit Seller Listing Page (Server Component)
 // =============================================================================
 
 import { notFound, redirect } from "next/navigation";

@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Supabase Server Client
+// ECON — Supabase Server Client
 // =============================================================================
 // Creates a Supabase client configured for server-side usage (Server Components,
 // Server Actions, Route Handlers). Uses Next.js `cookies()` for session management.

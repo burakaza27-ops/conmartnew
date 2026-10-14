@@ -1,7 +1,7 @@
 "use client";
 
 // =============================================================================
-// ConMart — Seller Referral Program Card
+// ECON — Seller Referral Program Card
 // =============================================================================
 // Visual referral dashboard showing copyable link, milestone progress,
 // unlocked subscription months, and recent supplier referrals.
@@ -58,7 +58,7 @@ export function SellerReferralCard({ referral }: SellerReferralCardProps) {
             <p className="text-xs text-muted-foreground">
               {t(
                 "referral_card_desc",
-                "Invite suppliers to ConMart. When they register and list materials, you earn free Direct Chat months."
+                "Invite suppliers to ECON. When they register and list materials, you earn free Direct Chat months."
               )}
             </p>
           </div>

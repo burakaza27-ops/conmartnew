@@ -1,17 +1,28 @@
 "use client";
 
 // =============================================================================
-// ConMart — Seller Listing Card Component
+// ECON — Seller Listing Card Component
 // =============================================================================
 // Displays a supplier listing with header meta, quick action buttons,
 // active status toggle, and the responsive PriceTierTable.
 // =============================================================================
 
+import { useState, useTransition } from "react";
 import Link from "next/link";
-import { ShoppingCart, MapPin, Pencil, ExternalLink } from "lucide-react";
+import {
+  ShoppingCart,
+  MapPin,
+  Pencil,
+  ExternalLink,
+  RefreshCw,
+  CheckCircle2,
+  Clock,
+  Loader2,
+  Package,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n/language-context";
 import {
@@ -23,6 +34,7 @@ import { ListingStatusButton } from "./listing-status-button";
 import { PriceTierTable } from "./price-tier-table";
 import type { SellerListingItem } from "./types";
 import { getProductFallback } from "@/lib/data/category-images";
+import { confirmListingAvailability } from "@/app/actions/listings";
 
 interface SellerListingCardProps {
   listing: SellerListingItem;
@@ -30,6 +42,8 @@ interface SellerListingCardProps {
 
 export function SellerListingCard({ listing }: SellerListingCardProps) {
   const { t, locale } = useLanguage();
+  const [isPending, startTransition] = useTransition();
+  const [confirmedAt, setConfirmedAt] = useState<string | null>(null);
 
   const unitLabel = getLocalizedUnit(listing.productUnit, locale);
   const localizedLocation = getLocalizedLocation(listing.location, locale);
@@ -42,6 +56,26 @@ export function SellerListingCard({ listing }: SellerListingCardProps) {
   const displayImage =
     listing.imageUrl ||
     getProductFallback(listing.categoryName);
+
+  const handleConfirmAvailability = () => {
+    startTransition(async () => {
+      const res = await confirmListingAvailability(listing.id);
+      if (res && res.success && res.updatedAt) {
+        setConfirmedAt(res.updatedAt);
+      }
+    });
+  };
+
+  const activeTimestamp = confirmedAt || listing.updatedAt;
+  const formattedUpdateDate = activeTimestamp
+    ? new Date(activeTimestamp).toLocaleDateString(locale === "am" ? "am-ET" : "en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : null;
+
+  const isConfirmed = Boolean(confirmedAt);
 
   return (
     <Card className="overflow-hidden border-border/60 bg-card">
@@ -71,6 +105,29 @@ export function SellerListingCard({ listing }: SellerListingCardProps) {
               <CardTitle className="text-base font-bold mt-1 text-foreground">
                 {listing.productTitle}
               </CardTitle>
+
+              {/* Freshness timestamp + Stock state */}
+              <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                {formattedUpdateDate && (
+                  <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    <span>
+                      {locale === "am" ? "የታደሰው: " : "Updated: "}
+                      <strong className="text-foreground">{formattedUpdateDate}</strong>
+                    </span>
+                  </span>
+                )}
+                {listing.stockState && (
+                  <Badge variant="outline" className="text-[10px] font-normal uppercase py-0 px-1.5 text-muted-foreground">
+                    {listing.stockState.replace(/_/g, " ")}
+                  </Badge>
+                )}
+                {listing.availableQty !== null && listing.availableQty !== undefined && listing.availableQty > 0 && (
+                  <span className="text-[11px] text-muted-foreground font-mono">
+                    ({listing.availableQty.toLocaleString()} {unitLabel})
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -89,6 +146,35 @@ export function SellerListingCard({ listing }: SellerListingCardProps) {
               </span>{" "}
               {t("seller_enquiries_badge", "enquiries")}
             </div>
+
+            {/* Confirm Still Available Button */}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleConfirmAvailability}
+              disabled={isPending}
+              className={cn(
+                "h-8 gap-1.5 text-xs font-semibold transition-all",
+                isConfirmed
+                  ? "border-emerald-500/50 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                  : "hover:bg-muted text-foreground"
+              )}
+              title="Confirm that materials are currently in stock and fresh"
+            >
+              {isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : isConfirmed ? (
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+              ) : (
+                <RefreshCw className="h-3.5 w-3.5 text-primary" />
+              )}
+              <span>
+                {isConfirmed
+                  ? (locale === "am" ? "ዛሬ ተረጋግጧል" : "Confirmed Today")
+                  : (locale === "am" ? "አለ አረጋግጥ" : "Confirm Available")}
+              </span>
+            </Button>
 
             <ListingStatusButton
               listingId={listing.id}

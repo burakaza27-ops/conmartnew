@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — In-App Notification Bell (Server Action + Client Component)
+// ECON — In-App Notification Bell (Server Action + Client Component)
 // =============================================================================
 // Supplies a bell icon in the app shell nav with an unread count badge.
 // Notifications are stored in the database (AppNotification model).

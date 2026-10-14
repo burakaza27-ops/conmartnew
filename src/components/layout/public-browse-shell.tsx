@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Public Browse Shell
+// ECON — Public Browse Shell
 // =============================================================================
 // A lightweight layout shell for anonymous visitors browsing the marketplace.
 // Shows the marketing header with sign-in/register CTAs, a minimal sidebar

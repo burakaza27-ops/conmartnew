@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Pre-Unlock Contact Masking
+// ECON — Pre-Unlock Contact Masking
 // =============================================================================
 // The platform's only paid asset is the introduction between a buyer and a
 // verified supplier. Anything that would let the two parties reach each other
@@ -32,7 +32,7 @@ const MESSAGING_LINK_PATTERN =
   /(?:https?:\/\/)?(?:www\.)?(?:wa\.me|api\.whatsapp\.com|telegram\.me|m\.me|imo\.im)\/\S*/gi;
 
 /**
- * Cities and towns ConMart operates in. A location is generalized to whichever
+ * Cities and towns ECON operates in. A location is generalized to whichever
  * of these it mentions, so buyers can still filter by region before paying.
  */
 const KNOWN_LOCALITIES = [

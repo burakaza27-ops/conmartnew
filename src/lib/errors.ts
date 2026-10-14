@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Error Boundaries Between Domain and Infrastructure Failures
+// ECON — Error Boundaries Between Domain and Infrastructure Failures
 // =============================================================================
 // Domain rules ("insufficient balance", "enquiry already accepted") are safe to
 // show a user. Infrastructure failures are not: driver and query errors leak

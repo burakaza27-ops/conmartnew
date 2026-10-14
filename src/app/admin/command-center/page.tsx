@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Admin Command Center (Operations Hub)
+// ECON — Admin Command Center (Operations Hub)
 // =============================================================================
 // Operational control room for the Subscription & Guided Leads Directory Model:
 // 1. Supplier Subscription Approvals & Tier Assignments

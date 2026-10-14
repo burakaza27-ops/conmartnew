@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Default Material Categories (Official 20 Construction Categories)
+// ECON — Default Material Categories (Official 20 Construction Categories)
 // =============================================================================
 // Inserted on catalog/listing/admin load to guarantee all 20 material categories
 // are always available with authentic Ethiopian market imagery and specifications.

@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Account Settings",
-  description: "Update your ConMart profile, phone, company, and password.",
+  description: "Update your ECON profile, phone, company, and password.",
 };
 
 interface AccountSettingsPageProps {

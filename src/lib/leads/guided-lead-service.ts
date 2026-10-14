@@ -1,11 +1,11 @@
 // =============================================================================
-// ConMart — Agent Guided Leads Service
+// ECON — Agent Guided Leads Service
 // =============================================================================
 // Implements the "Get Guided" / "Request a Visit" workflow:
 // 1. Lead creation for buyers (free, anonymous-friendly).
 // 2. Lead inbox & area assignment for Commission Agents.
 // 3. 5-stage status workflow: New -> Assigned -> Guiding -> Delivered -> Closed.
-// 4. Commission ledger tracking for CONMART accounting.
+// 4. Commission ledger tracking for ECON accounting.
 // =============================================================================
 
 import "server-only";
@@ -170,7 +170,7 @@ export async function updateGuidedLeadStatus(params: {
 }
 
 /**
- * Records fee earned per delivered guided lead for CONMART accounting ledger.
+ * Records fee earned per delivered guided lead for ECON accounting ledger.
  * Idempotent: guarantees exactly one commission entry per guided lead.
  */
 export async function recordAgentCommission(params: {

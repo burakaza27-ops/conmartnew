@@ -1,7 +1,7 @@
 "use client";
 
 // =============================================================================
-// ConMart — Admin Disputes Mediation Table
+// ECON — Admin Disputes Mediation Table
 // =============================================================================
 // Operations staff dashboard to review reported trade disputes, inspect
 // claims, and resolve cases by either crediting 80% non-withdrawable wallet

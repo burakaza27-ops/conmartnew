@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getSessionUser, defaultRouteForRole } from "@/lib/auth/session";
 
 // =============================================================================
-// ConMart — App Entry Root (Smart Route)
+// ECON — App Entry Root (Smart Route)
 // =============================================================================
 // Directs users immediately to their intended workspace or the categories hub:
 // - Authenticated SELLER      -> /seller

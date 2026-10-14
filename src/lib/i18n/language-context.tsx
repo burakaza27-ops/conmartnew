@@ -12,8 +12,8 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-const LANG_STORAGE_KEY = "conmart_locale";
-const LANG_COOKIE_NAME = "conmart_locale";
+const LANG_STORAGE_KEY = "ECON_locale";
+const LANG_COOKIE_NAME = "ECON_locale";
 
 const listeners = new Set<() => void>();
 

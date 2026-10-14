@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Buyer Purchase Request Modal Component
+// ECON — Buyer Purchase Request Modal Component
 // =============================================================================
 // Enables contractors/buyers to submit structured purchase enquiries
 // directly to verified suppliers with zero contact leakage until unlocked.

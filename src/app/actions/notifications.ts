@@ -1,6 +1,6 @@
 "use server";
 
-// ConMart — Notification Server Actions
+// ECON — Notification Server Actions
 // getUnreadCountAction: seeds the notification bell badge in the app shell.
 // getNotificationsAction: returns recent notifications (capped to 100).
 // markAllNotificationsReadAction / markNotificationReadAction: clear the badge.

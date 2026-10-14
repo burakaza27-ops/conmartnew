@@ -21,6 +21,7 @@
     "db:deploy": "prisma migrate deploy",
     "db:status": "prisma migrate status",
     "db:seed": "prisma db seed",
+    "clean:catalogue": "tsx prisma/clean-catalogue.ts",
     "db:studio": "prisma studio",
     "postinstall": "node --max-old-space-size=4096 ./node_modules/prisma/build/index.js generate"
   },

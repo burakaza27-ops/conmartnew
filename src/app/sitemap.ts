@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Sitemap Generator
+// ECON — Sitemap Generator
 // =============================================================================
 // Generates sitemap.xml dynamically so category pages and static routes
 // are indexed by Google and other search engines.

@@ -1,7 +1,7 @@
 "use client";
 
 // =============================================================================
-// ConMart — Language Toggle Button (Client Component)
+// ECON — Language Toggle Button (Client Component)
 // =============================================================================
 
 import React from "react";

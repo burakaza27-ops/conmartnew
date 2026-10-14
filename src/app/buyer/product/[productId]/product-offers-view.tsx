@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Product Competing Offers Comparison View
+// ECON — Product Competing Offers Comparison View
 // =============================================================================
 // Implements the Programmer's Guide "Competing Offers Comparison":
 // - Multiple verified sellers supplying the same product specification
@@ -43,6 +43,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { GetGuidedModal } from "@/components/leads/get-guided-modal";
 import { logLeadEventAction } from "@/app/actions/leads";
 import { SYSTEM_CONTACTS } from "@/lib/config/system-contacts";
+import { StartChatButton } from "@/components/chat/start-chat-button";
 import type { ProductWithOffers, CompetingOffer } from "@/lib/data/catalog";
 
 
@@ -216,9 +217,11 @@ export function ProductOffersView({ product, isAuthenticated = false }: ProductO
                         </div>
 
                         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-1.5">
-                          <span className="flex items-center gap-1">
+                          <span className="flex items-center gap-1 font-medium text-foreground/85">
                             <MapPin className="h-3.5 w-3.5 text-primary" />
-                            {getLocalizedLocation(offer.location, locale)}
+                            {offer.marketArea && !offer.location.toLowerCase().includes(offer.marketArea.toLowerCase())
+                              ? `${getLocalizedLocation(offer.location, locale)}, ${offer.marketArea}`
+                              : getLocalizedLocation(offer.location, locale)}
                           </span>
                           <span>•</span>
                           <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
@@ -304,19 +307,37 @@ export function ProductOffersView({ product, isAuthenticated = false }: ProductO
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2 ml-auto">
-                        {offer.isSubscribed && offer.directPhone ? (
+                        {offer.isSubscribed ? (
                           <>
-                            <a
-                              href={`tel:${offer.directPhone.replace(/\s+/g, "")}`}
-                              onClick={() => handleCallClick(offer)}
-                              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow-xs hover:bg-primary/90 transition-colors"
+                            <AuthGateButton
+                              isAuthenticated={isAuthenticated}
+                              redirectTo={`/buyer/product/${product.id}`}
+                              fallbackLabel={t("chat_start_direct", "Chat now")}
+                              fallbackVariant="default"
+                              fallbackSize="sm"
+                              fallbackClassName="gap-1.5 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950"
                             >
-                              <Phone className="h-3.5 w-3.5" />
-                              <span>{locale === "am" ? "ይደውሉ" : "Call"}</span>
-                            </a>
+                              <StartChatButton
+                                listingId={offer.listingId}
+                                directChatEnabled={true}
+                                size="sm"
+                                variant="default"
+                                className="gap-1.5 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950"
+                              />
+                            </AuthGateButton>
+                            {offer.directPhone && (
+                              <a
+                                href={`tel:${offer.directPhone.replace(/\s+/g, "")}`}
+                                onClick={() => handleCallClick(offer)}
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow-xs hover:bg-primary/90 transition-colors"
+                              >
+                                <Phone className="h-3.5 w-3.5" />
+                                <span>{locale === "am" ? "ይደውሉ" : "Call"}</span>
+                              </a>
+                            )}
                             {(offer.whatsappNumber || offer.directPhone) && (
                               <a
-                                href={`https://wa.me/${(offer.whatsappNumber || offer.directPhone).replace(/[^\d]/g, "")}`}
+                                href={`https://wa.me/${(offer.whatsappNumber || offer.directPhone || "").replace(/[^\d]/g, "")}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onClick={() => handleWhatsAppClick(offer)}

@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Category Catalog View (Product-Grouped, Image-First)
+// ECON — Category Catalog View (Product-Grouped, Image-First)
 // =============================================================================
 // Each card = one product type (e.g. "Dangote Cement 42.5N")
 // Clicking opens /buyer/product/[id] which lists all competing suppliers.
@@ -38,6 +38,11 @@ import type { ProductCatalogRow } from "@/lib/data/catalog";
 import type { SiteWastageItem } from "@/lib/data/wastage";
 import { GuestWastageModal } from "@/components/wastage/guest-wastage-modal";
 import { CategoryToolbar } from "./category-toolbar";
+import {
+  CITIES,
+  MARKET_AREAS,
+  getMarketAreasForCity,
+} from "@/lib/data/market-areas";
 
 import { getProductFallback } from "@/lib/data/category-images";
 
@@ -62,6 +67,8 @@ interface CategoryViewProps {
   searchQuery?: string;
   brandFilter?: string;
   sortBy?: string;
+  cityFilter?: string;
+  marketAreaFilter?: string;
   approvedWastages?: SiteWastageItem[];
 }
 
@@ -74,6 +81,8 @@ export function CategoryView({
   searchQuery,
   brandFilter,
   sortBy,
+  cityFilter,
+  marketAreaFilter,
   approvedWastages = [],
 }: CategoryViewProps) {
   const { t, locale } = useLanguage();
@@ -97,24 +106,50 @@ export function CategoryView({
         locale
       );
 
+  const buildFilterUrl = (overrides: {
+    search?: string | null;
+    sort?: string | null;
+    city?: string | null;
+    marketArea?: string | null;
+  }) => {
+    const params = new URLSearchParams();
+    const effectiveSearch =
+      overrides.search !== undefined ? overrides.search : searchQuery;
+    const effectiveSort =
+      overrides.sort !== undefined ? overrides.sort : sortBy;
+    const effectiveCity =
+      overrides.city !== undefined ? overrides.city : cityFilter;
+    const effectiveMarketArea =
+      overrides.marketArea !== undefined ? overrides.marketArea : marketAreaFilter;
+
+    if (effectiveSearch) params.set("search", effectiveSearch);
+    if (brandFilter && brandFilter !== "all") params.set("brand", brandFilter);
+    if (effectiveSort && effectiveSort !== "newest") params.set("sort", effectiveSort);
+    if (effectiveCity && effectiveCity !== "all") params.set("city", effectiveCity);
+    if (effectiveMarketArea && effectiveMarketArea !== "all")
+      params.set("marketArea", effectiveMarketArea);
+
+    const qs = params.toString();
+    return `/buyer/category/${categorySlug}${qs ? `?${qs}` : ""}`;
+  };
+
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const q = (fd.get("search") as string)?.trim();
-    const params = new URLSearchParams();
-    if (q) params.set("search", q);
-    if (brandFilter && brandFilter !== "all") params.set("brand", brandFilter);
-    if (sortBy && sortBy !== "supplier_count") params.set("sort", sortBy);
-    router.push(`/buyer/category/${categorySlug}?${params.toString()}`);
+    router.push(buildFilterUrl({ search: q || null }));
   };
 
   const clearSearch = () => {
-    const params = new URLSearchParams();
-    if (brandFilter && brandFilter !== "all") params.set("brand", brandFilter);
-    if (sortBy && sortBy !== "supplier_count") params.set("sort", sortBy);
-    const qs = params.toString();
-    router.push(`/buyer/category/${categorySlug}${qs ? `?${qs}` : ""}`);
+    router.push(buildFilterUrl({ search: null }));
   };
+
+  const currentCityId = cityFilter || "addis-ababa";
+  const cityMarketAreas = getMarketAreasForCity(currentCityId);
+  const availableMarketAreas =
+    cityMarketAreas.length > 0
+      ? cityMarketAreas
+      : MARKET_AREAS.filter((a) => a.cityId === "addis-ababa");
 
   return (
     <div className="space-y-0">
@@ -246,10 +281,93 @@ export function CategoryView({
           </button>
         </form>
 
-        {/* Filter row */}
-        {/* Sort only — brand chips removed (brands visible on product detail) */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="ml-auto flex items-center gap-1.5">
+        {/* Location & Sort Filter Row */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+          {/* Left: City & Market Area Dropdowns */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* City Selector */}
+            <div className="flex items-center gap-1.5 text-xs">
+              <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
+              <select
+                value={cityFilter || ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  router.push(buildFilterUrl({ city: val || null, marketArea: null }));
+                }}
+                className="h-8 rounded-lg border border-border bg-card px-2.5 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs"
+              >
+                <option value="">{locale === "am" ? "ሁሉም ከተሞች" : "All Cities"}</option>
+                <optgroup label={locale === "am" ? "ዋና ከተማ" : "Capital"}>
+                  <option value="addis-ababa">
+                    {locale === "am" ? "አዲስ አበባ" : "Addis Ababa"}
+                  </option>
+                </optgroup>
+                <optgroup label={locale === "am" ? "የዙሪያ ከተሞች" : "Surrounding Towns"}>
+                  {CITIES.filter((c) => c.isSurroundingTown).map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {locale === "am" ? c.nameAm : c.nameEn}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label={locale === "am" ? "ሌሎች ከተሞች" : "Other Regional Cities"}>
+                  {CITIES.filter((c) => !c.isSurroundingTown && c.id !== "addis-ababa").map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {locale === "am" ? c.nameAm : c.nameEn}
+                    </option>
+                  ))}
+                </optgroup>
+              </select>
+            </div>
+
+            {/* Market Area Selector */}
+            <div className="flex items-center gap-1.5 text-xs">
+              <select
+                value={marketAreaFilter || ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  router.push(buildFilterUrl({ marketArea: val || null }));
+                }}
+                className="h-8 rounded-lg border border-border bg-card px-2.5 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs"
+              >
+                <option value="">
+                  {locale === "am" ? "ሁሉም የገበያ ቦታዎች" : "All Market Areas"}
+                </option>
+                {availableMarketAreas.map((area) => (
+                  <option key={area.id} value={area.nameEn}>
+                    {locale === "am" ? area.nameAm : area.nameEn}
+                    {area.isBoundaryArea
+                      ? locale === "am"
+                        ? " (ድንበር)"
+                        : " (Boundary)"
+                      : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Active Location Chip */}
+            {(cityFilter || marketAreaFilter) && (
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(buildFilterUrl({ city: null, marketArea: null }))
+                }
+                className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-colors shadow-2xs"
+                title="Reset location filter"
+              >
+                <MapPin className="h-3 w-3" />
+                <span>
+                  {marketAreaFilter
+                    ? marketAreaFilter
+                    : CITIES.find((c) => c.id === cityFilter)?.nameEn || cityFilter}
+                </span>
+                <X className="h-3 w-3 ml-0.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Right: Sort controls */}
+          <div className="flex items-center gap-1.5 self-end sm:self-auto">
             <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">Sort:</span>
             {[
@@ -259,10 +377,7 @@ export function CategoryView({
             ].map(({ key, label }) => (
               <Link
                 key={key}
-                href={`/buyer/category/${categorySlug}?${new URLSearchParams({
-                  ...(searchQuery ? { search: searchQuery } : {}),
-                  sort: key,
-                }).toString()}`}
+                href={buildFilterUrl({ sort: key })}
                 className={cn(
                   "rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition",
                   (sortBy || "newest") === key
@@ -470,7 +585,7 @@ function ProductCard({
         <div className="absolute top-2 right-2">
           <span className="inline-flex items-center gap-1 rounded-full bg-background/90 backdrop-blur-sm border border-border px-2 py-0.5 text-[11px] font-semibold text-foreground shadow-sm">
             <Users className="h-2.5 w-2.5 text-primary" />
-            {product.supplierCount}
+            {product.supplierCount} {product.supplierCount === 1 ? "supplier" : "suppliers"}
           </span>
         </div>
         {/* Category chip */}
@@ -518,13 +633,27 @@ function ProductCard({
           </p>
         )}
 
-        {/* CTA row */}
-        <div className="mt-3 flex items-center justify-between">
-          <span className="text-[11px] text-muted-foreground">
-            {product.supplierCount}{" "}
-            {product.supplierCount === 1 ? "supplier" : "suppliers"}
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+        {/* Market Area & CTA row */}
+        <div className="mt-3 flex items-center justify-between gap-2 border-t border-border/40 pt-2.5">
+          <div
+            className="flex items-center gap-1.5 min-w-0 text-[11px] text-muted-foreground font-medium"
+            title={
+              product.marketAreas && product.marketAreas.length > 0
+                ? `Market Area: ${product.marketAreas.join(", ")}`
+                : "Addis Ababa"
+            }
+          >
+            <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />
+            <span className="truncate max-w-[140px] font-semibold text-foreground/85">
+              {product.marketAreas && product.marketAreas.length > 0
+                ? product.marketAreas.slice(0, 2).join(", ") +
+                  (product.marketAreas.length > 2
+                    ? ` +${product.marketAreas.length - 2}`
+                    : "")
+                : "Addis Ababa"}
+            </span>
+          </div>
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
             Compare
             <ChevronRight className="h-3 w-3" />
           </span>

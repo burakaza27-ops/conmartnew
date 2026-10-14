@@ -1,4 +1,4 @@
-// ConMart — Buyer Dashboard Error Boundary (Client Component)
+// ECON — Buyer Dashboard Error Boundary (Client Component)
 // Isolates render errors to the buyer content area without breaking the sidebar.
 
 "use client";

@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Auth Server Actions
+// ECON — Auth Server Actions
 // =============================================================================
 // Sign-in, registration, sign-out, profile updates, and password reset.
 //
@@ -115,7 +115,7 @@ export async function signIn(
     return {
       success: false,
       error:
-        "Your account setup is incomplete. Please contact ConMart support to finish registration.",
+        "Your account setup is incomplete. Please contact ECON support to finish registration.",
     };
   }
 
@@ -164,7 +164,7 @@ export async function signUp(
     if (existingSellerWithTin) {
       return {
         success: false,
-        error: `A supplier with TIN '${tinNumber}' is already registered in ConMart. Please sign in to your existing account or contact support.`,
+        error: `A supplier with TIN '${tinNumber}' is already registered in ECON. Please sign in to your existing account or contact support.`,
       };
     }
   }
@@ -417,7 +417,7 @@ export async function updateProfileAction(
   if (taken) {
     return {
       success: false,
-      error: "That phone number is already used by another ConMart account.",
+      error: "That phone number is already used by another ECON account.",
     };
   }
 

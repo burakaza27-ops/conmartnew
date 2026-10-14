@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Health Check
+// ECON — Health Check
 // =============================================================================
 // Reports whether the process can actually serve traffic correctly, not merely
 // whether it is running. A load balancer or uptime monitor should treat a 503

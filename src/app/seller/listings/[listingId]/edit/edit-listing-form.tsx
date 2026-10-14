@@ -1,7 +1,7 @@
 "use client";
 
 // =============================================================================
-// ConMart — Seller Edit Listing Form (Interactive)
+// ECON — Seller Edit Listing Form (Interactive)
 // =============================================================================
 // Allows suppliers to adjust wholesale unit prices, tier intervals,
 // warehouse location, and batch photo for existing material offerings.
@@ -33,6 +33,7 @@ import type { ProductUnit } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n/language-context";
 import { getCategoryTitle, getLocalizedUnit } from "@/lib/i18n/translations";
+import { MARKET_AREAS, CITIES } from "@/lib/data/market-areas";
 
 interface ExistingTier {
   id: string;
@@ -255,10 +256,44 @@ export function EditListingForm({
 
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="location" className="text-xs font-semibold flex items-center gap-1">
-                  <MapPin className="h-3 w-3 text-muted-foreground" />
-                  {t("seller_form_location_label")}
+                <Label htmlFor="location" className="text-xs font-semibold flex items-center justify-between">
+                  <span className="flex items-center gap-1">
+                    <MapPin className="h-3 w-3 text-muted-foreground" />
+                    {t("seller_form_location_label")}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {locale === "am" ? "የገበያ ቦታ ምረጥ" : "Select market area"}
+                  </span>
                 </Label>
+
+                <select
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setLocation(e.target.value);
+                    }
+                  }}
+                  className="w-full h-9 rounded-md border border-border bg-background px-3 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary mb-1.5"
+                >
+                  <option value="">
+                    {locale === "am" ? "-- የገበያ ቦታ ምረጥ --" : "-- Select Market Area --"}
+                  </option>
+                  <optgroup label={locale === "am" ? "የአዲስ አበባ ገበያዎች" : "Addis Ababa Market Areas"}>
+                    {MARKET_AREAS.filter((m) => m.cityId === "addis-ababa").map((m) => (
+                      <option key={m.id} value={`Addis Ababa, ${m.nameEn}`}>
+                        {locale === "am" ? m.nameAm : m.nameEn}
+                        {m.isBoundaryArea ? (locale === "am" ? " (ድንበር)" : " (Boundary)") : ""}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label={locale === "am" ? "የዙሪያ እና ሌሎች ከተሞች" : "Surrounding Towns & Regional Cities"}>
+                    {CITIES.filter((c) => c.id !== "addis-ababa").map((c) => (
+                      <option key={c.id} value={c.nameEn}>
+                        {locale === "am" ? c.nameAm : c.nameEn}
+                      </option>
+                    ))}
+                  </optgroup>
+                </select>
+
                 <Input
                   id="location"
                   value={location}

@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Zone Data (Server-Side)
+// ECON — Zone Data (Server-Side)
 // =============================================================================
 // Registration reads zones from the database. If production was deployed
 // before the coverage catalog was seeded, the first register page view

@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — 01B Admin Agent Review & Approval Workspace (Screen 5)
+// ECON — 01B Admin Agent Review & Approval Workspace (Screen 5)
 // =============================================================================
 
 "use client";
@@ -258,7 +258,7 @@ export function AgentReviewQueue({ initialApplications }: AgentReviewQueueProps)
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="font-mono text-xs font-black tracking-widest text-primary uppercase">
-              CONMART 01B • SCREEN 5
+              ECON 01B • SCREEN 5
             </span>
             <span className="text-muted-foreground">•</span>
             <span className="text-xs font-semibold text-muted-foreground">
@@ -269,7 +269,7 @@ export function AgentReviewQueue({ initialApplications }: AgentReviewQueueProps)
             Agent Application Vetting Queue
           </h1>
           <p className="text-xs text-muted-foreground mt-1">
-            CONMART reviews applicant documents, performs 5-point verification, and confirms service areas.
+            ECON reviews applicant documents, performs 5-point verification, and confirms service areas.
           </p>
         </div>
 

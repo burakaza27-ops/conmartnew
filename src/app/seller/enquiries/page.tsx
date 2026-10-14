@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Seller Enquiry Inbox Page
+// ECON — Seller Enquiry Inbox Page
 // =============================================================================
 
 import { redirect } from "next/navigation";
@@ -9,7 +9,7 @@ import { getSellerWalletAction } from "@/app/actions/wallet";
 import { SellerEnquiriesView } from "./enquiries-view";
 
 export const metadata = {
-  title: "Purchase Enquiries Inbox | ConMart Ethiopia",
+  title: "Purchase Enquiries Inbox | ECON Ethiopia",
   description: "Review incoming purchase enquiries from verified contractors and unlock introduction contacts.",
 };
 

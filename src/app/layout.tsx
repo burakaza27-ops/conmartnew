@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Root Layout
+// ECON — Root Layout
 // =============================================================================
 // App-wide layout with Geist font family, dark theme by default,
 // and SEO metadata for the B2B Construction Marketplace.
@@ -29,7 +29,7 @@ import { ToastProvider } from "@/components/ui/toast";
 import { PwaRegister } from "@/components/pwa-register";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://conmart-ethiopia.com"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://ECON-ethiopia.com"),
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -112,7 +112,7 @@ export default async function RootLayout({
   // Read locale server-side so the HTML lang attribute is correct on first render.
   // Screen readers use lang to select the correct voice/pronunciation engine.
   // The client LanguageProvider keeps it in sync on subsequent navigations.
-  const savedLocale = cookieStore.get("conmart_locale")?.value;
+  const savedLocale = cookieStore.get("ECON_locale")?.value;
   const lang = savedLocale === "am" ? "am" : "en";
 
   return (
@@ -130,7 +130,7 @@ export default async function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                var t = localStorage.getItem('conmart_theme');
+                var t = localStorage.getItem('ECON_theme');
                 if (t === 'light') {
                   document.documentElement.classList.remove('dark');
                   document.documentElement.classList.add('light');

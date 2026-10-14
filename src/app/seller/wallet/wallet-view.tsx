@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Seller Prepaid Wallet View Component
+// ECON — Seller Prepaid Wallet View Component
 // =============================================================================
 // Dual-balance system according to Addis Ababa B2B specifications:
 // - Cash Balance: Deposited via CBE / Telebirr, withdrawable upon request.

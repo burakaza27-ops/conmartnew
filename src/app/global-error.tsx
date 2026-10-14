@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Global Root Error Boundary (Client Component)
+// ECON — Global Root Error Boundary (Client Component)
 // =============================================================================
 // Renders when the root layout itself encounters a fatal error.
 // =============================================================================
@@ -16,7 +16,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("ConMart Global Root Layout Fatal Error:", error);
+    console.error("ECON Global Root Layout Fatal Error:", error);
   }, [error]);
 
   return (

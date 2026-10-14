@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Canonical Coverage Areas
+// ECON — Canonical Coverage Areas
 // =============================================================================
 // Single source of truth for agent signup and depot routing. Seed, registration,
 // and the matcher all read this list so a missing seed cannot leave agents with
@@ -73,12 +73,14 @@ export const COVERAGE_AREAS: readonly CoverageAreaDefinition[] = [
   area("gelan", "Gelan", "Greater Addis", ["gelan", "gelan town"], 1, 230),
   area("dukem", "Dukem", "Greater Addis", ["dukem"], 1, 240),
   area("legetafo", "Legetafo", "Greater Addis", ["legetafo", "legetafo legedadi"], 1, 250),
+  area("furi", "Furi", "Greater Addis", ["furi", "furi hana"], 1, 255),
   area("sendafa", "Sendafa", "Greater Addis", ["sendafa"], 1, 260),
   area("holeta", "Holeta", "Greater Addis", ["holeta", "holleta"], 1, 270),
 
   // --- Regional cities ---
   area("adama", "Adama", "Oromia", ["adama", "nazret", "nazareth"], 1, 300),
   area("bishoftu", "Bishoftu", "Oromia", ["bishoftu", "debre zeit", "debrezeit"], 1, 310),
+  area("mojo", "Mojo", "Oromia", ["mojo", "modjo", "mojo dry port"], 1, 315),
   area("jimma", "Jimma", "Oromia", ["jimma", "jima"], 1, 320),
   area("shashemene", "Shashemene", "Oromia", ["shashemene", "shashamane"], 1, 330),
   area("asela", "Asela", "Oromia", ["asela", "assela"], 1, 340),

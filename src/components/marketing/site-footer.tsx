@@ -48,7 +48,7 @@ export function SiteFooter() {
             </li>
             <li>
               <Link href="/landing" className="transition-colors hover:text-foreground">
-                {t("footer_how_it_works", "How ConMart works")}
+                {t("footer_how_it_works", "How ECON works")}
               </Link>
             </li>
           </ul>

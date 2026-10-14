@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Admin Orders Table (Client Component)
+// ECON — Admin Orders Table (Client Component)
 // =============================================================================
 // Interactive table with status advancement buttons for each order.
 // =============================================================================
@@ -213,7 +213,7 @@ export function OrdersTable({ orders }: OrdersTableProps) {
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `conmart-financial-orders-${new Date().toISOString().slice(0, 10)}.csv`
+      `ECON-financial-orders-${new Date().toISOString().slice(0, 10)}.csv`
     );
     document.body.appendChild(link);
     link.click();
@@ -511,7 +511,7 @@ export function OrdersTable({ orders }: OrdersTableProps) {
                                   : `Supplier Fulfillment Breakdown (${order.items.length} line item${order.items.length === 1 ? "" : "s"})`}
                               </h4>
                               <span className="text-xs text-muted-foreground">
-                                {locale === "am" ? "የኮንማርት ገቢ (10%): " : "ConMart Cut (10%): "}
+                                {locale === "am" ? "የኮንማርት ገቢ (10%): " : "ECON Cut (10%): "}
                                 <strong className="text-emerald-600">{formatETB(order.platformFee, locale)}</strong>
                               </span>
                             </div>

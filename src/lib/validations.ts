@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Zod Validation Schemas
+// ECON — Zod Validation Schemas
 // =============================================================================
 // Centralized validation schemas used across forms and server actions.
 // Localized for Ethiopian market (phone format, currency, etc.)

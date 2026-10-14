@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Chat Permission Decisions
+// ECON — Chat Permission Decisions
 // =============================================================================
 // Pure. The server action that opens a room or accepts a message must call
 // these functions; a UI lock is not authorization.

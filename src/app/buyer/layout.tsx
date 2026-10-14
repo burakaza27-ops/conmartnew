@@ -10,7 +10,7 @@ import { getUnreadCountAction } from "@/app/actions/notifications";
 import { BuyerSidebarNav, BuyerMobileBottomNav } from "./buyer-nav";
 
 // =============================================================================
-// ConMart — Buyer Layout (Dual-Mode: Authenticated + Public Browse)
+// ECON — Buyer Layout (Dual-Mode: Authenticated + Public Browse)
 // =============================================================================
 
 export const dynamic = "force-dynamic";

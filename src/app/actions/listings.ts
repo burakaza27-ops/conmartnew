@@ -1,7 +1,7 @@
 "use server";
 
 // =============================================================================
-// ConMart — Listing Server Actions
+// ECON — Listing Server Actions
 // =============================================================================
 // Handles:
 // 1. Creation of new products and seller listings with volume price tiers & images
@@ -12,7 +12,7 @@
 import { revalidatePath } from "next/cache";
 import { authorize } from "@/lib/auth/session";
 import { db } from "@/lib/db";
-import { ProductUnit } from "@prisma/client";
+import { ProductUnit, StockState } from "@prisma/client";
 import { qualifyReferralIfApplicable } from "@/lib/marketplace/referral";
 import {
   rateLimit,
@@ -225,11 +225,14 @@ export interface BatchListingItemInput {
   categoryId: string;
   description?: string;
   unit: ProductUnit;
-  unitPrice: number;
+  /** 0 or undefined means "Ask for price" — no numeric price published */
+  unitPrice?: number;
   availableQty?: number;
   brand?: string;
   imageUrl?: string;
   existingProductId?: string;
+  stockState?: StockState;
+  vatMode?: "included" | "excluded" | "confirm";
 }
 
 export interface CreateBatchListingsInput {
@@ -296,8 +299,9 @@ export async function createBatchSellerListingsAction(input: CreateBatchListings
           return { error: `Item #${rowNum} ("${item.title}"): Steel/rebar products cannot be listed under the "${matchedCat.name}" category.` };
         }
       }
-      if (!item.unitPrice || item.unitPrice <= 0) {
-        return { error: `Item #${rowNum} ("${item.title}"): Rate (unit price) must be greater than zero ETB.` };
+      // unitPrice is optional — 0 or undefined means "Ask for price"
+      if (item.unitPrice !== undefined && item.unitPrice !== null && item.unitPrice !== 0 && item.unitPrice < 0) {
+        return { error: `Item #${rowNum} ("${item.title}"): Price cannot be negative.` };
       }
       if (item.availableQty !== undefined && item.availableQty !== null && item.availableQty < 0) {
         return { error: `Item #${rowNum} ("${item.title}"): Available quantity cannot be negative.` };
@@ -354,6 +358,18 @@ export async function createBatchSellerListingsAction(input: CreateBatchListings
           targetProductId = product.id;
         }
 
+        const vatNote =
+          item.vatMode === "included"
+            ? "VAT: Included in price"
+            : item.vatMode === "excluded"
+            ? "VAT: Excluded (+15%)"
+            : item.vatMode === "confirm"
+            ? "VAT: Confirm with supplier"
+            : null;
+        const finalDescription = [item.description?.trim(), vatNote]
+          .filter(Boolean)
+          .join(" | ") || null;
+
         const listing = await tx.listing.create({
           data: {
             sellerId: dbUser.id,
@@ -362,22 +378,27 @@ export async function createBatchSellerListingsAction(input: CreateBatchListings
             location: input.location.trim(),
             imageUrl: item.imageUrl || null,
             brand: item.brand?.trim() || null,
-            description: item.description?.trim() || null,
+            description: finalDescription,
             availableQty: item.availableQty ?? null,
+            stockState: item.stockState || StockState.IN_STOCK,
           },
         });
 
         createdListingIds.push(listing.id);
 
-        await tx.priceTier.create({
-          data: {
-            listingId: listing.id,
-            minQty: 1,
-            maxQty: item.availableQty && item.availableQty > 1 ? item.availableQty : 999999,
-            unitPrice: item.unitPrice,
-            validUntil: defaultValidUntil,
-          },
-        });
+        // Only create a price tier when the supplier entered a numeric price
+        const hasPrice = item.unitPrice !== undefined && item.unitPrice !== null && item.unitPrice > 0;
+        if (hasPrice) {
+          await tx.priceTier.create({
+            data: {
+              listingId: listing.id,
+              minQty: 1,
+              maxQty: item.availableQty && item.availableQty > 1 ? item.availableQty : 999999,
+              unitPrice: item.unitPrice!,
+              validUntil: defaultValidUntil,
+            },
+          });
+        }
       }
     });
 
@@ -464,6 +485,54 @@ export async function toggleListingStatus(listingId: string, active: boolean) {
   } catch (error) {
     console.error("Error toggling listing status:", error);
     return { error: "Failed to update listing status." };
+  }
+}
+
+/**
+ * Confirms that a listing's materials and stock are still available.
+ * Touches `updatedAt` to refresh freshness ranking, restores IN_STOCK state, and revalidates paths.
+ */
+export async function confirmListingAvailability(listingId: string) {
+  try {
+    const auth = await authorize(["SELLER", "ADMIN"]);
+    if (!auth.ok) {
+      return { error: auth.error };
+    }
+    const dbUser = auth.user;
+
+    const listing = await db.listing.findUnique({
+      where: { id: listingId },
+      include: { product: { include: { category: true } } },
+    });
+
+    if (!listing) {
+      return { error: "Listing not found." };
+    }
+
+    if (listing.sellerId !== dbUser.id && dbUser.role !== "ADMIN") {
+      return { error: "You are not authorized to modify this listing." };
+    }
+
+    const updated = await db.listing.update({
+      where: { id: listingId },
+      data: {
+        updatedAt: new Date(),
+        stockState: StockState.IN_STOCK,
+        active: true,
+      },
+    });
+
+    revalidatePath("/seller/dashboard");
+    revalidatePath("/seller/listings");
+    revalidatePath(`/buyer/catalog/${listingId}`);
+    if (listing.productId) {
+      revalidatePath(`/buyer/product/${listing.productId}`);
+    }
+
+    return { success: true, updatedAt: updated.updatedAt.toISOString() };
+  } catch (error) {
+    console.error("Error confirming listing availability:", error);
+    return { error: "Failed to confirm listing availability." };
   }
 }
 

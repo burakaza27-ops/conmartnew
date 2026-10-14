@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Auth Callback Route Handler
+// ECON — Auth Callback Route Handler
 // =============================================================================
 
 import type { NextRequest } from "next/server";

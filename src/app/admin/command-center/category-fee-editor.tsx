@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Admin Category & Unlock Fee Editor Component
+// ECON — Admin Category & Unlock Fee Editor Component
 // =============================================================================
 
 "use client";

@@ -1,7 +1,7 @@
 "use client";
 
 // =============================================================================
-// ConMart — Responsive Price Tier Component
+// ECON — Responsive Price Tier Component
 // =============================================================================
 // Displays volume-based price tiers with a dual-layout design:
 // 1. Desktop: Clean, structured table with clear columns.

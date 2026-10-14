@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Seller Wallet Redirect (Pivoted to Subscription Model)
+// ECON — Seller Wallet Redirect (Pivoted to Subscription Model)
 // =============================================================================
 // The prepaid wallet and pay-per-lead unlock flow have been completely removed
 // in favor of the Supplier Subscription Directory model.

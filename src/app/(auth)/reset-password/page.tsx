@@ -8,7 +8,7 @@ import { ResetPasswordForm } from "./reset-password-form";
 
 export const metadata: Metadata = {
   title: "Choose a New Password",
-  description: "Set a new password for your ConMart account.",
+  description: "Set a new password for your ECON account.",
 };
 
 export default async function ResetPasswordPage() {

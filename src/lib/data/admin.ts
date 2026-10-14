@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Admin Data Fetchers (Server-Side)
+// ECON — Admin Data Fetchers (Server-Side)
 // =============================================================================
 // Data fetching for the Admin Command Center.
 // =============================================================================
@@ -329,6 +329,10 @@ async function _fetchSellerListings(sellerAuthId: string) {
     categoryName: listing.product.category.name,
     orderCount: orderCounts.get(listing.id) ?? 0,
     enquiryCount: listing._count.enquiries,
+    updatedAt: listing.updatedAt.toISOString(),
+    stockState: listing.stockState,
+    availableQty: listing.availableQty,
+    description: listing.description,
     priceTiers: listing.priceTiers.map((t) => ({
       id: t.id,
       minQty: t.minQty,

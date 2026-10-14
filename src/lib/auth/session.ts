@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Authoritative Session & Authorization
+// ECON — Authoritative Session & Authorization
 // =============================================================================
 // Every authorization decision in the application resolves the caller's role
 // from the `users` table, never from the Supabase JWT.

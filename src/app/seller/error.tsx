@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Seller Dashboard Error Boundary (Client Component)
+// ECON — Seller Dashboard Error Boundary (Client Component)
 // =============================================================================
 
 "use client";

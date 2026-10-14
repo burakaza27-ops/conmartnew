@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Proforma Line-Item Arithmetic
+// ECON — Proforma Line-Item Arithmetic
 // =============================================================================
 // Pure, client-safe pricing math shared by the live calculator in the buyer UI
 // and the authoritative server-side proforma engine.

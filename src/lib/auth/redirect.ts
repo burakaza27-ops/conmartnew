@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Same-origin path guard
+// ECON — Same-origin path guard
 // =============================================================================
 // Login, the auth callback, and password-reset emails all accept a `next` or
 // `redirect` value from the URL. Those values must stay on this origin.

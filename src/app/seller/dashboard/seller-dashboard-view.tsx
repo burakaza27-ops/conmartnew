@@ -1,7 +1,7 @@
 "use client";
 
 // =============================================================================
-// ConMart — Seller Dashboard Client View (Bilingual English & Amharic)
+// ECON — Seller Dashboard Client View (Bilingual English & Amharic)
 // =============================================================================
 // Clean orchestrator component displaying inventory, subscription tier,
 // referral progress, metrics, and listing cards with responsive pricing tiers.

@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Seller Wallet & Introduction Unlock Revenue Service
+// ECON — Seller Wallet & Introduction Unlock Revenue Service
 // =============================================================================
 // Implements the core commercial model:
 // 1. Dual-balance seller wallet (Cash vs Non-Withdrawable Credit).

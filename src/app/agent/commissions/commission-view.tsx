@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Agent Commission Ledger Client View
+// ECON — Agent Commission Ledger Client View
 // =============================================================================
 // Displays:
 // 1. Total Earned, Total Pending/Due, and Total Paid commissions.
@@ -132,7 +132,7 @@ export function CommissionView({
         <p>
           {locale === "am"
             ? "የኮንማርት ኮሚሽን ክፍያዎች በየሳምንቱ አርብ ወደ ተመዘገበው የቴሌብር ወይም ሲቢኢ አካውንትዎ ይላካሉ።"
-            : "Agent payouts are verified by ConMart accounting and disbursed every Friday directly to your registered Telebirr number."}
+            : "Agent payouts are verified by ECON accounting and disbursed every Friday directly to your registered Telebirr number."}
         </p>
       </div>
 

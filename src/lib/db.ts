@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Prisma Client Singleton (Prisma 7+)
+// ECON — Prisma Client Singleton (Prisma 7+)
 // =============================================================================
 // Prisma 7 requires a driver adapter for database connections.
 // Uses @prisma/adapter-pg for direct PostgreSQL connections via Supabase.

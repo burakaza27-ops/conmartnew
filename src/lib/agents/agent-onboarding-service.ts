@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — 01B Online Agent Registration, Vetting & Approval Service
+// ECON — 01B Online Agent Registration, Vetting & Approval Service
 // =============================================================================
 // Implements the Yakob Dan specification for Commission / Field Agent onboarding:
 // 1. Role Eligibility & Application submission with Grade 12 & ID evidence.

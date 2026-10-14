@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Shared Supabase auth callback handler
+// ECON — Shared Supabase auth callback handler
 // =============================================================================
 // Supabase password-reset emails may arrive as:
 //   • PKCE code on /auth/callback?code=…

@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Dual-Monetization Write Path
+// ECON — Dual-Monetization Write Path
 // =============================================================================
 // All chat, ticket, and commission writes go through here. Callers still have
 // to authorize; this module assumes the caller is already known.
@@ -540,6 +540,15 @@ async function findOrCreateDirectRoom(input: {
   });
 
   if (existing) {
+    if (input.listingId) {
+      await db.chatRoom.update({
+        where: { id: existing.id },
+        data: {
+          listingId: input.listingId,
+          ...(input.enquiryId ? { enquiryId: input.enquiryId } : {}),
+        },
+      });
+    }
     return existing;
   }
 
@@ -648,7 +657,7 @@ async function ensureOpenDealTicket(input: {
   const match = resolveCoverageZone(input.location, candidates);
   if (!match) {
     throw new DomainError(
-      "No coverage area is configured. Ask ConMart operations to seed location zones."
+      "No coverage area is configured. Ask ECON operations to seed location zones."
     );
   }
 

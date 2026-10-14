@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Register Page
+// ECON — Register Page
 // =============================================================================
 
 import { Suspense } from "react";
@@ -8,7 +8,7 @@ import { RegisterForm } from "./register-form";
 
 export const metadata: Metadata = {
   title: "Create Account",
-  description: "Create your ConMart B2B marketplace account",
+  description: "Create your ECON B2B marketplace account",
 };
 
 export default function RegisterPage() {

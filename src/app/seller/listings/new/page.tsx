@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — New Seller Listing Page (Server Component)
+// ECON — New Seller Listing Page (Server Component)
 // =============================================================================
 
 import { redirect } from "next/navigation";
@@ -33,9 +33,10 @@ export default async function NewListingPage() {
 
   let categories: Array<{ id: string; name: string; slug: string; imageUrl: string | null }> = [];
   let curatedProducts: Array<{ id: string; categoryId: string; title: string; unit: ProductUnit; imageUrl: string | null; specs: Record<string, string> }> = [];
+  let savedLocations: string[] = [];
 
   try {
-    const [cats, prods] = await Promise.all([
+    const [cats, prods, prevListings] = await Promise.all([
       db.category.findMany({
         where: { isActive: true },
         select: {
@@ -57,6 +58,12 @@ export default async function NewListingPage() {
         },
         orderBy: { title: "asc" },
       }),
+      db.listing.findMany({
+        where: { seller: { authId: user.id }, isDeleted: false },
+        select: { location: true },
+        distinct: ["location"],
+        take: 8,
+      }),
     ]);
     categories = cats;
     curatedProducts = prods.map((p) => ({
@@ -67,6 +74,7 @@ export default async function NewListingPage() {
       imageUrl: p.imageUrl,
       specs: (p.specs as Record<string, string>) || {},
     }));
+    savedLocations = Array.from(new Set(prevListings.map((l) => l.location).filter(Boolean)));
   } catch (err) {
     console.error("[seller/listings/new] category/product fetch failed:", err);
   }
@@ -76,6 +84,7 @@ export default async function NewListingPage() {
       categories={categories}
       curatedProducts={curatedProducts}
       sellerCompanyName={dbUser.companyName || "Your Company"}
+      savedLocations={savedLocations}
     />
   );
 }

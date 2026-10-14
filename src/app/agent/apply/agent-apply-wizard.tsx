@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — 01B Online Agent Registration Wizard (Screens 1 - 4)
+// ECON — 01B Online Agent Registration Wizard (Screens 1 - 4)
 // =============================================================================
 
 "use client";
@@ -273,7 +273,7 @@ export function AgentApplyWizard({ user, existingProfile }: AgentApplyWizardProp
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="font-mono text-xs font-black tracking-widest text-primary uppercase">
-              CONMART 01B
+              ECON 01B
             </span>
             <span className="text-muted-foreground">•</span>
             <span className="text-xs font-semibold text-muted-foreground">
@@ -348,7 +348,7 @@ export function AgentApplyWizard({ user, existingProfile }: AgentApplyWizardProp
               <div>
                 <CardTitle className="text-base font-bold">Choose your role</CardTitle>
                 <p className="text-xs text-muted-foreground">
-                  Create an account and select how you want to use CONMART.
+                  Create an account and select how you want to use ECON.
                 </p>
               </div>
             </div>
@@ -754,7 +754,7 @@ export function AgentApplyWizard({ user, existingProfile }: AgentApplyWizardProp
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-border/40">
               <span className="text-[11px] text-muted-foreground">
-                Final document rules set by CONMART.
+                Final document rules set by ECON.
               </span>
               <Button
                 onClick={() => {
@@ -1262,13 +1262,13 @@ export function AgentApplyWizard({ user, existingProfile }: AgentApplyWizardProp
                 />
                 <span className="text-xs text-foreground font-semibold">
                   Guarantor consent obtained. I confirm that the named individual or organization has
-                  authorized acting as my guarantor for ConMart field representation.
+                  authorized acting as my guarantor for ECON field representation.
                 </span>
               </label>
 
               <div className="rounded-lg bg-primary/10 border border-primary/20 p-3 text-xs text-primary flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4 shrink-0" />
-                <span>CONMART verifies guarantee and identity before approval.</span>
+                <span>ECON verifies guarantee and identity before approval.</span>
               </div>
 
               <Button

@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Product Image Upload
+// ECON — Product Image Upload
 // =============================================================================
 // Accepts multipart FormData from a verified supplier, confirms the bytes are
 // actually an image, stores the object in Supabase Storage, and returns its

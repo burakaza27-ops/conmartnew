@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Supabase Browser Client
+// ECON — Supabase Browser Client
 // =============================================================================
 // Creates a Supabase client for use in Client Components (browser-side).
 // Uses browser cookies for session persistence.

@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Supabase Service-Role Client
+// ECON — Supabase Service-Role Client
 // =============================================================================
 // Bypasses Row Level Security and can administer any account. It exists only
 // for maintenance the anon key cannot perform, such as deleting an auth user

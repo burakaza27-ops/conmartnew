@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Root Error Boundary (Client Component)
+// ECON — Root Error Boundary (Client Component)
 // =============================================================================
 // Catches unhandled client and server errors gracefully, prevents blank screens,
 // and provides instant retry recovery without crashing the session.
@@ -20,7 +20,7 @@ interface ErrorBoundaryProps {
 export default function ErrorBoundary({ error, reset }: ErrorBoundaryProps) {
   useEffect(() => {
     // Log exception for telemetry/monitoring
-    console.error("ConMart Root Error Boundary caught exception:", {
+    console.error("ECON Root Error Boundary caught exception:", {
       message: error?.message,
       digest: error?.digest,
       stack: error?.stack,
@@ -64,7 +64,7 @@ export default function ErrorBoundary({ error, reset }: ErrorBoundaryProps) {
       </div>
 
       <div className="mt-12 text-xs text-muted-foreground">
-        Urgent order issue? ConMart Ops Desk:{" "}
+        Urgent order issue? ECON Ops Desk:{" "}
         <span className="font-semibold text-foreground">
           {process.env.NEXT_PUBLIC_ADMIN_PHONE ?? "+251 91 100 0000"}
         </span>

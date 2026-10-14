@@ -1,4 +1,4 @@
-// ConMart — Business Rule Unit Tests
+// ECON — Business Rule Unit Tests
 // Validates pure functions: wallet accounting, contact masking, chat-guard
 // decisions, and reference code integrity. No database or HTTP involved.
 

@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Password recovery callback
+// ECON — Password recovery callback
 // =============================================================================
 // Supabase reset emails should redirect here (not /auth/callback?next=…).
 // Query params on redirectTo are often stripped; a dedicated path is reliable

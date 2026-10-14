@@ -1,7 +1,7 @@
 "use server";
 
 // =============================================================================
-// ConMart — Seller Compliance & Verification Server Actions
+// ECON — Seller Compliance & Verification Server Actions
 // =============================================================================
 // Enables platform operations staff to:
 // 1. Audit seller business licenses, TIN certificates, and validity periods

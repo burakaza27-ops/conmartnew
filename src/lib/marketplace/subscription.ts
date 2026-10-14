@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Supplier Subscription Entitlement
+// ECON — Supplier Subscription Entitlement
 // =============================================================================
 // Direct buyer↔supplier chat is a paid privilege. The stored enum alone is not
 // the truth: an ACTIVE row past `subscriptionExpiresAt` is FREE. Every chat

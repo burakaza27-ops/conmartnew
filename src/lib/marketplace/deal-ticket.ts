@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Deal Ticket State Machine
+// ECON — Deal Ticket State Machine
 // =============================================================================
 // Mediated deals move through a short, one-way path. Skipping a state (for
 // example PENDING_AGENT → COMPLETED) would let a supplier close a ticket

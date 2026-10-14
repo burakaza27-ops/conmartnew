@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Supplier Leads & Performance Dashboard Card
+// ECON — Supplier Leads & Performance Dashboard Card
 // =============================================================================
 // Implements the critical Supplier Dashboard requirement from Yakob Dan's brief:
 // - Views (weekly and monthly)

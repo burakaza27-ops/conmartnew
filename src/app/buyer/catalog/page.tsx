@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Buyer Catalog Route Redirect
+// ECON — Buyer Catalog Route Redirect
 // =============================================================================
 // Redirects legacy or generic /buyer/catalog links to the dedicated
 // focused category route (/buyer/category/[categorySlug]).

@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — shadcn/ui Utility Functions
+// ECON — shadcn/ui Utility Functions
 // =============================================================================
 // Core utility for merging Tailwind CSS class names with proper precedence.
 // Used by all shadcn/ui components.

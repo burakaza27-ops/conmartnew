@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Server-Side Notifications Service (Internal Only)
+// ECON — Server-Side Notifications Service (Internal Only)
 // =============================================================================
 // Internal helper called by domain services and server actions when
 // business events occur (new enquiry, acceptance, wallet credit, etc.).

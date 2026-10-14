@@ -1,7 +1,7 @@
 // =============================================================================
-// ConMart — Official System Contact Coordinates
+// ECON — Official System Contact Coordinates
 // =============================================================================
-// Used when routing non-subscribed supplier inquiries to CONMART agents
+// Used when routing non-subscribed supplier inquiries to ECON agents
 // and for direct platform support.
 // =============================================================================
 
@@ -14,10 +14,10 @@ export const SYSTEM_CONTACTS = {
   secondaryPhoneIntl: "+251961622226",
   secondaryPhoneFormatted: "+251 96 162 2226",
 
-  email: "info@conmart.et",
-  supportEmail: "support@conmart.et",
+  email: "info@ECON.et",
+  supportEmail: "support@ECON.et",
   officeAddress: "Addis Ababa, Ethiopia",
-  telegramHandle: "conmart_et",
+  telegramHandle: "ECON_et",
   displayPhone: "0911122226 / 0961622226",
 } as const;
 

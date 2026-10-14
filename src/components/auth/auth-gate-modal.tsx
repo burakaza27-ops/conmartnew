@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Auth Gate Modal
+// ECON — Auth Gate Modal
 // =============================================================================
 // A "soft" auth gate that replaces hard redirects. Instead of bouncing the
 // anonymous visitor to /login mid-browse, this modal slides in when they

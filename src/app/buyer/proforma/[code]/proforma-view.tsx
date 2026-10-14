@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Printable Proforma Invoice Client View
+// ECON — Printable Proforma Invoice Client View
 // =============================================================================
 // Renders the official printable proforma invoice in English or Amharic
 // based on buyer's active language preference.
@@ -74,7 +74,7 @@ export function ProformaView({ order, adminPhone }: ProformaViewProps) {
   const telegramMessage = encodeURIComponent(
     locale === "am"
       ? `ሰላም የኮንማርት ኦፕሬሽን፣ የፕሮፎርማ ማጣቀሻ #${order.referenceCode} ለ ${order.buyer.companyName || order.buyer.name} (${order.buyer.phone}) አዘጋጅቻለሁ። ጠቅላላ፡ ${formatETB(order.grandTotal, locale)}። እባክዎ ዕቃው መኖሩን ያረጋግጡ።`
-      : `Hello ConMart Operations, I generated Proforma #${order.referenceCode} for ${order.buyer.companyName || order.buyer.name} (${order.buyer.phone}). Total: ${formatETB(order.grandTotal)}. Please verify stock availability.`
+      : `Hello ECON Operations, I generated Proforma #${order.referenceCode} for ${order.buyer.companyName || order.buyer.name} (${order.buyer.phone}). Total: ${formatETB(order.grandTotal)}. Please verify stock availability.`
   );
   const telegramLink = `https://t.me/conmart_ops?text=${telegramMessage}`;
 
@@ -113,7 +113,7 @@ export function ProformaView({ order, adminPhone }: ProformaViewProps) {
           {/* PDF Download — hits streaming API route, triggers native save dialog */}
           <a
             href={`/api/proforma/${order.referenceCode}/pdf`}
-            download={`ConMart-Proforma-${order.referenceCode}.pdf`}
+            download={`ECON-Proforma-${order.referenceCode}.pdf`}
             className={cn(
               buttonVariants({ variant: "default", size: "sm" }),
               "gap-1.5 text-xs"
@@ -324,7 +324,7 @@ export function ProformaView({ order, adminPhone }: ProformaViewProps) {
 
         {/* Platform Footer */}
         <div className="mt-8 border-t border-border pt-4 text-center text-xs text-muted-foreground print:mt-12">
-          <p className="font-medium">ConMart Ethiopia</p>
+          <p className="font-medium">ECON Ethiopia</p>
           <p>
             {t("proforma_company_sub")} · {adminPhone}
           </p>

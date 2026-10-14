@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Seller Enquiry Inbox Client Component (Subscription Model)
+// ECON — Seller Enquiry Inbox Client Component (Subscription Model)
 // =============================================================================
 // - Zero unlock fee: Subscribed suppliers accept buyer purchase enquiries at 0 ETB
 // - Post-accept: Full contractor contact and delivery requirements revealed

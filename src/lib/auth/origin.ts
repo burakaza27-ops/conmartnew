@@ -1,10 +1,10 @@
 // =============================================================================
-// ConMart — Public origin for email links
+// ECON — Public origin for email links
 // =============================================================================
 // Password-reset emails must always use your *canonical* production domain,
 // not whichever Vercel preview URL happened to handle the forgot-password
 // form. Set NEXT_PUBLIC_SITE_URL in Vercel to your real domain (e.g.
-// https://conmart.et). Request Host is only used when that variable is unset
+// https://ECON.et). Request Host is only used when that variable is unset
 // (local dev).
 // =============================================================================
 

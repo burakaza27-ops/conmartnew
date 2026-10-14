@@ -1,7 +1,7 @@
 "use client";
 
 // =============================================================================
-// ConMart — Seller Stats Summary Cards
+// ECON — Seller Stats Summary Cards
 // =============================================================================
 // Quick KPI metric counters showing total active listings, order inquiries,
 // and buyer messages.

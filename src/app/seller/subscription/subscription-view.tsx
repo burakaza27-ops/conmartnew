@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Seller Subscription & Billing View
+// ECON — Seller Subscription & Billing View
 // =============================================================================
 // Displays:
 // 1. Current Subscription Tier & Expiry Countdown.
@@ -500,7 +500,7 @@ export function SubscriptionView({
                     <span className="font-mono text-xs font-bold text-primary block">
                       {SYSTEM_CONTACTS.primaryPhone}
                     </span>
-                    <span className="text-[10px] text-muted-foreground">ConMart Wholesale</span>
+                    <span className="text-[10px] text-muted-foreground">ECON Wholesale</span>
                   </div>
 
                   <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-1">
@@ -508,7 +508,7 @@ export function SubscriptionView({
                     <span className="font-mono text-xs font-bold text-foreground block">
                       {SYSTEM_CONTACTS.secondaryPhone}
                     </span>
-                    <span className="text-[10px] text-muted-foreground">ConMart General</span>
+                    <span className="text-[10px] text-muted-foreground">ECON General</span>
                   </div>
 
                   <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-1">
@@ -516,7 +516,7 @@ export function SubscriptionView({
                     <span className="font-mono text-xs font-bold text-foreground block">
                       1000 4821 9482
                     </span>
-                    <span className="text-[10px] text-muted-foreground">ConMart Trading PLC</span>
+                    <span className="text-[10px] text-muted-foreground">ECON Trading PLC</span>
                   </div>
                 </div>
               </div>

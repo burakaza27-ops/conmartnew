@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Seller Subscription Page (Server Component)
+// ECON — Seller Subscription Page (Server Component)
 // =============================================================================
 
 import { redirect } from "next/navigation";

@@ -22,7 +22,10 @@ export default async function AgentChatRoomPage({
       type={result.data.type}
       currentUserId={result.data.viewerId}
       currentUserName={result.data.viewerName}
+      currentUserRole={result.data.viewerRole}
       counterpartName={result.data.counterpartName}
+      counterpart={result.data.counterpart}
+      productContext={result.data.productContext}
       listingTitle={result.data.listingTitle}
       messages={result.data.messages}
       ticket={result.data.ticket}

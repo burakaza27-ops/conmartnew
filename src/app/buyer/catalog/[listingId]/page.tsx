@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Listing Detail Page (Server Component)
+// ECON — Listing Detail Page (Server Component)
 // =============================================================================
 // Fetches listing data and supplier yard inventory, delegating rendering to
 // the bilingual ListingDetailView client component.

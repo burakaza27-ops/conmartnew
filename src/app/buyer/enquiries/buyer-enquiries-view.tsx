@@ -1,7 +1,7 @@
 "use client";
 
 // =============================================================================
-// ConMart — Buyer Enquiries Tracker Client Component
+// ECON — Buyer Enquiries Tracker Client Component
 // =============================================================================
 // Displays all purchase requests sent by the buyer to verified suppliers.
 // - Masked before supplier accepts
@@ -128,7 +128,7 @@ export function BuyerEnquiriesView({ initialEnquiries }: BuyerEnquiriesViewProps
           text:
             locale === "am"
               ? "አቤቱታው በተሳካ ሁኔታ ቀርቧል። የኮንማርት የኦፕሬሽን ቡድን አሸማጋይነት ጀምሯል።"
-              : "Dispute submitted successfully. ConMart operations has initiated mediation.",
+              : "Dispute submitted successfully. ECON operations has initiated mediation.",
         });
         setDisputeModalEnquiry(null);
         setDisputeDescription("");
@@ -370,7 +370,7 @@ export function BuyerEnquiriesView({ initialEnquiries }: BuyerEnquiriesViewProps
                       <div className="flex items-center gap-2">
                         <Lock className="h-4 w-4 text-muted-foreground" />
                         <span className="font-bold text-xs text-foreground">
-                          {enq.sellerContact.companyName || "ConMart Verified Supplier Depot"}
+                          {enq.sellerContact.companyName || "ECON Verified Supplier Depot"}
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground leading-relaxed">
@@ -524,7 +524,7 @@ export function BuyerEnquiriesView({ initialEnquiries }: BuyerEnquiriesViewProps
               <div className="rounded-lg bg-muted/40 p-3 text-[11px] text-muted-foreground leading-relaxed">
                 {locale === "am"
                   ? "የኮንማርት የኦፕሬሽን ቡድን ሁለቱንም ወገኖች በማነጋገር ችግሩን በሽምግልና ይፈታል፤ እንደ አስፈላጊነቱም የዋስትና እርምጃዎችን ይወስዳል።"
-                  : "ConMart Operations will mediate between both parties and inspect delivery evidence to resolve the claim."}
+                  : "ECON Operations will mediate between both parties and inspect delivery evidence to resolve the claim."}
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2">

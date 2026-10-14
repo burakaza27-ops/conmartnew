@@ -1,8 +1,8 @@
 // =============================================================================
-// ConMart — Human-Readable Reference Codes
+// ECON — Human-Readable Reference Codes
 // =============================================================================
 // Codes are read aloud over the phone between a buyer, a supplier, and the
-// ConMart desk, so the alphabet omits characters that sound or look alike
+// ECON desk, so the alphabet omits characters that sound or look alike
 // (0/O, 1/I/L). Uniqueness is enforced by the unique constraint on the column,
 // not by this generator.
 // =============================================================================

@@ -1,6 +1,6 @@
 "use client";
 
-import { Package, PlusCircle, LogOut, CreditCard, Inbox, MessageCircle, Handshake, Settings } from "lucide-react";
+import { Package, PlusCircle, LogOut, CreditCard, Inbox, MessageCircle, Handshake, Settings, Layers } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { MobileTabLink, SidebarNavLink } from "@/components/layout/nav-link";
@@ -30,29 +30,19 @@ export function SellerSidebarNav() {
 }
 
 export function SellerBottomNav() {
-  const { t, locale } = useLanguage();
+  const { locale } = useLanguage();
 
   return (
     <>
-      <MobileTabLink href="/seller/dashboard" label={locale === "am" ? "መረጃ" : "Leads"} icon={Package} exact />
-      <MobileTabLink href="/seller/subscription" label={locale === "am" ? "ደንበኝነት" : "Plans"} icon={CreditCard} exact />
-      <MobileTabLink href="/seller/enquiries" label={t("enquiries_tab_all")} icon={Inbox} />
-      <MobileTabLink href="/seller/messages" label={t("chat_inbox_title", "Chat")} icon={MessageCircle} />
-      <MobileTabLink href="/seller/deals" label={t("deals_nav", "Deals")} icon={Handshake} />
-      <MobileTabLink href="/seller/listings/new" label={t("seller_add_material")} icon={PlusCircle} exact />
-
-      <form action={signOut} className="flex flex-1">
-        <button
-          type="submit"
-          className="flex w-full flex-col items-center gap-0.5 px-1 py-1 text-2xs font-medium text-muted-foreground hover:text-foreground"
-        >
-          <LogOut className="size-5" />
-          <span>{t("nav_sign_out")}</span>
-        </button>
-      </form>
+      <MobileTabLink href="/seller/dashboard" label={locale === "am" ? "ዋና ገጽ" : "Home"} icon={Package} exact />
+      <MobileTabLink href="/seller/listings/new" label={locale === "am" ? "ቁሳቁስ" : "Materials"} icon={Layers} exact />
+      <MobileTabLink href="/seller/enquiries" label={locale === "am" ? "ጥያቄዎች" : "Requests"} icon={Inbox} />
+      <MobileTabLink href="/seller/subscription" label={locale === "am" ? "ደንበኝነት" : "Plan"} icon={CreditCard} exact />
+      <MobileTabLink href="/account/settings" label={locale === "am" ? "መለያ" : "Account"} icon={Settings} exact />
     </>
   );
 }
+
 
 export function SellerSignOutButton() {
   const { t } = useLanguage();

@@ -194,7 +194,7 @@ function ProfileCard({
             label={t("auth_email_label")}
             hint={t(
               "account_email_readonly",
-              "Email is your login and cannot be changed here. Contact ConMart support if you need a new address."
+              "Email is your login and cannot be changed here. Contact ECON support if you need a new address."
             )}
           >
             <Input type="email" value={email ?? ""} disabled autoComplete="email" />

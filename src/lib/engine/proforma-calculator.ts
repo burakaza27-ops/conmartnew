@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Proforma Calculation Engine (Server-Side Only)
+// ECON — Proforma Calculation Engine (Server-Side Only)
 // =============================================================================
 // Tamper-proof server-side pricing calculation for Proforma Invoices.
 //

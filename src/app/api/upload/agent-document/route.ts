@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Agent Onboarding Document Upload API
+// ECON — Agent Onboarding Document Upload API
 // =============================================================================
 // Accepts Grade 12 completion certificates, National ID documents, and
 // Guarantor backing letters for 01B Agent Application vetting.

@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Admin Subscriptions Management Page (Server Component)
+// ECON — Admin Subscriptions Management Page (Server Component)
 // =============================================================================
 
 import { redirect } from "next/navigation";

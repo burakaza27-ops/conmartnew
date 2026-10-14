@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Role Router
+// ECON — Role Router
 // =============================================================================
 // Single authenticated entry point. Sign-in, the proxy, and any "take me home"
 // link can target /dashboard without knowing the caller's role, and the

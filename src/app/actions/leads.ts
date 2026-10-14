@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Guided Leads & Telemetry Server Actions
+// ECON — Guided Leads & Telemetry Server Actions
 // =============================================================================
 // Handles:
 // 1. "Get Guided" / "Request a Visit" lead submissions from buyers.

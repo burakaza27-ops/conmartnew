@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Subscription & Supplier Leads Engine
+// ECON — Subscription & Supplier Leads Engine
 // =============================================================================
 // Implements the new recurring subscription revenue model:
 // 1. Configurable Subscription Plans (Basic, Premium, Featured).

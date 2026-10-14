@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Supplier Contact & Telemetry Card
+// ECON — Supplier Contact & Telemetry Card
 // =============================================================================
 // Implements the two contact paths from the client brief:
 // 1. Subscribed supplier:

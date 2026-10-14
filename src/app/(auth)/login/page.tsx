@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Login Page
+// ECON — Login Page
 // =============================================================================
 
 import type { Metadata } from "next";
@@ -7,7 +7,7 @@ import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = {
   title: "Sign In",
-  description: "Sign in to your ConMart account",
+  description: "Sign in to your ECON account",
 };
 
 interface LoginPageProps {

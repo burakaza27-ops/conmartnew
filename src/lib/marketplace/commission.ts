@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Mediated-Deal Commission Arithmetic
+// ECON — Mediated-Deal Commission Arithmetic
 // =============================================================================
 // Pure. The write path persists whatever this function returns; it does not
 // re-derive percentages in SQL. Shares are of the *fee*, not of the order.

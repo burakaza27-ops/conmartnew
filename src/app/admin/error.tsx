@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Admin Command Center Error Boundary (Client Component)
+// ECON — Admin Command Center Error Boundary (Client Component)
 // =============================================================================
 
 "use client";

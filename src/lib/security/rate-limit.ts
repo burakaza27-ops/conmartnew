@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Fixed-Window Rate Limiting
+// ECON — Fixed-Window Rate Limiting
 // =============================================================================
 // Backed by Upstash Redis when UPSTASH_REDIS_REST_URL and
 // UPSTASH_REDIS_REST_TOKEN are configured, and by a per-process map otherwise.
@@ -138,7 +138,7 @@ export async function rateLimit(
   key: string,
   options: RateLimitOptions
 ): Promise<RateLimitResult> {
-  const namespacedKey = `conmart:ratelimit:${key}`;
+  const namespacedKey = `ECON:ratelimit:${key}`;
 
   if (!hasDistributedRateLimiter()) {
     return limitInMemory(namespacedKey, options);

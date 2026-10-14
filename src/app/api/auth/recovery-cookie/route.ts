@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Stamp password-recovery cookie after client-side email confirm
+// ECON — Stamp password-recovery cookie after client-side email confirm
 // =============================================================================
 // Implicit-flow links (#access_token) and some token_hash flows complete in the
 // browser. This route marks the session as recovery so /reset-password accepts it.

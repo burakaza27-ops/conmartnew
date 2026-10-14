@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Product Competing Offers Comparison Page
+// ECON — Product Competing Offers Comparison Page
 // =============================================================================
 
 import { notFound } from "next/navigation";

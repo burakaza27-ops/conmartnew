@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Agent Guided Leads & Assignments Page (01B Specification)
+// ECON — Agent Guided Leads & Assignments Page (01B Specification)
 // =============================================================================
 
 import { redirect } from "next/navigation";

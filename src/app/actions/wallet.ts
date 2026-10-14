@@ -1,9 +1,9 @@
 // =============================================================================
-// ConMart — Wallet Server Actions
+// ECON — Wallet Server Actions
 // =============================================================================
 // Suppliers view balances and submit offline deposits; administrators settle
 // them. Deposits are credited only after a human matches the reference against
-// the Telebirr or bank statement, because ConMart has no payment-gateway
+// the Telebirr or bank statement, because ECON has no payment-gateway
 // callback to confirm receipt.
 // =============================================================================
 

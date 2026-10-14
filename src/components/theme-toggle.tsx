@@ -1,7 +1,7 @@
 "use client";
 
 // =============================================================================
-// ConMart — Theme Toggle Button (Client Component)
+// ECON — Theme Toggle Button (Client Component)
 // =============================================================================
 
 import React from "react";

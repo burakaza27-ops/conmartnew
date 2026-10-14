@@ -1,9 +1,9 @@
 "use client";
 
 // =============================================================================
-// ConMart — About Us & Platform Trust Center
+// ECON — About Us & Platform Trust Center
 // =============================================================================
-// Publicly accessible bilingual showcase explaining ConMart's mission,
+// Publicly accessible bilingual showcase explaining ECON's mission,
 // depot-direct wholesale procurement, prepaid contact-unlock model,
 // 80% deal failure protection, and official Addis Ababa headquarters.
 // =============================================================================

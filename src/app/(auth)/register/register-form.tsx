@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Register Form (Client Component)
+// ECON — Register Form (Client Component)
 // =============================================================================
 // Registration with role selection: BUYER or SELLER only. ADMIN and FIELD_AGENT
 // are granted from the command line. Supports referral codes via ?ref=CODE.

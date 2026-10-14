@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Curated Category Image Map (Official 20 Categories)
+// ECON — Curated Category Image Map (Official 20 Categories)
 // =============================================================================
 // Every category slug maps to a focused, high-definition construction photo.
 // These are used as fallbacks when a product or listing has no uploaded image.

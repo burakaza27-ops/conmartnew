@@ -1,5 +1,5 @@
 // =============================================================================
-// ConMart — Proforma PDF Download API Route
+// ECON — Proforma PDF Download API Route
 // =============================================================================
 // GET /api/proforma/[code]/pdf
 //
@@ -103,7 +103,7 @@ export async function GET(
     const docElement = createElement(ProformaDocument, { order, adminPhone }) as any;
     const buffer = await renderToBuffer(docElement);
 
-    const filename = `ConMart-Proforma-${order.referenceCode}.pdf`;
+    const filename = `ECON-Proforma-${order.referenceCode}.pdf`;
 
     return new NextResponse(new Uint8Array(buffer), {
       status: 200,

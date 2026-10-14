@@ -1,7 +1,7 @@
 "use client";
 
 // =============================================================================
-// ConMart — Theme Provider (Client Component with useSyncExternalStore)
+// ECON — Theme Provider (Client Component with useSyncExternalStore)
 // =============================================================================
 
 import React, { createContext, useContext, useEffect, useSyncExternalStore } from "react";
@@ -16,7 +16,7 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const THEME_STORAGE_KEY = "conmart_theme";
+const THEME_STORAGE_KEY = "ECON_theme";
 
 // Store listeners
 const listeners = new Set<() => void>();
