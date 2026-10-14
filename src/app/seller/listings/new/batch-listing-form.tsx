@@ -27,7 +27,6 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronUp,
-  Info,
   DollarSign,
   Sparkles,
   MessageSquareMore,
@@ -35,7 +34,6 @@ import {
   Eye,
   Search,
   X,
-  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,7 +62,6 @@ import {
 import {
   getUnitLabel,
   getUnitsForCategory,
-  ALL_UNITS,
   getStockStateLabel,
   STOCK_STATE_LABELS,
   CATEGORY_SPEC_HINTS,
@@ -74,11 +71,9 @@ import type { CuratedProductOption } from "./new-listing-form";
 import {
   REGIONS,
   CITIES,
-  MARKET_AREAS,
   getCitiesForRegion,
   getMarketAreasForCity,
   formatStoredLocation,
-  extractMarketAreaFromLocation,
 } from "@/lib/data/market-areas";
 
 // ---------------------------------------------------------------------------
@@ -119,25 +114,6 @@ interface BatchItemRow {
   vatMode: "included" | "excluded" | "confirm";
   showMoreDetails: boolean; // collapse toggle for description/image
 }
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const COMMON_DEPOT_LOCATIONS = [
-  "Addis Ababa, Jemo (Nifas Silk-Lafto)",
-  "Addis Ababa, Tulu Dimtu (Akaki Kaliti)",
-  "Addis Ababa, Urael / Bambis (Bole/Kirkos)",
-  "Addis Ababa, Kaliti Industrial Zone",
-  "Addis Ababa, Akaki-Kaliti Logistics Hub",
-  "Addis Ababa, Bole Bulbula Yard",
-  "Addis Ababa, Merkato Trading Hub",
-  "Addis Ababa, CMC / Ayat Corridor",
-  "Addis Ababa, Megenagna Materials Depot",
-  "Gelan Logistics & Dry Port Zone",
-  "Sebeta Industrial Hub",
-  "Dukem / Eastern Industrial Zone",
-];
 
 const POPULAR_BRANDS = [
   "Dangote",
@@ -327,7 +303,7 @@ export function BatchListingForm({
   savedLocations = [],
   onSuccess,
 }: BatchListingFormProps) {
-  const { t, locale } = useLanguage();
+  const { locale } = useLanguage();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -339,7 +315,6 @@ export function BatchListingForm({
   const [isSuggestingArea, setIsSuggestingArea] = useState<boolean>(false);
   const [landmark, setLandmark] = useState<string>("");
   const [branchName, setBranchName] = useState("");
-  const [showLocationHubs, setShowLocationHubs] = useState(false);
 
   // Sync formatted location string
   const computedLocation = useMemo(() => {
@@ -351,13 +326,11 @@ export function BatchListingForm({
     });
   }, [selectedCity, selectedMarketArea, isSuggestingArea, customMarketArea, landmark]);
 
-  const [location, setLocation] = useState(
-    savedLocations[0] || computedLocation
+  const [savedLocationOverride, setSavedLocationOverride] = useState<string | null>(
+    savedLocations[0] || null
   );
 
-  React.useEffect(() => {
-    setLocation(computedLocation);
-  }, [computedLocation]);
+  const location = savedLocationOverride ?? computedLocation;
 
   // Preview item state
   const [previewItem, setPreviewItem] = useState<BatchItemRow | null>(null);
@@ -805,6 +778,7 @@ export function BatchListingForm({
                   onChange={(e) => {
                     const reg = e.target.value;
                     setSelectedRegion(reg);
+                    setSavedLocationOverride(null);
                     const citiesInReg = getCitiesForRegion(reg);
                     if (citiesInReg.length > 0) {
                       const firstCity = citiesInReg[0].id;
@@ -836,6 +810,7 @@ export function BatchListingForm({
                   onChange={(e) => {
                     const cId = e.target.value;
                     setSelectedCity(cId);
+                    setSavedLocationOverride(null);
                     const areasInCity = getMarketAreasForCity(cId);
                     if (areasInCity.length > 0) {
                       setSelectedMarketArea(areasInCity[0].id);
@@ -885,6 +860,7 @@ export function BatchListingForm({
                   <select
                     value={selectedMarketArea}
                     onChange={(e) => {
+                      setSavedLocationOverride(null);
                       if (e.target.value === "__SUGGEST__") {
                         setIsSuggestingArea(true);
                       } else {
@@ -911,7 +887,10 @@ export function BatchListingForm({
                   <div className="space-y-1">
                     <Input
                       value={customMarketArea}
-                      onChange={(e) => setCustomMarketArea(e.target.value)}
+                      onChange={(e) => {
+                        setCustomMarketArea(e.target.value);
+                        setSavedLocationOverride(null);
+                      }}
                       placeholder={
                         locale === "am"
                           ? "የገበያ ቦታውን ስም ያስገቡ"
@@ -955,7 +934,10 @@ export function BatchListingForm({
                 </Label>
                 <Input
                   value={landmark}
-                  onChange={(e) => setLandmark(e.target.value)}
+                  onChange={(e) => {
+                    setLandmark(e.target.value);
+                    setSavedLocationOverride(null);
+                  }}
                   placeholder="e.g. Near Total Station, Behind Commercial Bank, Gate 3"
                   className="text-xs"
                 />
@@ -1031,6 +1013,7 @@ export function BatchListingForm({
                       setSelectedCity(item.cityId);
                       setSelectedMarketArea(item.id);
                       setIsSuggestingArea(false);
+                      setSavedLocationOverride(null);
                     }}
                     className={cn(
                       "text-[10px] px-2 py-0.5 rounded-md border transition-colors",
@@ -1063,7 +1046,7 @@ export function BatchListingForm({
                     <button
                       key={savedLoc}
                       type="button"
-                      onClick={() => setLocation(savedLoc)}
+                      onClick={() => setSavedLocationOverride(savedLoc)}
                       className={cn(
                         "text-[11px] px-2.5 py-1 rounded-md border transition-colors flex items-center gap-1",
                         location === savedLoc

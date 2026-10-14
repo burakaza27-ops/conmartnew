@@ -1,4 +1,4 @@
-import { Skeleton, SkeletonCard, SkeletonTable } from "@/components/ui/skeleton";
+import { Skeleton, SkeletonTable } from "@/components/ui/skeleton";
 
 export default function SellerLoading() {
   return (

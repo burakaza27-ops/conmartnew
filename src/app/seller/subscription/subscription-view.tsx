@@ -19,12 +19,7 @@ import {
   Clock,
   AlertTriangle,
   ArrowRight,
-  Building2,
-  Phone,
-  QrCode,
-  FileText,
   Loader2,
-  ExternalLink,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

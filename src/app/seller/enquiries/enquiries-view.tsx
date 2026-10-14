@@ -23,7 +23,6 @@ import {
   Lock,
   Unlock,
   ShieldCheck,
-  Coins,
   RefreshCw,
   ChevronRight,
   X,
@@ -89,8 +88,6 @@ interface SellerEnquiriesViewProps {
 
 export function SellerEnquiriesView({
   initialEnquiries,
-  walletSpendable,
-  walletCredit,
 }: SellerEnquiriesViewProps) {
   const { t, locale } = useLanguage();
   const [enquiries, setEnquiries] = useState<EnquiryItem[]>(initialEnquiries);

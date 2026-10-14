@@ -31,7 +31,6 @@ import {
   AlertCircle,
   Upload,
   Layers,
-  Sparkles,
 } from "lucide-react";
 import { BatchListingForm } from "./batch-listing-form";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -55,7 +54,6 @@ import {
   translateZodError,
 } from "@/lib/i18n/translations";
 import { getProductFallback } from "@/lib/data/category-images";
-import { STANDARD_LOCATION_ZONES } from "@/lib/data/location-zones";
 import { MARKET_AREAS, CITIES } from "@/lib/data/market-areas";
 import {
   createListingSchema,
