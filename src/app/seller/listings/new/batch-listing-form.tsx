@@ -625,7 +625,7 @@ export function BatchListingForm({
         description: it.description.trim() || undefined,
         unit: it.unit,
         unitPrice: rate > 0 ? rate : undefined,
-        availableQty: qty,
+        availableQty: qty !== undefined ? Math.round(qty) : undefined,
         brand: it.brand.trim() || undefined,
         imageUrl: it.imageUrl.trim() || undefined,
         existingProductId: it.existingProductId || undefined,

@@ -138,6 +138,7 @@ export async function signUp(
     confirmPassword: formData.get("confirmPassword"),
     name: formData.get("name"),
     phone: formData.get("phone"),
+    companyName: formData.get("companyName"),
     role: formData.get("role"),
     tinNumber: formData.get("tinNumber") || undefined,
     referralCode: formData.get("referralCode") || undefined,
@@ -340,7 +341,6 @@ async function rollbackAuthUser(authId: string): Promise<void> {
 export async function signOut(): Promise<void> {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
-  revalidatePath("/", "layout");
   redirect("/login");
 }
 

@@ -154,6 +154,11 @@ export async function createSellerListing(input: CreateListingInput) {
         targetProductId = product.id;
       }
 
+      const roundedAvailableQty =
+        input.availableQty !== undefined && input.availableQty !== null
+          ? Math.max(0, Math.round(input.availableQty))
+          : null;
+
       // 2. Create the Listing
       const listing = await tx.listing.create({
         data: {
@@ -164,7 +169,7 @@ export async function createSellerListing(input: CreateListingInput) {
           imageUrl: input.imageUrl || null,
           brand: input.brand?.trim() || null,
           description: input.description?.trim() || null,
-          availableQty: input.availableQty ?? null,
+          availableQty: roundedAvailableQty,
         },
       });
 
@@ -180,8 +185,8 @@ export async function createSellerListing(input: CreateListingInput) {
         return tx.priceTier.create({
           data: {
             listingId: listing.id,
-            minQty: tier.minQty,
-            maxQty: tier.maxQty,
+            minQty: Math.max(1, Math.round(tier.minQty)),
+            maxQty: Math.max(1, Math.round(tier.maxQty)),
             unitPrice: tier.unitPrice,
             validUntil,
           },
@@ -288,6 +293,9 @@ export async function createBatchSellerListingsAction(input: CreateBatchListings
       if (!item.categoryId) {
         return { error: `Item #${rowNum} ("${item.title}"): Please select a category.` };
       }
+      if (!catMap.has(item.categoryId)) {
+        return { error: `Item #${rowNum} ("${item.title}"): The selected category is invalid or inactive.` };
+      }
       const matchedCat = catMap.get(item.categoryId);
       if (matchedCat) {
         const catSlug = matchedCat.slug.toLowerCase();
@@ -313,94 +321,99 @@ export async function createBatchSellerListingsAction(input: CreateBatchListings
 
     const createdListingIds: string[] = [];
 
-    await db.$transaction(async (tx) => {
-      // 0. Ensure SellerProfile and Wallet exist
-      const existingProfile = await tx.sellerProfile.findUnique({
-        where: { userId: dbUser.id },
-      });
-      if (!existingProfile) {
-        await tx.sellerProfile.create({
-          data: {
-            userId: dbUser.id,
-            verificationStatus: "UNVERIFIED",
-            sellerType: "RETAILER",
-          },
-        });
-      }
-
-      const existingWallet = await tx.wallet.findUnique({
-        where: { sellerId: dbUser.id },
-      });
-      if (!existingWallet) {
-        await tx.wallet.create({
-          data: {
-            sellerId: dbUser.id,
-            cashBalance: 0,
-            creditBalance: 0,
-          },
-        });
-      }
-
-      // Process each item
-      for (const item of input.items) {
-        let targetProductId = item.existingProductId;
-
-        if (!targetProductId) {
-          const product = await tx.product.create({
-            data: {
-              categoryId: item.categoryId,
-              title: item.title.trim(),
-              unit: item.unit,
-              imageUrl: item.imageUrl || null,
-              specs: item.brand ? { brand: item.brand.trim() } : {},
-            },
-          });
-          targetProductId = product.id;
-        }
-
-        const vatNote =
-          item.vatMode === "included"
-            ? "VAT: Included in price"
-            : item.vatMode === "excluded"
-            ? "VAT: Excluded (+15%)"
-            : item.vatMode === "confirm"
-            ? "VAT: Confirm with supplier"
-            : null;
-        const finalDescription = [item.description?.trim(), vatNote]
-          .filter(Boolean)
-          .join(" | ") || null;
-
-        const listing = await tx.listing.create({
-          data: {
-            sellerId: dbUser.id,
-            productId: targetProductId,
-            active: true,
-            location: input.location.trim(),
-            imageUrl: item.imageUrl || null,
-            brand: item.brand?.trim() || null,
-            description: finalDescription,
-            availableQty: item.availableQty ?? null,
-            stockState: item.stockState || StockState.IN_STOCK,
-          },
-        });
-
-        createdListingIds.push(listing.id);
-
-        // Only create a price tier when the supplier entered a numeric price
-        const hasPrice = item.unitPrice !== undefined && item.unitPrice !== null && item.unitPrice > 0;
-        if (hasPrice) {
-          await tx.priceTier.create({
-            data: {
-              listingId: listing.id,
-              minQty: 1,
-              maxQty: item.availableQty && item.availableQty > 1 ? item.availableQty : 999999,
-              unitPrice: item.unitPrice!,
-              validUntil: defaultValidUntil,
-            },
-          });
-        }
-      }
+    // 0. Ensure SellerProfile and Wallet exist
+    const existingProfile = await db.sellerProfile.findUnique({
+      where: { userId: dbUser.id },
+      select: { id: true },
     });
+    if (!existingProfile) {
+      await db.sellerProfile.create({
+        data: {
+          userId: dbUser.id,
+          verificationStatus: "UNVERIFIED",
+          sellerType: "RETAILER",
+        },
+      });
+    }
+
+    const existingWallet = await db.wallet.findUnique({
+      where: { sellerId: dbUser.id },
+      select: { id: true },
+    });
+    if (!existingWallet) {
+      await db.wallet.create({
+        data: {
+          sellerId: dbUser.id,
+          cashBalance: 0,
+          creditBalance: 0,
+        },
+      });
+    }
+
+    // Process each item using atomic queries (safe for PgBouncer transaction pooling)
+    for (const item of input.items) {
+      let targetProductId = item.existingProductId;
+
+      if (!targetProductId) {
+        const product = await db.product.create({
+          data: {
+            categoryId: item.categoryId,
+            title: item.title.trim(),
+            unit: item.unit,
+            imageUrl: item.imageUrl || null,
+            specs: item.brand ? { brand: item.brand.trim() } : {},
+          },
+        });
+        targetProductId = product.id;
+      }
+
+      const vatNote =
+        item.vatMode === "included"
+          ? "VAT: Included in price"
+          : item.vatMode === "excluded"
+          ? "VAT: Excluded (+15%)"
+          : item.vatMode === "confirm"
+          ? "VAT: Confirm with supplier"
+          : null;
+      const finalDescription = [item.description?.trim(), vatNote]
+        .filter(Boolean)
+        .join(" | ") || null;
+
+      const roundedQty =
+        item.availableQty !== undefined && item.availableQty !== null
+          ? Math.max(0, Math.round(item.availableQty))
+          : null;
+
+      const listing = await db.listing.create({
+        data: {
+          sellerId: dbUser.id,
+          productId: targetProductId,
+          active: true,
+          location: input.location.trim(),
+          imageUrl: item.imageUrl || null,
+          brand: item.brand?.trim() || null,
+          description: finalDescription,
+          availableQty: roundedQty,
+          stockState: item.stockState || StockState.IN_STOCK,
+        },
+      });
+
+      createdListingIds.push(listing.id);
+
+      // Only create a price tier when the supplier entered a numeric price
+      const hasPrice = item.unitPrice !== undefined && item.unitPrice !== null && item.unitPrice > 0;
+      if (hasPrice) {
+        await db.priceTier.create({
+          data: {
+            listingId: listing.id,
+            minQty: 1,
+            maxQty: roundedQty && roundedQty > 1 ? roundedQty : 999999,
+            unitPrice: item.unitPrice!,
+            validUntil: defaultValidUntil,
+          },
+        });
+      }
+    }
 
     revalidatePath("/seller/dashboard");
     revalidatePath("/seller/listings");
@@ -422,7 +435,16 @@ export async function createBatchSellerListingsAction(input: CreateBatchListings
     };
   } catch (error) {
     console.error("Error creating batch listings:", error);
-    return { error: "An unexpected error occurred while saving your batch listings." };
+    const rawMsg = error instanceof Error ? error.message : "";
+    let userMsg = "An unexpected error occurred while saving your batch listings.";
+    if (rawMsg.includes("Unique constraint")) {
+      userMsg = "A listing with these exact specifications already exists in your inventory.";
+    } else if (rawMsg.includes("Foreign key") || rawMsg.includes("fkey")) {
+      userMsg = "Unable to create listing because one of the selected categories or materials is unavailable.";
+    } else if (rawMsg && !rawMsg.includes("PrismaClient") && !rawMsg.includes("prepared statement")) {
+      userMsg = rawMsg;
+    }
+    return { error: userMsg };
   }
 }
 
