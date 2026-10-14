@@ -30,7 +30,7 @@ export function SellerSidebarNav() {
 }
 
 export function SellerBottomNav() {
-  const { locale } = useLanguage();
+  const { locale, t } = useLanguage();
 
   return (
     <>
@@ -39,6 +39,15 @@ export function SellerBottomNav() {
       <MobileTabLink href="/seller/enquiries" label={locale === "am" ? "ጥያቄዎች" : "Requests"} icon={Inbox} />
       <MobileTabLink href="/seller/subscription" label={locale === "am" ? "ደንበኝነት" : "Plan"} icon={CreditCard} exact />
       <MobileTabLink href="/account/settings" label={locale === "am" ? "መለያ" : "Account"} icon={Settings} exact />
+      <form action={signOut} className="flex flex-1">
+        <button
+          type="submit"
+          className="flex w-full flex-col items-center gap-0.5 px-1 py-1 text-2xs font-medium text-muted-foreground hover:text-destructive transition-colors"
+        >
+          <LogOut className="size-5" />
+          <span>{t("nav_sign_out", "Sign out")}</span>
+        </button>
+      </form>
     </>
   );
 }

@@ -132,16 +132,21 @@ export async function signIn(
 export async function signUp(
   formData: FormData
 ): Promise<ActionResult<{ redirectUrl: string }>> {
+  const getString = (key: string): string => {
+    const v = formData.get(key);
+    return typeof v === "string" ? v.trim() : "";
+  };
+
   const parsed = registerSchema.safeParse({
-    email: formData.get("email"),
-    password: formData.get("password"),
-    confirmPassword: formData.get("confirmPassword"),
-    name: formData.get("name"),
-    phone: formData.get("phone"),
-    companyName: formData.get("companyName"),
-    role: formData.get("role"),
-    tinNumber: formData.get("tinNumber") || undefined,
-    referralCode: formData.get("referralCode") || undefined,
+    email: getString("email"),
+    password: typeof formData.get("password") === "string" ? (formData.get("password") as string) : "",
+    confirmPassword: typeof formData.get("confirmPassword") === "string" ? (formData.get("confirmPassword") as string) : "",
+    name: getString("name"),
+    phone: getString("phone"),
+    companyName: getString("companyName"),
+    role: getString("role"),
+    tinNumber: getString("tinNumber") || undefined,
+    referralCode: getString("referralCode") || undefined,
   });
 
   if (!parsed.success) {
@@ -339,8 +344,31 @@ async function rollbackAuthUser(authId: string): Promise<void> {
 
 /** Signs out the current user and returns them to the login page. */
 export async function signOut(): Promise<void> {
-  const supabase = await createSupabaseServerClient();
-  await supabase.auth.signOut();
+  try {
+    const supabase = await createSupabaseServerClient();
+    await supabase.auth.signOut();
+  } catch (err) {
+    console.error("[signOut] Supabase signOut error:", err);
+  }
+
+  // Clear auth session cookies explicitly to guarantee sign out in all circumstances
+  try {
+    const cookieStore = await cookies();
+    const all = cookieStore.getAll();
+    for (const cookie of all) {
+      if (
+        cookie.name.startsWith("sb-") ||
+        cookie.name.includes("auth") ||
+        cookie.name.includes("token") ||
+        cookie.name.includes("session")
+      ) {
+        cookieStore.delete(cookie.name);
+      }
+    }
+  } catch (err) {
+    console.error("[signOut] cookie cleanup error:", err);
+  }
+
   redirect("/login");
 }
 

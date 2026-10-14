@@ -243,6 +243,9 @@ export interface BatchListingItemInput {
 export interface CreateBatchListingsInput {
   location: string;
   items: BatchListingItemInput[];
+  /** Optional GPS pin for the seller's depot (captured via navigator.geolocation) */
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 /**
@@ -413,6 +416,17 @@ export async function createBatchSellerListingsAction(input: CreateBatchListings
           },
         });
       }
+    }
+
+    // If the seller provided GPS coordinates for their depot, persist them on the SellerProfile
+    if (input.latitude != null && input.longitude != null) {
+      await db.sellerProfile.updateMany({
+        where: { userId: dbUser.id },
+        data: {
+          latitude: input.latitude,
+          longitude: input.longitude,
+        },
+      });
     }
 
     revalidatePath("/seller/dashboard");

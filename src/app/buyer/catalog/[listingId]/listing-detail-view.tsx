@@ -12,8 +12,10 @@ import {
   ShieldCheck,
   Truck,
   CheckCircle2,
-  SendHorizontal,
   Clock,
+  Phone,
+  UserCheck,
+  MessageCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,13 +35,9 @@ import {
   getLocalizedUnit,
   getLocalizedLocation,
 } from "@/lib/i18n/translations";
-import { PricingCalculator } from "./pricing-calculator";
-import { DepotMaterialsTable } from "./depot-materials-table";
-import { PurchaseRequestModal } from "@/components/enquiry/purchase-request-modal";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { StartChatButton } from "@/components/chat/start-chat-button";
-import { AuthGateButton } from "@/components/auth/auth-gate-modal";
 import { SupplierContactCard } from "@/components/leads/supplier-contact-card";
+import { GetGuidedModal } from "@/components/leads/get-guided-modal";
 import type { CatalogListing, ListingDetail } from "@/lib/data/catalog";
 import { getCategoryImage } from "@/lib/data/category-images";
 
@@ -54,10 +52,9 @@ export function ListingDetailView({
   listing,
   depotListings,
   adminPhone,
-  isAuthenticated = false,
 }: ListingDetailViewProps) {
   const { t, locale } = useLanguage();
-  const [isEnquiryOpen, setIsEnquiryOpen] = useState(false);
+  const [isGuidedModalOpen, setIsGuidedModalOpen] = useState(false);
 
   const localizedCategoryName = getCategoryTitle(
     listing.product.category.slug,
@@ -276,65 +273,11 @@ export function ListingDetailView({
             </CardContent>
           </Card>
 
-          {/* Other Materials Available at this Depot (Single-Trip Freight Savings) */}
-          <DepotMaterialsTable
-            depotName={listing.seller.companyName}
-            location={listing.location}
-            listings={depotListings}
-          />
         </div>
 
-        {/* --- Right Column: Pricing Calculator (2 cols) --- */}
+        {/* --- Right Column: Supplier Contact & Direct Actions (2 cols) --- */}
         <div className="lg:col-span-2">
           <div className="sticky top-6 space-y-4">
-            <PricingCalculator
-              unitLabel={unitLabel}
-              tiers={activeTiers.map((tier) => ({
-                id: tier.id,
-                minQty: tier.minQty,
-                maxQty: tier.maxQty,
-                unitPrice: tier.unitPrice,
-              }))}
-            />
-
-            {/* Send Verified Purchase Enquiry Button (Frictionless / No mandatory registration) */}
-            <Button
-              size="lg"
-              onClick={() => setIsEnquiryOpen(true)}
-              className="w-full gap-2 font-bold shadow-md bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              <SendHorizontal className="h-4 w-4" />
-              {t("buyer_request_enquiry_btn")}
-            </Button>
-
-            <AuthGateButton
-              isAuthenticated={isAuthenticated}
-              redirectTo={`/buyer/catalog/${listing.id}`}
-              fallbackLabel={
-                listing.directChatEnabled
-                  ? t("chat_start_direct", "Chat now")
-                  : t("chat_start_agent", "Request local agent")
-              }
-              fallbackVariant={listing.directChatEnabled ? "default" : "outline"}
-              fallbackSize="lg"
-              fallbackClassName={
-                listing.directChatEnabled
-                  ? "w-full gap-2 font-bold bg-amber-500 hover:bg-amber-600 text-slate-950"
-                  : "w-full gap-2 font-semibold"
-              }
-            >
-              <StartChatButton
-                listingId={listing.id}
-                directChatEnabled={listing.directChatEnabled}
-                variant={listing.directChatEnabled ? "default" : "outline"}
-                className={
-                  listing.directChatEnabled
-                    ? "w-full gap-2 font-bold bg-amber-500 hover:bg-amber-600 text-slate-950"
-                    : "w-full gap-2 font-semibold"
-                }
-              />
-            </AuthGateButton>
-
             {/* Supplier Contact & Telemetry Card */}
             <SupplierContactCard
               sellerId={listing.seller.id}
@@ -355,17 +298,6 @@ export function ListingDetailView({
         </div>
       </div>
 
-
-      {/* Purchase Request Modal */}
-      <PurchaseRequestModal
-        isOpen={isEnquiryOpen}
-        onClose={() => setIsEnquiryOpen(false)}
-        listingId={listing.id}
-        productTitle={listing.product.title}
-        unit={listing.product.unit}
-        basePrice={activeTiers[0]?.unitPrice}
-      />
-
       {/* Sticky Bottom Mobile Conversion Bar */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur-md px-4 py-3 md:hidden shadow-lg pb-safe-action">
         <div className="flex items-center justify-between gap-3">
@@ -383,15 +315,49 @@ export function ListingDetailView({
             </div>
           </div>
 
-          <Button
-            onClick={() => setIsEnquiryOpen(true)}
-            className="gap-1.5 font-bold shadow-md bg-primary text-primary-foreground text-xs h-9 px-3.5"
-          >
-            <SendHorizontal className="h-3.5 w-3.5" />
-            {t("buyer_request_enquiry_btn")}
-          </Button>
+          {listing.isSubscribed && (listing.directPhone || listing.whatsappNumber) ? (
+            <div className="flex items-center gap-2">
+              {listing.directPhone && (
+                <a
+                  href={`tel:${listing.directPhone.replace(/\s+/g, "")}`}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-bold text-primary-foreground shadow-md hover:bg-primary/90 transition-colors"
+                >
+                  <Phone className="h-3.5 w-3.5" />
+                  <span>{locale === "am" ? "ይደውሉ" : "Call"}</span>
+                </a>
+              )}
+              {listing.whatsappNumber && (
+                <a
+                  href={`https://wa.me/${listing.whatsappNumber.replace(/[^\d]/g, "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white shadow-md hover:bg-emerald-700 transition-colors"
+                >
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  <span>WhatsApp</span>
+                </a>
+              )}
+            </div>
+          ) : (
+            <Button
+              onClick={() => setIsGuidedModalOpen(true)}
+              className="gap-1.5 font-bold shadow-md bg-amber-600 hover:bg-amber-700 text-white text-xs h-9 px-3.5"
+            >
+              <UserCheck className="h-3.5 w-3.5" />
+              <span>{locale === "am" ? "ወኪል ይጠይቁ (ነፃ)" : "Request Local Agent"}</span>
+            </Button>
+          )}
         </div>
       </div>
+
+      {/* Guided Agent Modal (when requested via mobile bottom bar) */}
+      <GetGuidedModal
+        isOpen={isGuidedModalOpen}
+        onClose={() => setIsGuidedModalOpen(false)}
+        prefillMaterial={listing.product.title}
+        targetSellerId={listing.seller.id}
+        targetSellerName={listing.seller.companyName}
+      />
     </div>
   );
 }

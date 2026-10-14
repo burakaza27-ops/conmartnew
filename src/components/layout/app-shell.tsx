@@ -1,11 +1,12 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { Settings } from "lucide-react";
+import { Settings, LogOut } from "lucide-react";
 
 import { Logo } from "@/components/brand/logo";
 import { LanguageToggle } from "@/components/language-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationBell } from "@/components/notification-bell";
+import { signOut } from "@/app/actions/auth";
 import { cn } from "@/lib/utils";
 
 interface AppShellProps {
@@ -99,6 +100,16 @@ export function AppShell({
           >
             <Settings className="size-5" />
           </Link>
+          <form action={signOut}>
+            <button
+              type="submit"
+              aria-label="Sign out"
+              title="Sign out"
+              className="inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+            >
+              <LogOut className="size-4" />
+            </button>
+          </form>
           {mobileActions}
         </div>
       </header>

@@ -324,8 +324,10 @@ export function SubscriptionView({
                     <span className="font-mono text-3xl font-black text-foreground">
                       {formatETB(plan.priceETB, locale)}
                     </span>
-                    <span className="text-xs text-muted-foreground ml-1">
-                      / {plan.durationDays} {locale === "am" ? "ቀናት" : "Days"}
+                    <span className="text-xs font-semibold text-primary ml-1">
+                      / {plan.durationDays >= 180
+                          ? (locale === "am" ? "6 ወር (180 ቀናት)" : "6 Months (180 Days)")
+                          : `${plan.durationDays} ${locale === "am" ? "ቀናት" : "Days"}`}
                     </span>
                   </div>
                 </CardHeader>

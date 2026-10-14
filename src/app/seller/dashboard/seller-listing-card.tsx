@@ -90,18 +90,18 @@ export function SellerListingCard({ listing }: SellerListingCardProps) {
                 className="h-full w-full object-cover"
               />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant="secondary" className="text-[10px] font-medium">
                   {localizedCategory}
                 </Badge>
                 <span className="text-xs text-muted-foreground">·</span>
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <MapPin className="h-3 w-3" />
-                  {localizedLocation}
+                <span className="text-xs text-muted-foreground flex items-center gap-1 truncate">
+                  <MapPin className="h-3 w-3 shrink-0" />
+                  <span className="truncate">{localizedLocation}</span>
                 </span>
               </div>
-              <CardTitle className="text-base font-bold mt-1 text-foreground">
+              <CardTitle className="text-base font-bold mt-1 text-foreground line-clamp-2 break-words">
                 {listing.productTitle}
               </CardTitle>
 

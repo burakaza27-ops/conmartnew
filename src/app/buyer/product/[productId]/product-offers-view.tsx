@@ -25,6 +25,7 @@ import {
   Phone,
   MessageCircle,
   UserCheck,
+  Eye,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -195,9 +196,9 @@ export function ProductOffersView({ product, isAuthenticated = false }: ProductO
                   <div className="p-5 sm:p-6 space-y-4">
                     {/* Top Row: Depot Info & Price */}
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-base text-foreground">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-base text-foreground line-clamp-2 break-words">
                             {offer.depotName}
                           </span>
                           {isBestPrice && (
@@ -364,11 +365,11 @@ export function ProductOffersView({ product, isAuthenticated = false }: ProductO
                           href={`/buyer/catalog/${offer.listingId}`}
                           className={cn(
                             buttonVariants({ variant: "outline", size: "sm" }),
-                            "gap-1.5 text-xs font-medium"
+                            "gap-1.5 text-xs font-semibold hover:border-primary/50"
                           )}
                         >
-                          <Calculator className="h-3.5 w-3.5" />
-                          {t("offers_btn_proforma")}
+                          <Eye className="h-3.5 w-3.5 text-primary" />
+                          <span>{locale === "am" ? "ዝርዝር ይመልከቱ" : "View Details"}</span>
                         </Link>
                       </div>
                     </div>

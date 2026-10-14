@@ -633,7 +633,7 @@ function ProductCard({
           </p>
         )}
 
-        {/* Market Area & CTA row */}
+        {/* Market Area row */}
         <div className="mt-3 flex items-center justify-between gap-2 border-t border-border/40 pt-2.5">
           <div
             className="flex items-center gap-1.5 min-w-0 text-[11px] text-muted-foreground font-medium"
@@ -644,19 +644,16 @@ function ProductCard({
             }
           >
             <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />
-            <span className="truncate max-w-[140px] font-semibold text-foreground/85">
+            <span className="truncate font-semibold text-foreground/85">
               {product.marketAreas && product.marketAreas.length > 0
-                ? product.marketAreas.slice(0, 2).join(", ") +
-                  (product.marketAreas.length > 2
-                    ? ` +${product.marketAreas.length - 2}`
+                ? product.marketAreas.slice(0, 3).join(", ") +
+                  (product.marketAreas.length > 3
+                    ? ` +${product.marketAreas.length - 3}`
                     : "")
                 : "Addis Ababa"}
             </span>
           </div>
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-            Compare
-            <ChevronRight className="h-3 w-3" />
-          </span>
+          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40 group-hover:text-primary transition-colors" />
         </div>
       </div>
     </Link>

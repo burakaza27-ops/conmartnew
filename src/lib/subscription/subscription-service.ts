@@ -62,6 +62,41 @@ export async function getSubscriptionPlans(): Promise<SubscriptionPlanItem[]> {
       orderBy: { priceETB: "asc" },
     });
 
+    if (plans.length === 0) {
+      return [
+        {
+          id: "plan_basic",
+          tier: "BASIC" as SubscriptionTier,
+          name: "Basic Directory",
+          priceETB: 1000,
+          durationDays: 180,
+          description: "Listing with store name, verified location, working hours, and category in directory (6 Months Access).",
+          features: ["6-Month verified listing", "Working hours & phone display", "Standard search ranking", "Direct Google Maps location"],
+          isActive: true,
+        },
+        {
+          id: "plan_premium",
+          tier: "PREMIUM" as SubscriptionTier,
+          name: "Premium Catalog",
+          priceETB: 2500,
+          durationDays: 180,
+          description: "Full product catalog with photo showcase, price ranges, Verified badge, and prioritized search ranking (6 Months Access).",
+          features: ["6-Month verified access", "Full photo catalog", "Price range display", "Verified supplier badge", "Priority search ranking", "Direct WhatsApp & Call buttons"],
+          isActive: true,
+        },
+        {
+          id: "plan_featured",
+          tier: "FEATURED" as SubscriptionTier,
+          name: "Featured Partner",
+          priceETB: 4500,
+          durationDays: 180,
+          description: "All Premium benefits plus prominent promoted hero and top-of-category placement (6 Months Access).",
+          features: ["6-Month verified access", "Top promoted category placement", "Homepage featured showcase", "Full photo catalog", "Verified supplier badge", "Highest search priority", "Agent lead priority"],
+          isActive: true,
+        },
+      ];
+    }
+
     return plans.map((p) => ({
       id: p.id,
       tier: p.tier,
@@ -207,7 +242,7 @@ export async function reviewSubscriptionPayment(params: {
       const plan = await tx.subscriptionPlan.findUnique({
         where: { tier: payment.tier },
       });
-      const durationDays = plan?.durationDays ?? 30;
+      const durationDays = plan?.durationDays ?? 180;
 
       const currentExpiry = payment.seller.sellerProfile?.subscriptionExpiresAt;
       const baseDate = currentExpiry && currentExpiry > now ? currentExpiry : now;

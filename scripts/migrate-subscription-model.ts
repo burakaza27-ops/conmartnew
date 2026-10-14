@@ -147,18 +147,20 @@ async function migrate() {
       CREATE INDEX IF NOT EXISTS idx_agent_commissions ON agent_commission_records(agent_id, status);
     `);
 
-    // 8. Seed default subscription plans (Admin Configurable)
+    // 8. Seed default subscription plans (Admin Configurable) - 6 Months Access
     await client.query(`
-      INSERT INTO subscription_plans (id, tier, name, price_etb, duration_days, description, features, is_active)
+      INSERT INTO subscription_plans (id, tier, name, price_etb, duration_days, description, features, is_active, updated_at)
       VALUES
-        ('plan_basic', 'BASIC', 'Basic Directory', 1000.00, 30, 'Listing with store name, verified location, working hours, and category in directory.', '["Directory listing", "Working hours & phone display", "Standard search ranking"]', true),
-        ('plan_premium', 'PREMIUM', 'Premium Catalog', 2500.00, 30, 'Full product catalog with photo showcase, price ranges, Verified badge, and prioritized search ranking.', '["Full photo catalog", "Price range display", "Verified supplier badge", "Priority search ranking", "Direct WhatsApp & Call buttons"]', true),
-        ('plan_featured', 'FEATURED', 'Featured Partner', 4500.00, 30, 'All Premium benefits plus prominent promoted hero and top-of-category placement.', '["Top promoted category placement", "Homepage featured showcase", "Full photo catalog", "Verified supplier badge", "Highest search priority", "Agent lead priority"]', true)
+        ('plan_basic', 'BASIC', 'Basic Directory', 1000.00, 180, 'Listing with store name, verified location, working hours, and category in directory (6 Months Access).', '["6-Month verified listing", "Working hours & phone display", "Standard search ranking", "Direct Google Maps location"]', true, now()),
+        ('plan_premium', 'PREMIUM', 'Premium Catalog', 2500.00, 180, 'Full product catalog with photo showcase, price ranges, Verified badge, and prioritized search ranking (6 Months Access).', '["6-Month verified access", "Full photo catalog", "Price range display", "Verified supplier badge", "Priority search ranking", "Direct WhatsApp & Call buttons"]', true, now()),
+        ('plan_featured', 'FEATURED', 'Featured Partner', 4500.00, 180, 'All Premium benefits plus prominent promoted hero and top-of-category placement (6 Months Access).', '["6-Month verified access", "Top promoted category placement", "Homepage featured showcase", "Full photo catalog", "Verified supplier badge", "Highest search priority", "Agent lead priority"]', true, now())
       ON CONFLICT (tier) DO UPDATE SET
         name = EXCLUDED.name,
         price_etb = EXCLUDED.price_etb,
+        duration_days = EXCLUDED.duration_days,
         description = EXCLUDED.description,
-        features = EXCLUDED.features;
+        features = EXCLUDED.features,
+        updated_at = now();
     `);
 
     console.log("Safe migration completed successfully! All tables, enums, and plans created.");

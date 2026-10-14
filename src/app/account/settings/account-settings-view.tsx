@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { KeyRound, Save, Shield } from "lucide-react";
+import { KeyRound, Save, Shield, LogOut } from "lucide-react";
 import type { UserRole } from "@prisma/client";
 
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ import {
 import {
   changePasswordAction,
   updateProfileAction,
+  signOut,
 } from "@/app/actions/auth";
 import { useLanguage } from "@/lib/i18n/language-context";
 
@@ -53,7 +54,7 @@ export function AccountSettingsView({
   passwordUpdated,
   recoveryPending,
 }: AccountSettingsViewProps) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const router = useRouter();
 
   return (
@@ -99,6 +100,33 @@ export function AccountSettingsView({
         />
         <PasswordCard hasEmail={Boolean(email)} />
       </div>
+
+      {/* Account Session & Sign Out Card */}
+      <Card className="border border-destructive/30 bg-destructive/5 shadow-xs">
+        <CardHeader className="border-b border-destructive/20 pb-4">
+          <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
+            <LogOut className="size-4 text-destructive" />
+            {t("nav_sign_out", "Sign out")}
+          </CardTitle>
+          <CardDescription className="text-xs">
+            {locale === "am"
+              ? "ከዚህ መሳሪያ ወይም አካውንት ለመውጣት ይጫኑ"
+              : "Sign out of your active account session on this device"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <form action={signOut}>
+            <Button
+              type="submit"
+              variant="destructive"
+              className="w-full sm:w-auto font-semibold gap-2"
+            >
+              <LogOut className="size-4" />
+              {t("nav_sign_out", "Sign out")}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -33,6 +33,7 @@ import { logLeadEventAction } from "@/app/actions/leads";
 import { GetGuidedModal } from "./get-guided-modal";
 import { SYSTEM_CONTACTS } from "@/lib/config/system-contacts";
 import { useLanguage } from "@/lib/i18n/language-context";
+import { StartChatButton } from "@/components/chat/start-chat-button";
 
 interface SupplierContactCardProps {
   sellerId: string;
@@ -124,32 +125,40 @@ export function SupplierContactCard({
         <CardContent className="p-4 space-y-3.5">
           <div>
             <h4 className="font-bold text-base text-foreground flex items-center gap-1.5">
-              <Building2 className="h-4 w-4 text-muted-foreground" />
+              <Building2 className="h-4 w-4 text-primary" />
               {companyName || sellerName}
             </h4>
             {address && (
-              <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                <MapPin className="h-3 w-3 text-primary shrink-0" />
-                {address}
-              </p>
+              <div className="mt-2 rounded-lg bg-muted/40 border border-border/60 p-2.5 text-xs space-y-1">
+                <div className="font-semibold text-foreground flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <span>{locale === "am" ? "የመጋዘን / ሱቅ አድራሻ" : "Depot / Shop Address"}:</span>
+                </div>
+                <p className="text-muted-foreground font-medium pl-5 leading-relaxed">{address}</p>
+                {latitude && longitude && (
+                  <p className="text-[10px] text-muted-foreground/75 font-mono pl-5">
+                    GPS: {latitude.toFixed(5)}°, {longitude.toFixed(5)}°
+                  </p>
+                )}
+              </div>
             )}
             {workingHours && (
-              <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
+              <p className="text-[11px] text-muted-foreground mt-2 flex items-center gap-1">
                 <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
                 {workingHours}
               </p>
             )}
           </div>
 
-          {/* Action buttons */}
+          {/* Action buttons: Phone Call & WhatsApp */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
             {directPhone && (
               <a
                 href={`tel:${directPhone.replace(/\s+/g, "")}`}
                 onClick={handleCallClick}
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground shadow-xs hover:bg-primary/90 transition-colors"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2.5 text-xs font-bold text-primary-foreground shadow-xs hover:bg-primary/90 transition-colors"
               >
-                <Phone className="h-3.5 w-3.5" />
+                <Phone className="h-4 w-4" />
                 <span>{locale === "am" ? "በቀጥታ ይደውሉ" : "Call Supplier"}</span>
               </a>
             )}
@@ -160,25 +169,36 @@ export function SupplierContactCard({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={handleWhatsAppClick}
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 transition-colors"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 transition-colors"
               >
-                <MessageCircle className="h-3.5 w-3.5" />
+                <MessageCircle className="h-4 w-4" />
                 <span>WhatsApp</span>
               </a>
             )}
           </div>
 
+          {/* In-app Direct Chat */}
+          {listingId && (
+            <StartChatButton
+              listingId={listingId}
+              directChatEnabled={true}
+              variant="outline"
+              className="w-full gap-2 font-semibold text-xs py-2 border-border/80 hover:bg-muted"
+            />
+          )}
+
+          {/* GPS Directions Map */}
           {mapsUrl && (
             <a
               href={mapsUrl}
               target="_blank"
               rel="noopener noreferrer"
               onClick={handleDirectionsClick}
-              className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-xs font-bold text-primary hover:bg-primary/10 transition-colors"
             >
-              <MapPin className="h-3 w-3 text-primary" />
-              <span>{locale === "am" ? "አድራሻ በካርታ ይመልከቱ" : "Get Directions / Map"}</span>
-              <ExternalLink className="h-3 w-3 text-muted-foreground ml-1" />
+              <MapPin className="h-4 w-4 text-primary" />
+              <span>{locale === "am" ? "የሱቅ አድራሻ በካርታ (GPS) ይመልከቱ" : "View Shop GPS on Google Maps"}</span>
+              <ExternalLink className="h-3 w-3 text-primary ml-1" />
             </a>
           )}
         </CardContent>

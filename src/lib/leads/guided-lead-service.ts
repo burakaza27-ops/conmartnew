@@ -13,6 +13,7 @@ import "server-only";
 import { db } from "@/lib/db";
 import { GuidedLeadStatus, AgentCommissionStatus } from "@prisma/client";
 import { normalizeEthiopianPhone } from "@/lib/validations";
+import { createNotification } from "@/lib/notifications";
 
 export interface CreateGuidedLeadParams {
   materialNeeded: string;
@@ -54,6 +55,16 @@ export async function createGuidedLead(params: CreateGuidedLeadParams) {
       status: GuidedLeadStatus.NEW,
     },
   });
+
+  // If directed to a specific supplier depot, notify the supplier
+  if (params.targetSellerId) {
+    createNotification({
+      userId: params.targetSellerId,
+      type: "ENQUIRY_RECEIVED",
+      title: "አዲስ የወኪል ግዢ ጥያቄ ቀርቧል (New Guided Purchase Request)",
+      body: `ደንበኛ ለ ${params.materialNeeded.trim()} (ብዛት: ${params.quantity.trim()}) በEcon ወኪል በኩል የግዢ ጥያቄ አቅርቧል። ወኪል እንደተመደበ ስሙ እና ስልኩ ወዲያው ይደርስዎታል።`,
+    }).catch((err) => console.error("[createGuidedLead:notify]", err));
+  }
 
   return {
     success: true,
@@ -126,9 +137,26 @@ export async function assignGuidedLead(leadId: string, agentId: string) {
     );
   }
 
-  return db.guidedLead.findUniqueOrThrow({
+  const updatedLead = await db.guidedLead.findUniqueOrThrow({
     where: { id: leadId },
+    include: {
+      assignedAgent: {
+        select: { id: true, name: true, phone: true },
+      },
+    },
   });
+
+  // Notify supplier with the assigned agent's full name and phone number
+  if (updatedLead.targetSellerId && updatedLead.assignedAgent) {
+    createNotification({
+      userId: updatedLead.targetSellerId,
+      type: "DEAL_STATUS_CHANGED",
+      title: "ወኪል ተመድቧል (Agent Assigned for Buyer Request)",
+      body: `ለ ${updatedLead.materialNeeded} (ብዛት: ${updatedLead.quantity}) ግዢ ወኪል ${updatedLead.assignedAgent.name} (ስልክ: ${updatedLead.assignedAgent.phone}) ተመድቧል። ወኪሉ ወደ መጋዘንዎ ከመምጣቱ በፊት በስልክ ሊያገኝዎት ይችላል።`,
+    }).catch((err) => console.error("[assignGuidedLead:notify]", err));
+  }
+
+  return updatedLead;
 }
 
 /**

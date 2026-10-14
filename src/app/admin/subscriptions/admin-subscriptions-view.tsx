@@ -360,8 +360,8 @@ export function AdminSubscriptionsView({
                 <span className="font-mono text-2xl font-black text-foreground">
                   {formatETB(plan.priceETB, locale)}
                 </span>
-                <span className="text-xs text-muted-foreground ml-1">
-                  / {plan.durationDays} Days
+                <span className="text-xs font-semibold text-primary ml-1">
+                  / {plan.durationDays >= 180 ? "6 Months (180 Days)" : `${plan.durationDays} Days`}
                 </span>
               </div>
 

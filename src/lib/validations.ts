@@ -67,24 +67,27 @@ export function ethiopianPhoneLookupVariants(phone: string): string[] {
 
 /** Password rules shared by registration, settings, and reset. */
 export const passwordSchema = z
-  .string()
+  .string({ message: "Password is required" })
   .min(8, "Password must be at least 8 characters")
   .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
   .regex(/[a-z]/, "Password must contain at least one lowercase letter")
   .regex(/[0-9]/, "Password must contain at least one number");
 
 export const personNameSchema = z
-  .string()
+  .string({ message: "Full name is required" })
+  .trim()
   .min(2, "Name must be at least 2 characters")
   .max(100, "Name must be less than 100 characters");
 
 export const companyNameSchema = z
-  .string()
+  .string({ message: "Company or business name is required" })
+  .trim()
   .min(2, "Company name must be at least 2 characters")
   .max(200, "Company name must be less than 200 characters");
 
 export const emailSchema = z
-  .string()
+  .string({ message: "Email is required" })
+  .trim()
   .min(1, "Email is required")
   .email("Please enter a valid email address");
 
@@ -110,7 +113,7 @@ export const etbAmountSchema = z
 export const loginSchema = z.object({
   email: emailSchema,
   password: z
-    .string()
+    .string({ message: "Password is required" })
     .min(8, "Password must be at least 8 characters"),
 });
 export type LoginFormData = z.infer<typeof loginSchema>;
@@ -119,12 +122,14 @@ export type LoginFormData = z.infer<typeof loginSchema>;
 export const registerSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
-  confirmPassword: z.string().min(1, "Please confirm your password"),
+  confirmPassword: z
+    .string({ message: "Please confirm your password" })
+    .min(1, "Please confirm your password"),
   name: personNameSchema,
   phone: ethiopianPhoneSchema,
   companyName: companyNameSchema,
   role: z.enum(SELF_REGISTERABLE_ROLES, {
-    error: "Please select your account type",
+    message: "Please select your account type",
   }),
   tinNumber: z.string().trim().max(30, "Invalid TIN number").optional(),
   referralCode: z.string().max(20, "Invalid referral code").optional(),
