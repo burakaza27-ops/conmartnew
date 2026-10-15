@@ -24,6 +24,7 @@ export default async function SellerLayout({
       userName={user.name}
       userEmail={user.email ?? ""}
       userId={user.id}
+      userRole={user.role}
       unreadNotifications={unreadNotifications}
       sidebarNav={<SellerSidebarNav />}
       sidebarFooter={<SellerSignOutButton />}

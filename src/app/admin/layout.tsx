@@ -20,6 +20,8 @@ export default async function AdminLayout({
       portal="Admin"
       userName={user.name}
       userEmail={user.email ?? ""}
+      userId={user.id}
+      userRole={user.role}
       sidebarNav={<AdminSidebarNav />}
       sidebarFooter={<AdminSignOutButton />}
       mobileNav={<AdminBottomNav />}

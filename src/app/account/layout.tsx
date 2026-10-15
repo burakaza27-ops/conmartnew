@@ -38,6 +38,8 @@ export default async function AccountLayout({
         portal="Seller"
         userName={user.name}
         userEmail={user.email ?? ""}
+        userId={user.id}
+        userRole={user.role}
         sidebarNav={<SellerSidebarNav />}
         sidebarFooter={<SellerSignOutButton />}
         mobileNav={<SellerBottomNav />}
@@ -53,6 +55,8 @@ export default async function AccountLayout({
         portal="Agent"
         userName={user.name}
         userEmail={user.email ?? ""}
+        userId={user.id}
+        userRole={user.role}
         sidebarNav={<AgentSidebarNav />}
         sidebarFooter={<AgentSignOutButton />}
         mobileNav={<AgentBottomNav />}
@@ -68,6 +72,8 @@ export default async function AccountLayout({
         portal="Admin"
         userName={user.name}
         userEmail={user.email ?? ""}
+        userId={user.id}
+        userRole={user.role}
         sidebarNav={<AdminSidebarNav />}
         sidebarFooter={<AdminSignOutButton />}
         mobileNav={<AdminBottomNav />}
@@ -83,6 +89,8 @@ export default async function AccountLayout({
       portal="Buyer"
       userName={user.name}
       userEmail={user.email ?? ""}
+      userId={user.id}
+      userRole={user.role}
       sidebarNav={<BuyerSidebarNav />}
       sidebarFooter={
         <form action={signOut}>

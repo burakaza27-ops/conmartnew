@@ -317,8 +317,9 @@ export function ChatThread({
       return;
     }
 
+    const channelId = `room:${roomId}:${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     const channel = supabase
-      .channel(`room:${roomId}`)
+      .channel(channelId)
       .on(
         "postgres_changes",
         {

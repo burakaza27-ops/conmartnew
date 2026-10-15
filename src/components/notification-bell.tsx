@@ -53,29 +53,38 @@ export function NotificationBell({ initialUnread, userId }: NotificationBellProp
     const supabase = getSupabaseClient();
     if (!supabase || !userId) return;
 
-    const channel = supabase
-      .channel(`notifications:${userId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "app_notifications",
-          filter: `user_id=eq.${userId}`,
-        },
-        () => {
-          // A new notification arrived — bump the count and refresh server state
-          setUnread((prev) => prev + 1);
-          refresh();
+    try {
+      const channelId = `notifications:${userId}:${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      const channel = supabase
+        .channel(channelId)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "app_notifications",
+            filter: `user_id=eq.${userId}`,
+          },
+          () => {
+            // A new notification arrived — bump the count and refresh server state
+            setUnread((prev) => prev + 1);
+            refresh();
+          }
+        )
+        .subscribe();
+
+      channelRef.current = channel;
+
+      return () => {
+        try {
+          supabase.removeChannel(channel);
+        } catch {
+          // Cleanup silently
         }
-      )
-      .subscribe();
-
-    channelRef.current = channel;
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+      };
+    } catch (err) {
+      console.warn("[NotificationBell] Realtime subscription failed silently:", err);
+    }
   }, [userId, refresh]);
 
   return (

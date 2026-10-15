@@ -543,7 +543,7 @@ export function AgentLeadsView({
                       <span>Edit Application Details</span>
                     </Button>
                   </Link>
-                  <span className="text-[11px] text-muted-foreground">
+                  <span className="text-[11px] text-muted-foreground" suppressHydrationWarning>
                     Submitted on {agentProfile?.createdAt ? new Date(agentProfile.createdAt).toLocaleDateString() : "Recently"}
                   </span>
                 </div>
@@ -795,7 +795,7 @@ export function AgentLeadsView({
                         </span>
                       </div>
 
-                      <div className="text-[11px] text-muted-foreground">
+                      <div className="text-[11px] text-muted-foreground" suppressHydrationWarning>
                         {(() => {
                           try {
                             return new Date(lead.createdAt).toLocaleString(

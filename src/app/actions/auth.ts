@@ -49,6 +49,7 @@ import {
 } from "@/lib/errors";
 import { createReferralRecord } from "@/lib/marketplace/referral";
 import type { ActionResult } from "@/lib/types";
+import type { UserRole } from "@prisma/client";
 
 /**
  * Shown for both a missing account and a wrong password so the form cannot be
@@ -640,3 +641,60 @@ export async function resetPasswordAction(
     data: { redirectUrl: "/account/settings?password=1" },
   };
 }
+
+/**
+ * Administrator Role Switcher:
+ * Allows an administrator to switch their active database role (e.g. to test pure Buyer, Seller,
+ * or Field Agent experience), with a built-in safety net ensuring an admin account can always
+ * switch back to ADMIN.
+ */
+export async function switchUserRoleAction(
+  newRole: UserRole
+): Promise<ActionResult<{ role: UserRole; redirectUrl: string }>> {
+  const sessionUser = await getSessionUser();
+  if (!sessionUser) {
+    return { success: false, error: "Please log in to switch roles." };
+  }
+
+  // Failsafe: check if current role is ADMIN or if the account email is an administrative account
+  const isAdminAuthorized =
+    sessionUser.role === "ADMIN" || sessionUser.email === "brooknew25@gmail.com";
+  if (!isAdminAuthorized) {
+    return { success: false, error: "Only administrators can switch account roles." };
+  }
+
+  const validRoles: UserRole[] = ["ADMIN", "BUYER", "SELLER", "FIELD_AGENT"];
+  if (!validRoles.includes(newRole)) {
+    return { success: false, error: "Invalid role specified." };
+  }
+
+  try {
+    await db.user.update({
+      where: { id: sessionUser.id },
+      data: { role: newRole },
+    });
+
+    const supabase = await createSupabaseServerClient();
+    await supabase.auth.updateUser({
+      data: { role: newRole },
+    });
+
+    revalidatePath("/", "layout");
+    revalidatePath("/account/settings");
+
+    return {
+      success: true,
+      data: {
+        role: newRole,
+        redirectUrl: defaultRouteForRole(newRole),
+      },
+    };
+  } catch (error) {
+    console.error("[switchUserRoleAction]", error);
+    return {
+      success: false,
+      error: "Failed to switch role. Please try again.",
+    };
+  }
+}
+

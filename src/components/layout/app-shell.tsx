@@ -6,14 +6,17 @@ import { Logo } from "@/components/brand/logo";
 import { LanguageToggle } from "@/components/language-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationBell } from "@/components/notification-bell";
+import { PortalSwitcher } from "@/components/layout/portal-switcher";
 import { signOut } from "@/app/actions/auth";
 import { cn } from "@/lib/utils";
+import type { UserRole } from "@prisma/client";
 
 interface AppShellProps {
   /** Wordmark subtitle: "Buyer", "Seller", "Admin". */
   portal: string;
   userName: string;
   userEmail: string;
+  userRole?: UserRole | string;
   /** Authenticated user ID — used to subscribe to Realtime notifications. */
   userId?: string;
   unreadNotifications?: number;
@@ -36,6 +39,7 @@ export function AppShell({
   portal,
   userName,
   userEmail,
+  userRole,
   userId,
   unreadNotifications = 0,
   sidebarNav,
@@ -64,7 +68,13 @@ export function AppShell({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-3 py-3">{sidebarNav}</div>
+        <PortalSwitcher
+          currentPortal={portal}
+          userRole={userRole}
+          userEmail={userEmail}
+        />
+
+        <div className="flex-1 overflow-y-auto px-3 py-1">{sidebarNav}</div>
 
         <div className="mt-auto border-t border-sidebar-border p-3">
           <Link
@@ -87,8 +97,16 @@ export function AppShell({
         </div>
       </aside>
 
-      <header className="sticky top-0 z-40 flex h-14 items-center justify-between gap-3 border-b border-border bg-background/85 px-3 backdrop-blur-md md:hidden">
-        <Logo size="sm" subtitle={portal} />
+      <header className="sticky top-0 z-40 flex h-14 items-center justify-between gap-2 border-b border-border bg-background/85 px-3 backdrop-blur-md md:hidden">
+        <div className="flex items-center gap-2">
+          <Logo size="sm" subtitle={portal} />
+          <PortalSwitcher
+            currentPortal={portal}
+            userRole={userRole}
+            userEmail={userEmail}
+            isMobile
+          />
+        </div>
         <div className="flex items-center gap-0.5">
           <NotificationBell initialUnread={unreadNotifications} userId={userId} />
           <LanguageToggle />

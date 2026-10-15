@@ -14,6 +14,8 @@ export default async function AgentLayout({
       portal="Agent"
       userName={user.name}
       userEmail={user.email ?? ""}
+      userId={user.id}
+      userRole={user.role}
       sidebarNav={<AgentSidebarNav />}
       sidebarFooter={<AgentSignOutButton />}
       mobileNav={<AgentBottomNav />}

@@ -43,6 +43,7 @@ export default async function BuyerLayout({
       userName={user.name}
       userEmail={user.email ?? ""}
       userId={user.id}
+      userRole={user.role}
       unreadNotifications={unreadNotifications}
       sidebarNav={<BuyerSidebarNav assistMode={assistMode} />}
       sidebarFooter={
