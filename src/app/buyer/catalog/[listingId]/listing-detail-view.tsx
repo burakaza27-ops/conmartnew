@@ -111,7 +111,7 @@ export function ListingDetailView({
             </div>
 
             <div className="absolute bottom-4 left-4 right-4">
-              <h1 className="heading-display text-2xl text-white drop-shadow-md sm:text-3xl">
+              <h1 className="text-2xl font-bold tracking-tight text-white drop-shadow-md sm:text-3xl">
                 {listing.product.title}
               </h1>
               <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-white/90 drop-shadow">
@@ -302,8 +302,8 @@ export function ListingDetailView({
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur-md px-4 py-3 md:hidden shadow-lg pb-safe-action">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <div className="text-[10px] uppercase font-semibold text-muted-foreground">
-              {locale === "am" ? "የጅምላ ዋጋ" : "Wholesale Rate"}
+            <div className="text-xs font-medium text-muted-foreground">
+              {locale === "am" ? "የጅምላ ዋጋ" : "Wholesale rate"}
             </div>
             <div className="font-mono text-base font-extrabold text-foreground leading-tight">
               {activeTiers[0]?.unitPrice !== undefined
@@ -320,9 +320,9 @@ export function ListingDetailView({
               {listing.directPhone && (
                 <a
                   href={`tel:${listing.directPhone.replace(/\s+/g, "")}`}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-bold text-primary-foreground shadow-md hover:bg-primary/90 transition-colors"
+                  className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground shadow-sm hover:bg-primary/90 active:scale-95 transition-all"
                 >
-                  <Phone className="h-3.5 w-3.5" />
+                  <Phone className="h-4 w-4" />
                   <span>{locale === "am" ? "ይደውሉ" : "Call"}</span>
                 </a>
               )}
@@ -331,9 +331,9 @@ export function ListingDetailView({
                   href={`https://wa.me/${listing.whatsappNumber.replace(/[^\d]/g, "")}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white shadow-md hover:bg-emerald-700 transition-colors"
+                  className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 active:scale-95 transition-all"
                 >
-                  <MessageCircle className="h-3.5 w-3.5" />
+                  <MessageCircle className="h-4 w-4" />
                   <span>WhatsApp</span>
                 </a>
               )}
@@ -341,9 +341,9 @@ export function ListingDetailView({
           ) : (
             <Button
               onClick={() => setIsGuidedModalOpen(true)}
-              className="gap-1.5 font-bold shadow-md bg-amber-600 hover:bg-amber-700 text-white text-xs h-9 px-3.5"
+              className="gap-2 font-bold shadow-sm bg-primary hover:bg-primary/90 text-primary-foreground text-xs min-h-[44px] h-11 px-4 rounded-xl active:scale-95 transition-all"
             >
-              <UserCheck className="h-3.5 w-3.5" />
+              <UserCheck className="h-4 w-4" />
               <span>{locale === "am" ? "ወኪል ይጠይቁ (ነፃ)" : "Request Local Agent"}</span>
             </Button>
           )}

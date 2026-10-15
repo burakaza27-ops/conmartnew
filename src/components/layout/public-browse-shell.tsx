@@ -34,8 +34,8 @@ export function PublicBrowseShell({ children }: PublicBrowseShellProps) {
   return (
     <div className="flex min-h-dvh flex-col">
       {/* ── Header ──────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
+      <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-md">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
           <Logo />
 
           <nav
@@ -69,7 +69,7 @@ export function PublicBrowseShell({ children }: PublicBrowseShellProps) {
             </Link>
             <Link
               href="/register"
-              className={cn(buttonVariants({ size: "sm" }), "font-semibold")}
+              className={cn(buttonVariants({ size: "sm" }), "font-semibold shadow-xs")}
             >
               Get started
               <ArrowRight className="size-3.5" aria-hidden="true" />
@@ -85,11 +85,11 @@ export function PublicBrowseShell({ children }: PublicBrowseShellProps) {
         </div>
       </main>
 
-      {/* ── Sticky CTA Banner ───────────────────────────────────────────── */}
-      <div className="sticky bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur-lg md:hidden">
+      {/* ── Sticky CTA Banner — anonymous mobile only ───────────────────── */}
+      <div className="sticky bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-md md:hidden">
         <div className="flex items-center justify-between gap-3 px-4 py-3">
           <p className="text-xs font-medium text-muted-foreground">
-            Sign up free to send purchase requests
+            Free account to send purchase requests
           </p>
           <Link
             href="/register"
@@ -98,7 +98,7 @@ export function PublicBrowseShell({ children }: PublicBrowseShellProps) {
               "shrink-0 font-semibold"
             )}
           >
-            Register
+            Register free
             <ArrowRight className="size-3.5" aria-hidden="true" />
           </Link>
         </div>

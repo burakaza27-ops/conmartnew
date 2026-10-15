@@ -29,36 +29,33 @@ export default function ErrorBoundary({ error, reset }: ErrorBoundaryProps) {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10 text-destructive mb-6 shadow-sm">
-        <AlertTriangle className="h-8 w-8" />
+      <div className="flex size-14 items-center justify-center rounded-2xl bg-destructive/10 text-destructive mb-5">
+        <AlertTriangle className="size-7" />
       </div>
 
-      <p className="text-sm font-bold uppercase tracking-wider text-destructive">
-        Temporary Operational Interruption
-      </p>
-      <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
-        Something went wrong loading this view.
+      <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+        Something went wrong
       </h1>
-      <p className="mt-3 max-w-md text-xs sm:text-sm text-muted-foreground">
-        The system encountered an unexpected response while processing your request. 
-        Your account and orders are safe. Please try refreshing the view.
+      <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
+        The system hit an unexpected error loading this view.
+        Your account and orders are safe — try refreshing.
       </p>
 
       {error?.digest && (
         <p className="mt-2 text-[11px] font-mono text-muted-foreground/60">
-          Incident Reference: {error.digest}
+          Ref: {error.digest}
         </p>
       )}
 
-      <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-        <Button onClick={() => reset()} className="gap-2 font-semibold shadow-md">
-          <RotateCcw className="h-4 w-4" />
-          Retry Action
+      <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+        <Button onClick={() => reset()} className="gap-2 font-semibold">
+          <RotateCcw className="size-4" />
+          Try again
         </Button>
         <Link href="/">
           <Button variant="outline" className="gap-2">
-            <Home className="h-4 w-4" />
-            Homepage
+            <Home className="size-4" />
+            Home
           </Button>
         </Link>
       </div>

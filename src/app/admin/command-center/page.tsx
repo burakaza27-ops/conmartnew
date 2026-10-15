@@ -61,62 +61,68 @@ export default async function CommandCenterPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary mb-2">
-          <Sparkles className="h-3.5 w-3.5" />
-          Addis Ababa Construction Materials Trading Hub
+      {/* Page header */}
+      <div className="space-y-2">
+        <div className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-muted/40 px-2.5 py-1 font-mono text-2xs font-bold uppercase tracking-widest text-muted-foreground">
+          <span className="size-1.5 rounded-full bg-success animate-pulse" />
+          <span>Clearinghouse Live</span>
+          <span className="text-border">|</span>
+          <span>Addis Ababa</span>
         </div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          Platform Operations Command Center
+          Platform Operations
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Real-time oversight: supplier subscription verification, guided buyer leads assignment, depot yard compliance, and dispute mediation.
+        <p className="text-sm leading-relaxed text-muted-foreground max-w-2xl">
+          Subscription approvals, field dispatch inspection tickets, proforma clearing, and commercial dispute mediation for Ethiopia’s national construction trade network.
         </p>
       </div>
 
-      {/* KPI Stats Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+      {/* Operational KPI grid */}
+      <div className="grid gap-2.5 grid-cols-2 sm:grid-cols-4 lg:grid-cols-8">
         <StatCard
-          icon={<CreditCard className="h-5 w-5 text-emerald-500" />}
-          label="Pending Subscriptions"
+          icon={<CreditCard className="h-4 w-4 text-emerald-500" />}
+          label="Subscriptions"
           value={pendingPayments.length.toString()}
           href="/admin/subscriptions"
+          badge={pendingPayments.length > 0 ? "Action Req" : undefined}
         />
         <StatCard
-          icon={<Users className="h-5 w-5 text-amber-500" />}
+          icon={<Users className="h-4 w-4 text-amber-500" />}
           label="Agent Vetting"
           value={pendingAgents.length.toString()}
           href="/admin/agents"
+          badge={pendingAgents.length > 0 ? `${pendingAgents.length} Pending` : undefined}
         />
         <StatCard
-          icon={<UserCheck className="h-5 w-5 text-primary" />}
-          label="Guided Buyer Leads"
+          icon={<UserCheck className="h-4 w-4 text-primary" />}
+          label="Buyer Leads"
           value={guidedLeads.length.toString()}
           href="/agent/leads"
         />
         <StatCard
-          icon={<ShieldCheck className="h-5 w-5 text-indigo-500" />}
-          label="Verified Suppliers"
+          icon={<ShieldCheck className="h-4 w-4 text-emerald-500" />}
+          label="Verified Yds"
           value={sellers.filter((s) => s.verificationStatus === "VERIFIED").length.toString()}
         />
         <StatCard
-          icon={<Building2 className="h-5 w-5 text-blue-500" />}
-          label="Re-check Due"
+          icon={<Building2 className="h-4 w-4 text-blue-500" />}
+          label="Audit Due"
           value={sellers.filter((s) => s.reverificationNeeded).length.toString()}
         />
         <StatCard
-          icon={<ShieldAlert className="h-5 w-5 text-rose-500" />}
-          label="Open Disputes"
+          icon={<ShieldAlert className="h-4 w-4 text-rose-500" />}
+          label="Disputes"
           value={disputes.filter((d) => d.status === "OPEN" || d.status === "MEDIATING").length.toString()}
+          badge={disputes.filter((d) => d.status === "OPEN").length > 0 ? "Open" : undefined}
         />
         <StatCard
-          icon={<Inbox className="h-5 w-5 text-amber-500" />}
-          label="Bank Proformas"
+          icon={<Inbox className="h-4 w-4 text-indigo-500" />}
+          label="Proformas"
           value={orders.length.toString()}
         />
         <StatCard
-          icon={<Recycle className="h-5 w-5 text-emerald-500" />}
-          label="Site Wastages"
+          icon={<Recycle className="h-4 w-4 text-emerald-500" />}
+          label="Surplus Lots"
           value={pendingWastages.length.toString()}
         />
       </div>
@@ -234,21 +240,26 @@ function StatCard({
   label,
   value,
   href,
+  badge,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   href?: string;
+  badge?: string;
 }) {
   const content = (
-    <Card className="border-border/50 shadow-2xs hover:border-primary/40 transition-colors">
-      <CardContent className="flex items-center gap-3 pt-4 pb-4">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+    <Card className="border-border/50 shadow-2xs transition-colors hover:border-primary/40">
+      <CardContent className="flex items-center gap-3 p-3.5">
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">
           {icon}
         </div>
-        <div>
-          <p className="text-[11px] font-medium text-muted-foreground">{label}</p>
-          <p className="text-base font-bold text-foreground font-mono">{value}</p>
+        <div className="min-w-0">
+          <p className="text-[11px] font-medium text-muted-foreground truncate">{label}</p>
+          <p className="text-lg font-bold text-foreground tabular-nums leading-none mt-0.5">{value}</p>
+          {badge && (
+            <p className="text-[10px] font-semibold text-primary mt-0.5 truncate">{badge}</p>
+          )}
         </div>
       </CardContent>
     </Card>

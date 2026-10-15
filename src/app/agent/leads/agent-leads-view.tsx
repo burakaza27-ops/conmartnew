@@ -435,45 +435,43 @@ export function AgentLeadsView({
           </Card>
         )}
 
-        {/* SCREEN 5 APPLICANT STATUS: UNDER REVIEW HOLDING CARD */}
+        {/* APPLICANT STATUS: UNDER REVIEW HOLDING CARD */}
         {(approvalStatus === AgentApprovalStatus.SUBMITTED ||
           approvalStatus === AgentApprovalStatus.UNDER_REVIEW) && (
-          <Card className="border-border/80 shadow-sm overflow-hidden">
-            <CardHeader className="border-b border-border/40 bg-muted/20">
-              <div className="flex items-center gap-2">
-                <span className="flex size-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-                  5
-                </span>
+          <Card className="border border-border/80 shadow-xs overflow-hidden">
+            <CardHeader className="border-b border-border/40 bg-muted/10">
+              <div className="flex items-center gap-2.5">
+                <ShieldCheck className="size-5 text-primary" />
                 <div>
-                  <CardTitle className="text-base font-bold">
-                    Applicant status (what the agent sees)
+                  <CardTitle className="text-base font-bold text-foreground">
+                    Agent Credential Vetting & Compliance Clearance
                   </CardTitle>
                   <p className="text-xs text-muted-foreground">
-                    ECON reviews your application and documents.
+                    Official vetting against Kebele records, Grade 12 certificates, and guarantor confirmation.
                   </p>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="p-8 space-y-8">
+            <CardContent className="p-6 space-y-6">
               {/* Application Status Pipeline Tracker */}
               <div className="space-y-3">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
-                  Application status pipeline
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block font-mono">
+                  Verification Pipeline
                 </span>
                 <div className="flex items-center justify-between gap-2 max-w-xl mx-auto py-2">
                   {[
                     { label: "Submitted", active: true, done: true },
-                    { label: "Under review", active: true, done: false, current: true },
-                    { label: "Approved", active: false, done: false },
+                    { label: "Compliance Review", active: true, done: false, current: true },
+                    { label: "Field Authorization", active: false, done: false },
                   ].map((step, idx) => (
                     <React.Fragment key={step.label}>
                       <div className="flex flex-col items-center text-center">
                         <div
-                          className={`size-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                          className={`size-8 rounded-lg flex items-center justify-center text-xs font-bold font-mono transition-all ${
                             step.done
                               ? "bg-primary text-primary-foreground"
                               : step.current
-                              ? "border-2 border-primary bg-primary/20 text-primary ring-4 ring-primary/10"
+                              ? "border-2 border-primary bg-primary/20 text-primary ring-2 ring-primary/20"
                               : "border border-border text-muted-foreground bg-muted/30"
                           }`}
                         >
@@ -499,15 +497,15 @@ export function AgentLeadsView({
                 </div>
               </div>
 
-              {/* Exact Screen 5 Holding Box */}
-              <div className="rounded-2xl border-2 border-border/80 bg-muted/10 p-6 flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
-                <div className="flex size-16 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 shrink-0">
-                  <Clock className="size-8" />
+              {/* Status Notice */}
+              <div className="rounded-xl border border-border/80 bg-muted/10 p-5 flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
+                <div className="flex size-12 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 shrink-0 border border-amber-500/20">
+                  <Clock className="size-6" />
                 </div>
                 <div className="space-y-1">
-                  <h2 className="text-xl font-black text-foreground">Under review</h2>
+                  <h2 className="text-base font-bold text-foreground">Application Under Compliance Review</h2>
                   <p className="text-xs text-muted-foreground leading-relaxed max-w-lg">
-                    Your application is being reviewed. Assignments are unavailable until approval.
+                    Your credentials and guarantor documents are being audited by ECON Operations. Field lead dispatch will activate immediately upon verification.
                   </p>
                 </div>
               </div>
@@ -559,37 +557,37 @@ export function AgentLeadsView({
   // SCREEN 6: APPROVED AGENT DASHBOARD & NEARBY ASSIGNMENTS
   // ===========================================================================
   return (
-    <div className="space-y-8">
-      {/* Screen 6 Header Strip */}
-      <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-xs space-y-4">
+    <div className="space-y-6">
+      {/* Header Strip — Industrial Terminal Look */}
+      <div className="rounded-xl border border-border/80 bg-card p-5 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-4">
           <div className="flex items-center gap-3">
-            <div className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <ShieldCheck className="size-6" />
+            <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
+              <ShieldCheck className="size-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-lg font-black text-foreground">
-                  Welcome, Agent {agentProfile?.user?.name || "Partner"}
+                <h1 className="text-lg font-bold tracking-tight text-foreground">
+                  Field Operations & Procurement Dispatch
                 </h1>
-                <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 text-[10px] font-bold px-2 py-0.5">
-                  Approved
+                <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 text-[10px] font-mono uppercase font-bold tracking-wider px-2 py-0.5">
+                  Authorized Agent
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Local part-time work • Make a difference
+                Officer: <strong className="text-foreground">{agentProfile?.user?.name || "Field Agent"}</strong> • On-site contractor verification, materials inspection & dispatch
               </p>
             </div>
           </div>
 
           {/* Availability Toggle Switch */}
-          <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/20 px-4 py-2 self-start sm:self-auto">
+          <div className="flex items-center gap-3 rounded-lg border border-border/80 bg-muted/20 px-3.5 py-2 self-start sm:self-auto">
             <div className="space-y-0.5">
               <span className="text-xs font-bold text-foreground block">
-                {isAvailable ? "Available for assignments" : "Unavailable"}
+                {isAvailable ? "Dispatch Receiving Active" : "Dispatch Paused"}
               </span>
-              <span className="text-[10px] text-muted-foreground block">
-                {isAvailable ? "Receiving nearby visit requests" : "Temporarily paused"}
+              <span className="text-[10px] text-muted-foreground block font-mono">
+                {isAvailable ? "Ready for site calls" : "Temporarily offline"}
               </span>
             </div>
             <Switch
@@ -604,15 +602,15 @@ export function AgentLeadsView({
         {/* Service Area & Coverage Banner */}
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2 text-muted-foreground">
-            <span className="font-semibold text-foreground">My service area:</span>
-            <Badge variant="outline" className="gap-1 font-mono text-xs text-primary border-primary/30">
-              <MapPin className="h-3 w-3" />
-              {agentProfile?.serviceArea || "Bole"} ({agentProfile?.travelRadiusKm || 5} km radius)
+            <span className="font-semibold text-foreground">Assigned Jurisdiction:</span>
+            <Badge variant="outline" className="gap-1.5 font-mono text-xs text-foreground border-border bg-background">
+              <MapPin className="h-3 w-3 text-primary" />
+              {agentProfile?.serviceArea || "Bole Sub-City"} ({agentProfile?.travelRadiusKm || 5} km radius)
             </Badge>
           </div>
 
-          <div className="text-[11px] text-muted-foreground">
-            Available: <strong>{agentProfile?.availableDaysHours || "Mon - Fri, 9:00 - 17:00"}</strong>
+          <div className="text-[11px] text-muted-foreground font-mono">
+            Operating Hours: <strong className="text-foreground">{agentProfile?.availableDaysHours || "Mon - Fri, 08:30 - 17:30 EAT"}</strong>
           </div>
         </div>
       </div>
@@ -624,96 +622,102 @@ export function AgentLeadsView({
         </div>
       )}
 
-      {/* Screen 6: Nearby Visit Requests (Accept / Decline Strip) */}
+      {/* Screen 6: Priority Field Dispatch Orders (Procurement Manifest Slips) */}
       {nearbyRequests.length > 0 && (
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="flex size-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-                6
-              </span>
-              <h2 className="text-sm font-black text-foreground uppercase tracking-wider">
-                Nearby Visit Requests ({nearbyRequests.length})
+              <span className="size-2 rounded-full bg-amber-500 animate-pulse" />
+              <h2 className="text-xs font-bold text-foreground uppercase tracking-wider font-mono">
+                Priority Field Dispatch Orders ({nearbyRequests.length} Pending Acceptance)
               </h2>
             </div>
-            <span className="text-[11px] text-muted-foreground">
-              Privacy rule: Buyer phone released only after assignment
+            <span className="text-[11px] text-muted-foreground font-medium">
+              Contractor identity sealed until dispatch acceptance
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             {nearbyRequests.map((req) => (
-              <Card
+              <div
                 key={req.id}
-                className="border-2 border-primary/30 bg-gradient-to-br from-card to-primary/5 shadow-xs overflow-hidden"
+                className="rounded-xl border border-border/90 bg-card p-4 space-y-3.5 shadow-xs transition-all hover:border-primary/50"
               >
-                <div className="p-5 space-y-4">
-                  <div className="flex items-center justify-between border-b border-border/40 pb-3">
-                    <span className="font-mono text-xs font-black text-primary">
-                      {req.referenceCode}
+                <div className="flex items-center justify-between border-b border-border/50 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded">
+                      #{req.referenceCode}
                     </span>
-                    <Badge variant="outline" className="text-[10px] text-blue-600 border-blue-500/30">
-                      Nearby Request
-                    </Badge>
+                    <span className="text-[10px] text-amber-600 dark:text-amber-400 font-mono font-bold uppercase tracking-wider">
+                      ● Dispatch Available
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    Urgent Site Request
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider block">
+                      Material Spec & Volume
+                    </span>
+                    <strong className="text-foreground text-sm font-bold block mt-0.5">
+                      {req.materialNeeded}
+                    </strong>
+                    <span className="text-muted-foreground text-xs font-mono">
+                      Quantity: <strong className="text-foreground">{req.quantity}</strong>
+                    </span>
                   </div>
 
-                  <div className="space-y-2 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Supplier area:</span>
-                      <strong className="text-foreground flex items-center gap-1">
-                        <MapPin className="h-3 w-3 text-primary" />
-                        {req.areaLocation}
-                      </strong>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Material:</span>
-                      <strong className="text-foreground">{req.materialNeeded} ({req.quantity})</strong>
-                    </div>
-
+                  <div>
+                    <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider block">
+                      Target Area / Yard
+                    </span>
+                    <strong className="text-foreground text-xs font-semibold flex items-center gap-1 mt-0.5">
+                      <MapPin className="h-3 w-3 text-primary shrink-0" />
+                      {req.areaLocation}
+                    </strong>
                     {req.preferredVisitTime && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Preferred visit:</span>
-                        <span className="text-foreground flex items-center gap-1">
-                          <Clock className="h-3 w-3 text-muted-foreground" />
-                          {req.preferredVisitTime}
-                        </span>
-                      </div>
+                      <span className="text-[11px] text-muted-foreground flex items-center gap-1 mt-1 font-mono">
+                        <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
+                        {req.preferredVisitTime}
+                      </span>
                     )}
-
-                    {/* PRIVACY PROTECTED BUYER PHONE */}
-                    <div className="flex items-center justify-between rounded-lg bg-muted/40 p-2.5">
-                      <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                        <Lock className="h-3 w-3 text-muted-foreground" />
-                        Buyer Phone:
-                      </span>
-                      <span className="font-mono font-bold text-xs text-muted-foreground">
-                        {req.buyerPhone}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Accept / Decline Action Buttons */}
-                  <div className="flex items-center gap-2 pt-2 border-t border-border/40">
-                    <Button
-                      onClick={() => handleAcceptRequest(req.id)}
-                      disabled={actionLoadingId === req.id}
-                      className="flex-1 font-bold text-xs gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground"
-                    >
-                      {actionLoadingId === req.id && <Loader2 className="h-3 w-3 animate-spin" />}
-                      <Check className="h-3.5 w-3.5" />
-                      <span>Accept</span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => handleDeclineRequest(req.id)}
-                      className="text-xs font-semibold"
-                    >
-                      Decline
-                    </Button>
                   </div>
                 </div>
-              </Card>
+
+                {/* Privacy Protected Phone Box */}
+                <div className="flex items-center justify-between rounded-lg bg-muted/40 border border-border/40 px-3 py-2 text-xs">
+                  <span className="text-[11px] text-muted-foreground flex items-center gap-1.5 font-medium">
+                    <Lock className="h-3 w-3 text-muted-foreground" />
+                    Buyer Phone:
+                  </span>
+                  <span className="font-mono font-bold text-xs text-foreground">
+                    {req.buyerPhone}
+                  </span>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 pt-1 border-t border-border/40">
+                  <Button
+                    onClick={() => handleAcceptRequest(req.id)}
+                    disabled={actionLoadingId === req.id}
+                    className="flex-1 font-bold text-xs gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground h-9"
+                  >
+                    {actionLoadingId === req.id && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                    <Check className="h-3.5 w-3.5" />
+                    <span>Accept & Claim Order</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleDeclineRequest(req.id)}
+                    className="text-xs font-semibold h-9 px-3"
+                  >
+                    Decline
+                  </Button>
+                </div>
+              </div>
             ))}
           </div>
         </div>

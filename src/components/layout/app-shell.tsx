@@ -58,8 +58,9 @@ export function AppShell({
 
   return (
     <div className="flex min-h-dvh flex-col md:flex-row">
-      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-border bg-sidebar md:flex">
-        <div className="flex h-16 items-center justify-between gap-2 px-4">
+      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
+        {/* Sidebar header: logo + utilities */}
+        <div className="flex h-14 items-center justify-between gap-2 border-b border-sidebar-border/60 px-4">
           <Logo size="sm" subtitle={portal} />
           <div className="flex items-center gap-0.5">
             <NotificationBell initialUnread={unreadNotifications} userId={userId} />
@@ -68,36 +69,38 @@ export function AppShell({
           </div>
         </div>
 
-        <PortalSwitcher
-          currentPortal={portal}
-          userRole={userRole}
-          userEmail={userEmail}
-        />
+        {/* Portal switcher — admin only */}
+        <div className="px-2 pt-2">
+          <PortalSwitcher
+            currentPortal={portal}
+            userRole={userRole}
+            userEmail={userEmail}
+          />
+        </div>
 
-        <div className="flex-1 overflow-y-auto px-3 py-1">{sidebarNav}</div>
+        <div className="flex-1 overflow-y-auto px-2 py-2">{sidebarNav}</div>
 
-        <div className="mt-auto border-t border-sidebar-border p-3">
+        <div className="border-t border-sidebar-border/60 p-3">
           <Link
             href="/account/settings"
-            className="mb-3 flex items-center gap-2.5 rounded-lg px-1 py-1 hover:bg-muted"
+            className="group mb-2 flex items-center gap-2.5 rounded-lg px-2 py-2 transition-colors hover:bg-sidebar-accent"
           >
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
+            {/* Avatar — amber ring matches brand primary */}
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary ring-1 ring-primary/30">
               {initials || "U"}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-foreground">
-                {userName}
-              </p>
+              <p className="truncate text-sm font-semibold text-foreground">{userName}</p>
               <p className="truncate text-2xs text-muted-foreground">{userEmail}</p>
             </div>
-            <Settings className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <Settings className="size-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" aria-hidden="true" />
             <span className="sr-only">Account settings</span>
           </Link>
           {sidebarFooter}
         </div>
       </aside>
 
-      <header className="sticky top-0 z-40 flex h-14 items-center justify-between gap-2 border-b border-border bg-background/85 px-3 backdrop-blur-md md:hidden">
+      <header className="sticky top-0 z-40 flex h-14 items-center justify-between gap-2 border-b border-sidebar-border bg-sidebar/95 px-3 backdrop-blur-md md:hidden">
         <div className="flex items-center gap-2">
           <Logo size="sm" subtitle={portal} />
           <PortalSwitcher
@@ -107,25 +110,25 @@ export function AppShell({
             isMobile
           />
         </div>
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-1">
           <NotificationBell initialUnread={unreadNotifications} userId={userId} />
           <LanguageToggle />
           <ThemeToggle />
           <Link
             href="/account/settings"
             aria-label="Account settings"
-            className="inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="inline-flex size-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors"
           >
-            <Settings className="size-5" />
+            <Settings className="size-4.5" />
           </Link>
           <form action={signOut}>
             <button
               type="submit"
               aria-label="Sign out"
               title="Sign out"
-              className="inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+              className="inline-flex size-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
             >
-              <LogOut className="size-4" />
+              <LogOut className="size-4.5" />
             </button>
           </form>
           {mobileActions}
@@ -143,8 +146,8 @@ export function AppShell({
         </div>
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 pb-safe backdrop-blur-md md:hidden">
-        <div className="flex items-stretch justify-around pt-1">{mobileNav}</div>
+      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-sidebar-border bg-sidebar/98 pb-safe backdrop-blur-md md:hidden">
+        <div className="flex items-stretch justify-around pt-0.5">{mobileNav}</div>
       </nav>
     </div>
   );

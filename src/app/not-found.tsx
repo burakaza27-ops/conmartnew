@@ -9,13 +9,13 @@ export default function NotFound() {
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center px-4 text-center">
       <Logo href="/" />
-      <p className="mt-10 text-xs font-medium tracking-wider text-primary uppercase">
+      <p className="mt-10 text-sm font-bold text-primary tabular-nums">
         404
       </p>
-      <h1 className="heading-display mt-2 text-3xl text-foreground sm:text-4xl">
+      <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
         That page is not on the yard.
       </h1>
-      <p className="mt-3 max-w-md text-sm text-muted-foreground">
+      <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
         The listing, proforma, or page you asked for may have been archived or
         the link is wrong.
       </p>

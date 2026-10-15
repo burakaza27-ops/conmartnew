@@ -17,8 +17,9 @@ export function ThemeToggle({ className }: { className?: string }) {
     <Button
       variant="ghost"
       size="sm"
+      tapTarget={true}
       onClick={toggleTheme}
-      className={`h-8 w-8 p-0 text-muted-foreground hover:text-foreground transition-colors ${
+      className={`h-9 w-9 md:h-8 md:w-8 p-0 text-muted-foreground hover:text-foreground transition-colors ${
         className ?? ""
       }`}
       aria-label={isLight ? "Switch to dark theme" : "Switch to light theme"}

@@ -17,8 +17,9 @@ export function LanguageToggle({ className }: { className?: string }) {
     <Button
       variant="ghost"
       size="sm"
+      tapTarget={true}
       onClick={toggleLocale}
-      className={`h-8 gap-1.5 px-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors ${
+      className={`h-9 md:h-8 gap-1.5 px-2.5 md:px-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors ${
         className ?? ""
       }`}
       aria-label="Switch Language (English / አማርኛ)"

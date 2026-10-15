@@ -96,6 +96,7 @@ export function PricingCalculator({
               <Input
                 id="calc-qty"
                 type="number"
+                inputMode="numeric"
                 min={1}
                 step={1}
                 placeholder={`e.g., ${tiers[0]?.minQty ?? 100}`}

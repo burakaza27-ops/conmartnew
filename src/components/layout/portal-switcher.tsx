@@ -211,7 +211,7 @@ export function PortalSwitcher({
               </span>
             </div>
             <span className="block truncate text-[10px] font-medium text-muted-foreground">
-              👑 Admin View: Switch Portal
+              Admin — Switch Portal
             </span>
           </div>
         </div>

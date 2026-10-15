@@ -116,7 +116,7 @@ export function SupplierContactCard({
             <span>{locale === "am" ? "የተረጋገጠ አቅራቢ" : "Subscribed Verified Supplier"}</span>
           </div>
           {subscriptionTier && (
-            <Badge variant="secondary" className="text-[10px] uppercase font-mono font-bold tracking-wider">
+            <Badge variant="secondary" className="text-xs font-mono font-medium">
               {subscriptionTier}
             </Badge>
           )}

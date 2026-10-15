@@ -185,55 +185,55 @@ export function SubscriptionView({
       </div>
 
       {/* Subscription Status Card */}
-      <Card className="border-border/80 bg-gradient-to-br from-card via-card to-background shadow-md overflow-hidden">
-        <div className="p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <Card className="border-border bg-card shadow-xs overflow-hidden">
+        <div className="p-6 sm:p-7 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-3">
             <div className="flex items-center gap-2 flex-wrap">
               <Badge
                 variant={status === "ACTIVE" ? "default" : "secondary"}
-                className={`text-xs font-bold uppercase tracking-wider ${
+                className={`text-xs font-semibold ${
                   status === "ACTIVE"
-                    ? "bg-emerald-600 text-white"
+                    ? "bg-emerald-600/90 text-white"
                     : status === "PENDING_CONFIRMATION"
-                    ? "bg-amber-600 text-white"
+                    ? "bg-amber-600/90 text-white"
                     : "bg-muted text-muted-foreground"
                 }`}
               >
                 {status === "ACTIVE"
                   ? locale === "am"
-                    ? "ንቁ ደንበኛ (ACTIVE)"
-                    : "ACTIVE SUBSCRIPTION"
+                    ? "ንቁ ደንበኝነት"
+                    : "Active subscription"
                   : status === "PENDING_CONFIRMATION"
                   ? locale === "am"
                     ? "ክፍያ በመረጋገጥ ላይ"
-                    : "PENDING CONFIRMATION"
+                    : "Payment under review"
                   : locale === "am"
                   ? "ያልነቃ / ያለቀ"
-                  : "FREE / EXPIRED"}
+                  : "Free / expired"}
               </Badge>
 
-              <Badge variant="outline" className="font-mono text-xs font-semibold">
-                Tier: {currentTier}
+              <Badge variant="outline" className="font-mono text-xs font-medium">
+                {currentTier}
               </Badge>
             </div>
 
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
                 {status === "ACTIVE"
-                  ? `${currentTier} Plan — ${daysRemaining} Days Remaining`
+                  ? `${currentTier} — ${daysRemaining} days remaining`
                   : status === "PENDING_CONFIRMATION"
                   ? locale === "am"
                     ? "ክፍያዎ በአስተዳዳሪ እየተረጋገጠ ነው"
-                    : "Payment under Admin Review"
+                    : "Payment under verification"
                   : locale === "am"
                   ? "ደንበኝነትዎ አብቅቷል"
-                  : "Your Subscription has Expired"}
+                  : "Subscription expired"}
               </h2>
               {expiresAt && (
                 <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
                   <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                   <span>
-                    {locale === "am" ? "የሚያበቃበት ቀን: " : "Valid until: "}
+                    {locale === "am" ? "የሚያበቃበት ቀን: " : "Valid until "}
                     {new Date(expiresAt).toLocaleDateString(locale === "am" ? "am-ET" : "en-US", {
                       dateStyle: "long",
                     })}
@@ -248,10 +248,10 @@ export function SubscriptionView({
               <Button
                 onClick={() => handleOpenSubscribe(plans[1] || plans[0])}
                 size="lg"
-                className="gap-2 font-bold shadow-md bg-primary hover:bg-primary/90 text-primary-foreground"
+                className="gap-2 font-semibold shadow-xs bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 <ShieldCheck className="h-5 w-5" />
-                <span>{status === "ACTIVE" ? (locale === "am" ? "አድስ / አሻሽል" : "Renew / Upgrade") : (locale === "am" ? "አሁን ይመዝገቡ" : "Subscribe Now")}</span>
+                <span>{status === "ACTIVE" ? (locale === "am" ? "አድስ / አሻሽል" : "Renew / upgrade") : (locale === "am" ? "አሁን ይመዝገቡ" : "Activate plan")}</span>
               </Button>
             )}
           </div>
@@ -265,10 +265,10 @@ export function SubscriptionView({
               {isExpired
                 ? (locale === "am"
                     ? "የቀጥታ ስልክዎ እና ዋትሳፕዎ ለገዢዎች ተደብቀዋል። ገዢዎች በቀጥታ እንዲደውሉልዎ አሁን ደንበኝነትዎን ያድሱ!"
-                    : "Your direct phone and WhatsApp contact details are currently hidden. Renew now to restore instant buyer calls.")
+                    : "Your direct phone and WhatsApp contact details are currently hidden. Renew now to restore direct contractor inquiries.")
                 : (locale === "am"
                     ? `ደንበኝነትዎ በ ${daysRemaining} ቀናት ውስጥ ያበቃል! ክፍተቶች እንዳይፈጠሩ አስቀድመው ያድሱ።`
-                    : `Your subscription expires in ${daysRemaining} days! Renew today to prevent interruption.`)}
+                    : `Your subscription expires in ${daysRemaining} days. Renew in advance to keep buyer channels open.`)}
             </p>
           </div>
         )}
@@ -278,12 +278,12 @@ export function SubscriptionView({
       <div className="space-y-4">
         <div>
           <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
-            {locale === "am" ? "የደንበኝነት ዕቅዶች" : "Available Subscription Plans"}
+            {locale === "am" ? "የደንበኝነት ዕቅዶች" : "Available subscription plans"}
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             {locale === "am"
               ? "ለንግድዎ የሚስማማውን ይምረጡ። ምንም ተጨማሪ የኮሚሽን ቅነሳ አይደረግም — ገዢዎች በቀጥታ ይደውሉልዎታል!"
-              : "Zero commission deducted from your sales. Buyers call and pay you directly."}
+              : "Zero commission on transactions. Contractors contact and settle with you directly."}
           </p>
         </div>
 
@@ -297,13 +297,13 @@ export function SubscriptionView({
                 key={plan.id}
                 className={`relative flex flex-col justify-between overflow-hidden border transition-all ${
                   isFeatured
-                    ? "border-primary/60 shadow-lg bg-card"
-                    : "border-border shadow-xs bg-card/60"
+                    ? "border-primary/70 shadow-sm bg-card ring-1 ring-primary/20"
+                    : "border-border shadow-xs bg-card"
                 }`}
               >
                 {isFeatured && (
-                  <div className="bg-primary px-3 py-1 text-center text-[11px] font-bold uppercase tracking-wider text-primary-foreground">
-                    {locale === "am" ? "በጣም ተመራጭ" : "Most Popular"}
+                  <div className="bg-primary px-3 py-1 text-center text-xs font-semibold text-primary-foreground">
+                    {locale === "am" ? "ተመራጭ ዕቅድ" : "Recommended for active yards"}
                   </div>
                 )}
 
@@ -313,29 +313,29 @@ export function SubscriptionView({
                       {plan.name}
                     </CardTitle>
                     {isCurrent && (
-                      <Badge variant="outline" className="text-[10px] font-semibold border-emerald-500 text-emerald-600">
-                        {locale === "am" ? "የአሁኑ ዕቅድ" : "Current Plan"}
+                      <Badge variant="outline" className="text-xs font-semibold border-emerald-500/80 text-emerald-600 dark:text-emerald-400">
+                        {locale === "am" ? "የአሁኑ" : "Current"}
                       </Badge>
                     )}
                   </div>
                   <CardDescription className="text-xs">{plan.description}</CardDescription>
 
                   <div className="pt-4">
-                    <span className="font-mono text-3xl font-black text-foreground">
+                    <span className="font-mono text-3xl font-extrabold text-foreground tabular-nums">
                       {formatETB(plan.priceETB, locale)}
                     </span>
-                    <span className="text-xs font-semibold text-primary ml-1">
+                    <span className="text-xs font-semibold text-primary ml-1.5">
                       / {plan.durationDays >= 180
-                          ? (locale === "am" ? "6 ወር (180 ቀናት)" : "6 Months (180 Days)")
-                          : `${plan.durationDays} ${locale === "am" ? "ቀናት" : "Days"}`}
+                          ? (locale === "am" ? "6 ወር" : "6 months")
+                          : `${plan.durationDays} ${locale === "am" ? "ቀናት" : "days"}`}
                     </span>
                   </div>
                 </CardHeader>
 
                 <CardContent className="space-y-4 flex-1 flex flex-col justify-between">
-                  <div className="space-y-2 border-t border-border/40 pt-4">
+                  <div className="space-y-2.5 border-t border-border/50 pt-4">
                     {plan.features.map((feature, idx) => (
-                      <div key={idx} className="flex items-start gap-2 text-xs text-muted-foreground">
+                      <div key={idx} className="flex items-start gap-2.5 text-xs text-muted-foreground">
                         <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
                         <span>{feature}</span>
                       </div>
@@ -345,9 +345,9 @@ export function SubscriptionView({
                   <Button
                     onClick={() => handleOpenSubscribe(plan)}
                     variant={isFeatured ? "default" : "outline"}
-                    className="w-full mt-6 gap-2 font-bold shadow-xs"
+                    className="w-full mt-6 gap-2 font-semibold shadow-xs"
                   >
-                    <span>{isCurrent ? (locale === "am" ? "አድስ" : "Renew Plan") : (locale === "am" ? "ይህን ምረጥ" : "Select Plan")}</span>
+                    <span>{isCurrent ? (locale === "am" ? "አድስ" : "Renew plan") : (locale === "am" ? "ይህን ምረጥ" : "Select plan")}</span>
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </CardContent>
@@ -439,23 +439,23 @@ export function SubscriptionView({
 
       {/* Payment Instructions & Submission Modal */}
       <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
-        <DialogContent className="max-w-xl p-0 overflow-hidden border border-border shadow-2xl">
-          <DialogHeader className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 border-b border-border/60">
-            <div className="flex items-center gap-2 mb-1">
+        <DialogContent className="max-w-xl p-0 overflow-hidden border border-border shadow-xl">
+          <DialogHeader className="bg-muted/40 p-5 sm:p-6 border-b border-border">
+            <div className="flex items-center gap-2 mb-1.5">
               <Badge className="bg-primary text-primary-foreground font-semibold text-xs">
-                {selectedPlan?.tier} PLAN
+                {selectedPlan?.tier}
               </Badge>
-              <Badge variant="outline" className="font-mono text-xs font-bold">
+              <Badge variant="outline" className="font-mono text-xs font-bold tabular-nums">
                 {selectedPlan ? formatETB(selectedPlan.priceETB, locale) : ""}
               </Badge>
             </div>
-            <DialogTitle className="text-xl font-bold text-foreground">
-              {locale === "am" ? "የክፍያ ማረጋገጫ ያስገቡ" : "Complete Subscription Payment"}
+            <DialogTitle className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
+              {locale === "am" ? "የክፍያ ማረጋገጫ ያስገቡ" : "Confirm subscription payment"}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground mt-1">
               {locale === "am"
                 ? "በቴሌብር ወይም በባንክ የተላከውን የክፍያ ማረጋገጫ ቁጥር ያስገቡ። አስተዳዳሪው ወዲያውኑ አረጋግጦ ደንበኝነትዎን ያነቃዋል።"
-                : "Transfer the plan amount using Telebirr or Bank, then submit your transaction code below."}
+                : "Transfer the amount to an official ConMart account, then submit your transaction reference."}
             </DialogDescription>
           </DialogHeader>
 
@@ -466,7 +466,7 @@ export function SubscriptionView({
               </div>
               <div className="space-y-2">
                 <h3 className="text-lg font-bold text-foreground">
-                  {locale === "am" ? "የክፍያ ጥያቄዎ ደርሷል!" : "Payment Submitted!"}
+                  {locale === "am" ? "የክፍያ ጥያቄዎ ደርሷል!" : "Payment submitted"}
                 </h3>
                 <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
                   {formSuccess}
@@ -477,7 +477,7 @@ export function SubscriptionView({
               </Button>
             </div>
           ) : (
-            <form onSubmit={handleSubmitPayment} className="p-6 space-y-5">
+            <form onSubmit={handleSubmitPayment} className="p-5 sm:p-6 space-y-5">
               {formError && (
                 <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 shrink-0" />
@@ -486,43 +486,43 @@ export function SubscriptionView({
               )}
 
               {/* Step 1: Bank / Mobile Account Details */}
-              <div className="space-y-3">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  {locale === "am" ? "ደረጃ 1: ወደሚከተሉት ሂሳቦች ይላኩ" : "Step 1: Transfer to Official Accounts"}
-                </Label>
+              <div className="space-y-2.5">
+                <p className="text-xs font-semibold text-foreground">
+                  {locale === "am" ? "ደረጃ 1: ወደሚከተሉት ይላኩ" : "1. Transfer to official settlement account"}
+                </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-                  <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-1">
-                    <span className="font-bold text-foreground block">Telebirr</span>
-                    <span className="font-mono text-xs font-bold text-primary block">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                  <div className="rounded-lg border border-border bg-card p-3 space-y-1">
+                    <span className="font-semibold text-foreground block">Telebirr</span>
+                    <span className="font-mono text-xs font-bold text-primary block tabular-nums">
                       {SYSTEM_CONTACTS.primaryPhone}
                     </span>
-                    <span className="text-[10px] text-muted-foreground">ECON Wholesale</span>
+                    <span className="text-[11px] text-muted-foreground">ConMart Wholesale</span>
                   </div>
 
-                  <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-1">
-                    <span className="font-bold text-foreground block">CBE Birr</span>
-                    <span className="font-mono text-xs font-bold text-foreground block">
+                  <div className="rounded-lg border border-border bg-card p-3 space-y-1">
+                    <span className="font-semibold text-foreground block">CBE Birr</span>
+                    <span className="font-mono text-xs font-bold text-foreground block tabular-nums">
                       {SYSTEM_CONTACTS.secondaryPhone}
                     </span>
-                    <span className="text-[10px] text-muted-foreground">ECON General</span>
+                    <span className="text-[11px] text-muted-foreground">ConMart General</span>
                   </div>
 
-                  <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-1">
-                    <span className="font-bold text-foreground block">CBE Bank</span>
-                    <span className="font-mono text-xs font-bold text-foreground block">
+                  <div className="rounded-lg border border-border bg-card p-3 space-y-1">
+                    <span className="font-semibold text-foreground block">Commercial Bank</span>
+                    <span className="font-mono text-xs font-bold text-foreground block tabular-nums">
                       1000 4821 9482
                     </span>
-                    <span className="text-[10px] text-muted-foreground">ECON Trading PLC</span>
+                    <span className="text-[11px] text-muted-foreground">ConMart Trading PLC</span>
                   </div>
                 </div>
               </div>
 
               {/* Step 2: Payment Details Submission Form */}
-              <div className="space-y-4 pt-2 border-t border-border/40">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  {locale === "am" ? "ደረጃ 2: የላኩበትን ዝርዝር ያስገቡ" : "Step 2: Enter Transaction Details"}
-                </Label>
+              <div className="space-y-4 pt-3 border-t border-border/50">
+                <p className="text-xs font-semibold text-foreground">
+                  {locale === "am" ? "ደረጃ 2: የላኩበትን ዝርዝር ያስገቡ" : "2. Enter transaction details"}
+                </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">

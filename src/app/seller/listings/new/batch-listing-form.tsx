@@ -1551,6 +1551,7 @@ export function BatchListingForm({
                         <div className="relative flex-1">
                           <Input
                             type="number"
+                            inputMode="decimal"
                             min="0"
                             step="any"
                             value={item.availableQty}
@@ -1619,6 +1620,7 @@ export function BatchListingForm({
                           <div className="relative flex-1 max-w-xs">
                             <Input
                               type="number"
+                              inputMode="decimal"
                               min="0.1"
                               step="any"
                               value={item.unitPrice}

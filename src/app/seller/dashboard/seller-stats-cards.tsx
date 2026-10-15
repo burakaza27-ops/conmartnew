@@ -8,7 +8,6 @@
 // =============================================================================
 
 import { Package, ShoppingCart, MessageCircle } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { useLanguage } from "@/lib/i18n/language-context";
 
 interface SellerStatsCardsProps {
@@ -26,47 +25,41 @@ export function SellerStatsCards({
 
   return (
     <div className="grid gap-3 sm:grid-cols-3">
-      <Card className="border-border/60">
-        <CardContent className="flex items-center gap-3 p-4">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-            <Package className="size-4" />
-          </div>
-          <div>
-            <p className="text-2xs font-medium uppercase tracking-wide text-muted-foreground">
-              {t("seller_stat_listings", "Listings")}
-            </p>
-            <p className="text-lg font-semibold tabular-nums text-foreground">{listingsCount}</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="rounded-xl border border-border/60 bg-card p-4 flex items-center gap-3">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+          <Package className="size-5 text-muted-foreground" />
+        </div>
+        <div>
+          <p className="text-xs font-medium text-muted-foreground">
+            {t("seller_stat_listings", "Active listings")}
+          </p>
+          <p className="text-2xl font-bold tabular-nums text-foreground leading-none mt-0.5">{listingsCount}</p>
+        </div>
+      </div>
 
-      <Card className="border-border/60">
-        <CardContent className="flex items-center gap-3 p-4">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <ShoppingCart className="size-4" />
-          </div>
-          <div>
-            <p className="text-2xs font-medium uppercase tracking-wide text-muted-foreground">
-              {t("seller_stat_orders", "Orders")}
-            </p>
-            <p className="text-lg font-semibold tabular-nums text-foreground">{ordersCount}</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="rounded-xl border border-primary/25 bg-primary/5 p-4 flex items-center gap-3">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/15">
+          <ShoppingCart className="size-5 text-primary" />
+        </div>
+        <div>
+          <p className="text-xs font-medium text-muted-foreground">
+            {t("seller_stat_orders", "Purchase orders")}
+          </p>
+          <p className="text-2xl font-bold tabular-nums text-foreground leading-none mt-0.5">{ordersCount}</p>
+        </div>
+      </div>
 
-      <Card className="border-border/60">
-        <CardContent className="flex items-center gap-3 p-4">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-            <MessageCircle className="size-4" />
-          </div>
-          <div>
-            <p className="text-2xs font-medium uppercase tracking-wide text-muted-foreground">
-              {t("seller_stat_enquiries", "Enquiries")}
-            </p>
-            <p className="text-lg font-semibold tabular-nums text-foreground">{enquiriesCount}</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="rounded-xl border border-border/60 bg-card p-4 flex items-center gap-3">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+          <MessageCircle className="size-5 text-muted-foreground" />
+        </div>
+        <div>
+          <p className="text-xs font-medium text-muted-foreground">
+            {t("seller_stat_enquiries", "Buyer enquiries")}
+          </p>
+          <p className="text-2xl font-bold tabular-nums text-foreground leading-none mt-0.5">{enquiriesCount}</p>
+        </div>
+      </div>
     </div>
   );
 }

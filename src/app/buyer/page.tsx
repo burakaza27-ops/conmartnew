@@ -11,7 +11,6 @@ import {
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { PageHeader } from "@/components/layout/page-header";
 import { getSessionUser } from "@/lib/auth/session";
 import { fetchCategoriesWithCounts } from "@/lib/data/catalog";
 import { fetchRecentBuyerEnquiries } from "@/lib/data/buyer-history";
@@ -35,12 +34,15 @@ export default async function BuyerCategoryHubPage() {
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* ============================================================
-          HERO BANNER — COMPACT & ACTION-FIRST
+          HERO BANNER — COMMANDING & ACTION-FIRST
       ============================================================ */}
-      <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-xs">
-        <div className="pointer-events-none absolute inset-0 cm-glow opacity-60" />
-        <div className="relative max-w-2xl space-y-3.5">
-          <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        {/* Structural grid overlay — construction-site blueprint atmosphere */}
+        <div className="pointer-events-none absolute inset-0 cm-grid opacity-35" />
+        <div className="pointer-events-none absolute inset-0 cm-glow opacity-55" />
+
+        <div className="relative px-5 py-6 sm:px-7 sm:py-8">
+          <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
             <p className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
               <ShieldCheck className="size-3.5" />
               Depot-direct wholesale · Addis Ababa
@@ -56,61 +58,57 @@ export default async function BuyerCategoryHubPage() {
             )}
           </div>
 
-          <PageHeader
-            className="border-0 pb-0"
-            title={
-              isAnonymous
+          <div className="max-w-2xl space-y-4">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+              {isAnonymous
                 ? "What do you want to buy?"
-                : `Welcome back, ${buyerName} — What do you want to buy?`
-            }
-            description={
-              isAnonymous
-                ? "Find construction materials near you — free. Search suppliers, see their location, and get help from our team if you need it."
-                : `${companyName} — search verified depots, see direct contact details, or request a free agent visit.`
-            }
+                : `Welcome back, ${buyerName} — what do you need today?`}
+            </h1>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              {isAnonymous
+                ? "Find construction materials from verified depots in Addis Ababa — free. See direct contact details or request a free field agent visit."
+                : `${companyName} — search verified depots, see their contact details, or request a free agent visit.`}
+            </p>
 
-          />
-
-          <form
-            action="/buyer/category/all"
-            method="GET"
-            className="flex flex-col gap-2 sm:flex-row sm:items-center"
-          >
-            <div className="relative flex-1">
-              <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="search"
-                name="search"
-                placeholder="Search Dangote, Zuquala rebar, river sand, HCB, pipes…"
-                className="h-10 sm:h-11 rounded-xl bg-background pl-10 text-sm"
-              />
-            </div>
-            <button
-              type="submit"
-              className={cn(
-                buttonVariants({ size: "default" }),
-                "h-10 sm:h-11 rounded-xl font-semibold px-5"
-              )}
+            <form
+              action="/buyer/category/all"
+              method="GET"
+              className="flex flex-col gap-2 sm:flex-row sm:items-center"
             >
-              Search
-              <ArrowRight className="size-4" />
-            </button>
-          </form>
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="search"
+                  name="search"
+                  placeholder="Search Dangote, Zuquala rebar, river sand, HCB, pipes…"
+                  className="h-11 rounded-xl bg-background/70 pl-10 text-sm"
+                />
+              </div>
+              <button
+                type="submit"
+                className={cn(
+                  buttonVariants({ size: "default" }),
+                  "h-11 rounded-xl font-semibold px-6 shrink-0"
+                )}
+              >
+                Search
+                <ArrowRight className="size-4" />
+              </button>
+            </form>
 
-          {/* Quick preset chips */}
-          <div className="flex flex-wrap items-center gap-1.5 text-xs">
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mr-1">
-              Quick:
-            </span>
-            <QuickChip href="/buyer/category/cement">1. Cement</QuickChip>
-            <QuickChip href="/buyer/category/steel">2. Rebar</QuickChip>
-            <QuickChip href="/buyer/category/aggregates">3. Sand</QuickChip>
-            <QuickChip href="/buyer/category/ready-mix-concrete">4. Concrete</QuickChip>
-            <QuickChip href="/buyer/category/blocks">12. HCB</QuickChip>
-            <QuickChip href="/buyer/stores">
-              <Store className="size-3 mr-0.5" />
-              All Stores
-            </QuickChip>
+            {/* Quick preset chips */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">Jump to:</span>
+              <QuickChip href="/buyer/category/cement">Cement</QuickChip>
+              <QuickChip href="/buyer/category/steel">Rebar</QuickChip>
+              <QuickChip href="/buyer/category/aggregates">Sand</QuickChip>
+              <QuickChip href="/buyer/category/ready-mix-concrete">Concrete</QuickChip>
+              <QuickChip href="/buyer/category/blocks">HCB</QuickChip>
+              <QuickChip href="/buyer/stores">
+                <Store className="size-3 mr-0.5" />
+                All Stores
+              </QuickChip>
+            </div>
           </div>
         </div>
       </div>
@@ -167,11 +165,11 @@ export default async function BuyerCategoryHubPage() {
       {/* ============================================================
           HOW IT WORKS
       ============================================================ */}
-      <section className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs">
-        <h2 className="text-center text-base sm:text-lg font-bold">
+      <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+        <h2 className="text-base sm:text-lg font-bold tracking-tight">
           How introductions work
         </h2>
-        <p className="mx-auto mt-1 max-w-lg text-center text-xs sm:text-sm text-muted-foreground">
+        <p className="mt-1 max-w-lg text-xs sm:text-sm leading-relaxed text-muted-foreground">
           You never pay to browse. If the supplier subscribes, you get their direct phone number — otherwise our agents take you to their shop at no extra cost.
         </p>
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -206,7 +204,7 @@ function QuickChip({
   return (
     <Link
       href={href}
-      className="inline-flex items-center rounded-full border border-border bg-background px-2.5 py-0.5 text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+      className="inline-flex items-center rounded-full border border-border/80 bg-background/50 px-2.5 py-0.5 text-xs text-muted-foreground transition-all hover:border-primary/50 hover:bg-primary/5 hover:text-foreground"
     >
       {children}
     </Link>
@@ -223,12 +221,12 @@ function Guarantee({
   body: string;
 }) {
   return (
-    <div className="rounded-xl border border-border/70 bg-background/50 p-3.5">
-      <span className="mb-2 flex size-7 items-center justify-center rounded-lg bg-primary/12 text-primary">
-        <Icon className="size-3.5" />
+    <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
+      <span className="mb-3 flex size-8 items-center justify-center rounded-lg bg-primary/12 text-primary">
+        <Icon className="size-4" />
       </span>
-      <h3 className="text-xs sm:text-sm font-semibold">{title}</h3>
-      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{body}</p>
+      <h3 className="text-sm font-semibold">{title}</h3>
+      <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{body}</p>
     </div>
   );
 }

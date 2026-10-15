@@ -259,7 +259,7 @@ export function AdminSubscriptionsView({
                           </a>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="font-mono text-[10px] uppercase font-bold">
+                          <Badge variant="outline" className="font-mono text-xs font-semibold">
                             {p.tier}
                           </Badge>
                         </TableCell>
