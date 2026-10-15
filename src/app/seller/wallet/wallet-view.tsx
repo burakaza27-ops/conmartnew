@@ -285,12 +285,18 @@ export function SellerWalletView({ initialData }: SellerWalletViewProps) {
                     <span className="truncate max-w-[120px]">{p.referenceCode}</span>
                   </div>
                   <div className="text-[11px] text-muted-foreground">
-                    {new Date(p.createdAt).toLocaleDateString(locale === "am" ? "am-ET" : "en-US", {
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    {(() => {
+                      try {
+                        return new Date(p.createdAt).toLocaleString(locale === "am" ? "am-ET" : "en-US", {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        });
+                      } catch {
+                        return String(p.createdAt);
+                      }
+                    })()}
                   </div>
                 </div>
                 <Badge variant="outline" className="border-amber-500 text-amber-600 dark:text-amber-400 bg-amber-500/10 font-medium">
@@ -338,16 +344,22 @@ export function SellerWalletView({ initialData }: SellerWalletViewProps) {
                     return (
                       <tr key={tx.id} className="hover:bg-muted/40 transition-colors">
                         <td className="py-3 px-4 text-xs text-muted-foreground whitespace-nowrap">
-                          {new Date(tx.createdAt).toLocaleDateString(
-                            locale === "am" ? "am-ET" : "en-US",
-                            {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
+                          {(() => {
+                            try {
+                              return new Date(tx.createdAt).toLocaleString(
+                                locale === "am" ? "am-ET" : "en-US",
+                                {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                }
+                              );
+                            } catch {
+                              return String(tx.createdAt);
                             }
-                          )}
+                          })()}
                         </td>
                         <td className="py-3 px-4 whitespace-nowrap">
                           {getTxTypeBadge(tx.type)}

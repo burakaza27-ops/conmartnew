@@ -796,10 +796,19 @@ export function AgentLeadsView({
                       </div>
 
                       <div className="text-[11px] text-muted-foreground">
-                        {new Date(lead.createdAt).toLocaleDateString(locale === "am" ? "am-ET" : "en-US", {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        })}
+                        {(() => {
+                          try {
+                            return new Date(lead.createdAt).toLocaleString(
+                              locale === "am" ? "am-ET" : "en-US",
+                              {
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                              }
+                            );
+                          } catch {
+                            return String(lead.createdAt);
+                          }
+                        })()}
                       </div>
                     </div>
 

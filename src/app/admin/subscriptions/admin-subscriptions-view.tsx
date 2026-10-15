@@ -284,10 +284,19 @@ export function AdminSubscriptionsView({
                           )}
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
-                          {new Date(p.createdAt).toLocaleDateString(locale === "am" ? "am-ET" : "en-US", {
-                            dateStyle: "medium",
-                            timeStyle: "short",
-                          })}
+                          {(() => {
+                            try {
+                              return new Date(p.createdAt).toLocaleString(
+                                locale === "am" ? "am-ET" : "en-US",
+                                {
+                                  dateStyle: "medium",
+                                  timeStyle: "short",
+                                }
+                              );
+                            } catch {
+                              return String(p.createdAt);
+                            }
+                          })()}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1.5">
