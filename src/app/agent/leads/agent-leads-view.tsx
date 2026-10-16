@@ -32,7 +32,6 @@ import {
   FileEdit,
   Truck,
   RotateCcw,
-  Wallet,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -50,12 +49,11 @@ import {
 } from "@/components/ui/dialog";
 import { updateGuidedLeadStatusAction } from "@/app/actions/leads";
 import {
-  toggleAgentAvailabilityAction,
   toggleAgentOnlineStatusAction,
   acceptNearbyRequestAction,
   disputeLeadAssignmentAction,
 } from "@/app/actions/agents";
-import { GuidedLeadStatus, AgentApprovalStatus } from "@prisma/client";
+import { GuidedLeadStatus, AgentApprovalStatus, Prisma } from "@prisma/client";
 import { useLanguage } from "@/lib/i18n/language-context";
 
 export interface GuidedLeadItem {
@@ -94,7 +92,7 @@ export interface AgentProfileSummary {
   vehicleType?: string | null;
   vehiclePlateNumber?: string | null;
   introductoryEndsAt?: string | Date | null;
-  jobCreditBalance?: any | number | string | null;
+  jobCreditBalance?: Prisma.Decimal | number | string | null;
   serviceArea?: string | null;
   approvalStatus?: AgentApprovalStatus | string;
   rejectionReason?: string | null;
@@ -135,11 +133,7 @@ export function AgentLeadsView({
   const [areaFilter, setAreaFilter] = useState("");
 
   // Agent availability & real-time dispatch state
-  const [isAvailable, setIsAvailable] = useState<boolean>(
-    agentProfile?.isAvailableForAssignments ?? true
-  );
   const [isOnline, setIsOnline] = useState<boolean>(agentProfile?.isOnline ?? true);
-  const [togglingAvailability, setTogglingAvailability] = useState(false);
   const [togglingOnline, setTogglingOnline] = useState(false);
 
   // Modals state
@@ -176,24 +170,6 @@ export function AgentLeadsView({
       setActionError("Failed to update dispatch online status.");
     } finally {
       setTogglingOnline(false);
-    }
-  };
-
-  // Availability Switch Toggle
-  const handleToggleAvailability = async (checked: boolean) => {
-    setIsAvailable(checked);
-    setTogglingAvailability(true);
-    try {
-      const res = await toggleAgentAvailabilityAction(checked);
-      if (!res.success) {
-        setIsAvailable(!checked); // revert on error
-        setActionError(res.error);
-      }
-    } catch {
-      setIsAvailable(!checked);
-      setActionError("Failed to update availability status.");
-    } finally {
-      setTogglingAvailability(false);
     }
   };
 

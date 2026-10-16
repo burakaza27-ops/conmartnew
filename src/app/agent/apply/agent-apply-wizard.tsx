@@ -22,19 +22,14 @@ import {
   FileText,
   AlertCircle,
   Truck,
-  Building2,
   Users,
   Send,
   Loader2,
-  ChevronRight,
   ArrowLeft,
   ArrowRight,
-  Check,
-  Lock,
   Sparkles,
   Phone,
   Clock,
-  Car,
   BadgeCheck,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,6 +40,7 @@ import { Badge } from "@/components/ui/badge";
 import { submitAgentApplicationAction } from "@/app/actions/agents";
 import { useLanguage } from "@/lib/i18n/language-context";
 import { ETHIOPIAN_MARKETPLACE_HUBS, MarketplaceHub } from "@/lib/validations";
+import type { Prisma } from "@prisma/client";
 
 export interface ExistingAgentProfile {
   id?: string;
@@ -65,7 +61,7 @@ export interface ExistingAgentProfile {
   rejectionReason?: string | null;
   isOnline?: boolean | null;
   introductoryEndsAt?: string | Date | null;
-  jobCreditBalance?: any | number | string | null;
+  jobCreditBalance?: Prisma.Decimal | number | string | null;
   createdAt?: string;
   updatedAt?: string;
   user?: {
@@ -76,6 +72,9 @@ export interface ExistingAgentProfile {
   } | null;
   [key: string]: unknown;
 }
+
+type ServiceTypeOption = "SUPPLIER_ASSISTANCE" | "TRANSPORT_DELIVERY" | "BOTH";
+type VehicleTypeOption = "PICKUP" | "ISUZU" | "SINO_TRUCK" | "MOTORCYCLE" | "NONE_FOOT";
 
 interface AgentApplyWizardProps {
   user: {
@@ -119,19 +118,19 @@ export function AgentApplyWizard({ user, existingProfile }: AgentApplyWizardProp
   // --- Step 2: Personal Details & Hub Station ---
   const [fullName, setFullName] = useState(existingProfile?.user?.name || user.name || "");
   const [phone, setPhone] = useState(existingProfile?.user?.phone || user.phone || "");
-  const [city, setCity] = useState(existingProfile?.city || "Addis Ababa");
+  const city = existingProfile?.city || "Addis Ababa";
   const [subCity, setSubCity] = useState(existingProfile?.subCity || "Yeka");
   const [marketplaceHub, setMarketplaceHub] = useState<MarketplaceHub>(
     (existingProfile?.marketplaceHub as MarketplaceHub) || "Megenagna"
   );
 
   // --- Step 3: Service Capabilities & Vehicle ---
-  const [serviceType, setServiceType] = useState<"SUPPLIER_ASSISTANCE" | "TRANSPORT_DELIVERY" | "BOTH">(
-    (existingProfile?.serviceType as any) || "BOTH"
+  const [serviceType, setServiceType] = useState<ServiceTypeOption>(
+    (existingProfile?.serviceType as ServiceTypeOption) || "BOTH"
   );
-  const [vehicleType, setVehicleType] = useState<
-    "PICKUP" | "ISUZU" | "SINO_TRUCK" | "MOTORCYCLE" | "NONE_FOOT"
-  >((existingProfile?.vehicleType as any) || "ISUZU");
+  const [vehicleType, setVehicleType] = useState<VehicleTypeOption>(
+    (existingProfile?.vehicleType as VehicleTypeOption) || "ISUZU"
+  );
   const [vehiclePlateNumber, setVehiclePlateNumber] = useState(
     existingProfile?.vehiclePlateNumber || ""
   );
@@ -608,30 +607,32 @@ export function AgentApplyWizard({ user, existingProfile }: AgentApplyWizardProp
                 Service Type (የአገልግሎት ዓይነት) *
               </Label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {[
-                  {
-                    id: "BOTH",
-                    title: "Both (Recommended)",
-                    amharic: "ዕቃ ማፈላለግ እና ትራንስፖርት",
-                    desc: "Material sourcing + Truck delivery",
-                  },
-                  {
-                    id: "TRANSPORT_DELIVERY",
-                    title: "Transport / Truck Delivery",
-                    amharic: "የትራንስፖርት እና ጭነት ማድረስ",
-                    desc: "Pickup, Isuzu or Sino delivery",
-                  },
-                  {
-                    id: "SUPPLIER_ASSISTANCE",
-                    title: "Supplier Finding Only",
-                    amharic: "የመጋዘን ዕቃ ማፈላለግ ብቻ",
-                    desc: "Depot runner on foot / transit",
-                  },
-                ].map((st) => (
+                {(
+                  [
+                    {
+                      id: "BOTH",
+                      title: "Both (Recommended)",
+                      amharic: "ዕቃ ማፈላለግ እና ትራንስፖርት",
+                      desc: "Material sourcing + Truck delivery",
+                    },
+                    {
+                      id: "TRANSPORT_DELIVERY",
+                      title: "Transport / Truck Delivery",
+                      amharic: "የትራንስፖርት እና ጭነት ማድረስ",
+                      desc: "Pickup, Isuzu or Sino delivery",
+                    },
+                    {
+                      id: "SUPPLIER_ASSISTANCE",
+                      title: "Supplier Finding Only",
+                      amharic: "የመጋዘን ዕቃ ማፈላለግ ብቻ",
+                      desc: "Depot runner on foot / transit",
+                    },
+                  ] as const
+                ).map((st) => (
                   <button
                     key={st.id}
                     type="button"
-                    onClick={() => setServiceType(st.id as any)}
+                    onClick={() => setServiceType(st.id)}
                     className={`p-4 rounded-xl border text-left transition-all ${
                       serviceType === st.id
                         ? "border-primary bg-primary/10 shadow-sm ring-2 ring-primary/20 text-foreground"
@@ -664,16 +665,18 @@ export function AgentApplyWizard({ user, existingProfile }: AgentApplyWizardProp
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {[
-                    { id: "ISUZU", label: "Isuzu (NPR/FSR)", desc: "3.5 - 7 Ton Medium Truck" },
-                    { id: "PICKUP", label: "Pickup / Hilux", desc: "1 - 1.5 Ton Light Hauler" },
-                    { id: "SINO_TRUCK", label: "Sino / Dump Truck", desc: "10 - 20 Ton Heavy Tipper" },
-                    { id: "MOTORCYCLE", label: "Motorcycle", desc: "Fast courier / small parts" },
-                  ].map((v) => (
+                  {(
+                    [
+                      { id: "ISUZU", label: "Isuzu (NPR/FSR)", desc: "3.5 - 7 Ton Medium Truck" },
+                      { id: "PICKUP", label: "Pickup / Hilux", desc: "1 - 1.5 Ton Light Hauler" },
+                      { id: "SINO_TRUCK", label: "Sino / Dump Truck", desc: "10 - 20 Ton Heavy Tipper" },
+                      { id: "MOTORCYCLE", label: "Motorcycle", desc: "Fast courier / small parts" },
+                    ] as const
+                  ).map((v) => (
                     <button
                       key={v.id}
                       type="button"
-                      onClick={() => setVehicleType(v.id as any)}
+                      onClick={() => setVehicleType(v.id)}
                       className={`p-3.5 rounded-xl border text-left transition-all ${
                         vehicleType === v.id
                           ? "border-primary bg-primary/10 ring-2 ring-primary/20 text-foreground"

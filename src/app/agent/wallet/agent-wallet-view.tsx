@@ -16,7 +16,6 @@ import Link from "next/link";
 import {
   Wallet,
   Sparkles,
-  CreditCard,
   PlusCircle,
   ArrowUpRight,
   ArrowDownLeft,
@@ -26,11 +25,7 @@ import {
   CheckCircle2,
   AlertCircle,
   MapPin,
-  Truck,
   Loader2,
-  Building2,
-  HelpCircle,
-  Radio,
   ExternalLink,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -164,7 +159,7 @@ export function AgentWalletView({ wallet: initialWallet, userName }: AgentWallet
     }
   };
 
-  const getTxTypeBadge = (type: string, amount: number) => {
+  const getTxTypeBadge = (type: string) => {
     switch (type) {
       case "TOP_UP":
         return (
@@ -398,7 +393,7 @@ export function AgentWalletView({ wallet: initialWallet, userName }: AgentWallet
                             minute: "2-digit",
                           })}
                         </td>
-                        <td className="p-3.5">{getTxTypeBadge(tx.type, tx.amount)}</td>
+                        <td className="p-3.5">{getTxTypeBadge(tx.type)}</td>
                         <td className="p-3.5 font-mono text-xs font-semibold text-foreground">
                           {tx.referenceCode || tx.leadId || "—"}
                         </td>

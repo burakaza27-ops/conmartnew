@@ -16,7 +16,6 @@ import {
   CreditCard,
   UserCheck,
   Inbox,
-  Sparkles,
   ArrowRight,
   Building2,
   Users,
@@ -69,8 +68,13 @@ export default async function CommandCenterPage() {
   const disputes = disputesRes.success && disputesRes.data ? disputesRes.data : [];
   const sellers = sellersRes.success && sellersRes.data ? sellersRes.data : [];
   const agentApps = agentsRes.success && agentsRes.data ? agentsRes.data : [];
-  const pendingAgents = agentApps.filter((a: any) => a.approvalStatus === "UNDER_REVIEW" || a.approvalStatus === "SUBMITTED");
-  const pendingWastages = wastages.filter((w: any) => w.status === "PENDING");
+  const pendingAgents = agentApps.filter(
+    (a: { approvalStatus?: string }) =>
+      a.approvalStatus === "UNDER_REVIEW" || a.approvalStatus === "SUBMITTED"
+  );
+  const pendingWastages = wastages.filter(
+    (w: { status?: string }) => w.status === "PENDING"
+  );
 
   return (
     <div className="space-y-8">

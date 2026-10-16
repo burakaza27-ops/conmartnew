@@ -17,7 +17,6 @@ import {
   RefreshCw,
   Check,
   ArrowRight,
-  ExternalLink,
   Sparkles,
 } from "lucide-react";
 import type { UserRole } from "@prisma/client";

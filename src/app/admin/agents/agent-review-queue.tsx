@@ -13,12 +13,10 @@ import {
   Search,
   ExternalLink,
   MapPin,
-  Building2,
   UserCheck,
   Check,
   Loader2,
   Truck,
-  Radio,
   Sparkles,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -35,7 +33,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { reviewAgentApplicationAction } from "@/app/actions/agents";
-import { AgentApprovalStatus } from "@prisma/client";
+import { AgentApprovalStatus, Prisma } from "@prisma/client";
 
 export interface AgentApplicationRecord {
   id: string;
@@ -49,7 +47,7 @@ export interface AgentApplicationRecord {
   vehiclePlateNumber?: string | null;
   isOnline?: boolean | null;
   introductoryEndsAt?: string | Date | null;
-  jobCreditBalance?: any | number | string | null;
+  jobCreditBalance?: Prisma.Decimal | number | string | null;
   travelRadiusKm?: number | null;
   availableDaysHours?: string | null;
   experienceYears?: number | null;
@@ -585,7 +583,7 @@ export function AgentReviewQueue({ initialApplications }: AgentReviewQueueProps)
                       <div className="flex items-center justify-between text-muted-foreground pt-0.5">
                         <span>Job Credits:</span>
                         <span className="font-mono font-bold text-foreground">
-                          ETB {Number(app.jobCreditBalance || 0).toLocaleString()}
+                          ETB {Number(app.jobCreditBalance?.toString() || 0).toLocaleString()}
                         </span>
                       </div>
                     </div>

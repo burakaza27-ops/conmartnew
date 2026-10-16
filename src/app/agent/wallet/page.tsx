@@ -22,11 +22,13 @@ export default async function AgentWalletPage() {
     redirect("/login?next=/agent/wallet");
   }
 
+  let wallet;
   try {
-    const wallet = await getAgentWalletStatus(auth.user.id);
-    return <AgentWalletView wallet={wallet} userName={auth.user.name} />;
+    wallet = await getAgentWalletStatus(auth.user.id);
   } catch {
     // If agent profile is not created yet, redirect to apply
     redirect("/agent/apply");
   }
+
+  return <AgentWalletView wallet={wallet} userName={auth.user.name} />;
 }
