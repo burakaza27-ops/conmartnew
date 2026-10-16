@@ -30,6 +30,9 @@ import {
   Check,
   Sparkles,
   FileEdit,
+  Truck,
+  RotateCcw,
+  Wallet,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -48,7 +51,9 @@ import {
 import { updateGuidedLeadStatusAction } from "@/app/actions/leads";
 import {
   toggleAgentAvailabilityAction,
+  toggleAgentOnlineStatusAction,
   acceptNearbyRequestAction,
+  disputeLeadAssignmentAction,
 } from "@/app/actions/agents";
 import { GuidedLeadStatus, AgentApprovalStatus } from "@prisma/client";
 import { useLanguage } from "@/lib/i18n/language-context";
@@ -83,6 +88,13 @@ export interface GuidedLeadItem {
 export interface AgentProfileSummary {
   id?: string;
   isAvailableForAssignments?: boolean;
+  isOnline?: boolean;
+  marketplaceHub?: string | null;
+  serviceType?: string | null;
+  vehicleType?: string | null;
+  vehiclePlateNumber?: string | null;
+  introductoryEndsAt?: string | Date | null;
+  jobCreditBalance?: any | number | string | null;
   serviceArea?: string | null;
   approvalStatus?: AgentApprovalStatus | string;
   rejectionReason?: string | null;
@@ -122,11 +134,13 @@ export function AgentLeadsView({
   const [search, setSearch] = useState("");
   const [areaFilter, setAreaFilter] = useState("");
 
-  // Agent availability state
+  // Agent availability & real-time dispatch state
   const [isAvailable, setIsAvailable] = useState<boolean>(
     agentProfile?.isAvailableForAssignments ?? true
   );
+  const [isOnline, setIsOnline] = useState<boolean>(agentProfile?.isOnline ?? true);
   const [togglingAvailability, setTogglingAvailability] = useState(false);
+  const [togglingOnline, setTogglingOnline] = useState(false);
 
   // Modals state
   const [deliveringLead, setDeliveringLead] = useState<GuidedLeadItem | null>(null);
@@ -136,8 +150,34 @@ export function AgentLeadsView({
   const [closingLead, setClosingLead] = useState<GuidedLeadItem | null>(null);
   const [closeReason, setCloseReason] = useState("");
 
+  // Dispute modal state
+  const [disputeModalLead, setDisputeModalLead] = useState<GuidedLeadItem | null>(null);
+  const [disputeReason, setDisputeReason] = useState("");
+  const [submittingDispute, setSubmittingDispute] = useState(false);
+  const [disputeSuccessMsg, setDisputeSuccessMsg] = useState<string | null>(null);
+
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  // Online / Offline Switch Toggle
+  const handleToggleOnline = async () => {
+    const nextStatus = !isOnline;
+    setIsOnline(nextStatus);
+    setTogglingOnline(true);
+    setActionError(null);
+    try {
+      const res = await toggleAgentOnlineStatusAction(nextStatus);
+      if (!res.success) {
+        setIsOnline(!nextStatus);
+        setActionError(res.error);
+      }
+    } catch {
+      setIsOnline(!nextStatus);
+      setActionError("Failed to update dispatch online status.");
+    } finally {
+      setTogglingOnline(false);
+    }
+  };
 
   // Availability Switch Toggle
   const handleToggleAvailability = async (checked: boolean) => {
@@ -154,6 +194,38 @@ export function AgentLeadsView({
       setActionError("Failed to update availability status.");
     } finally {
       setTogglingAvailability(false);
+    }
+  };
+
+  // Dispute Submission
+  const handleDisputeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!disputeModalLead || !disputeReason.trim()) return;
+    setSubmittingDispute(true);
+    setActionError(null);
+    try {
+      const res = await disputeLeadAssignmentAction({
+        leadId: disputeModalLead.id,
+        reason: disputeReason.trim(),
+      });
+      if (!res.success) {
+        setActionError(res.error);
+      } else {
+        setDisputeSuccessMsg(
+          res.data.refunded
+            ? "Dispute approved. 100 ETB has been refunded to your wallet."
+            : "Dispute recorded. No fee was deducted under your 6-month free intro."
+        );
+        setTimeout(() => {
+          setDisputeModalLead(null);
+          setDisputeReason("");
+          setDisputeSuccessMsg(null);
+        }, 1500);
+      }
+    } catch {
+      setActionError("Failed to submit dispute.");
+    } finally {
+      setSubmittingDispute(false);
     }
   };
 
@@ -580,37 +652,58 @@ export function AgentLeadsView({
             </div>
           </div>
 
-          {/* Availability Toggle Switch */}
-          <div className="flex items-center gap-3 rounded-lg border border-border/80 bg-muted/20 px-3.5 py-2 self-start sm:self-auto">
+          {/* Dispatch ONLINE/OFFLINE switch */}
+          <div className="flex items-center gap-3 rounded-xl border border-border/80 bg-muted/20 px-4 py-2.5 self-start sm:self-auto">
             <div className="space-y-0.5">
-              <span className="text-xs font-bold text-foreground block">
-                {isAvailable ? "Dispatch Receiving Active" : "Dispatch Paused"}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span
+                  className={`size-2 rounded-full ${
+                    isOnline ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground"
+                  }`}
+                />
+                <span className="text-xs font-bold text-foreground">
+                  {isOnline ? "ONLINE — Receiving Dispatch" : "OFFLINE — Dispatch Paused"}
+                </span>
+              </div>
               <span className="text-[10px] text-muted-foreground block font-mono">
-                {isAvailable ? "Ready for site calls" : "Temporarily offline"}
+                {isOnline
+                  ? `Active in ${agentProfile?.marketplaceHub || "Megenagna"}`
+                  : "Switch online to receive contractor leads"}
               </span>
             </div>
             <Switch
-              checked={isAvailable}
-              disabled={togglingAvailability}
-              onCheckedChange={handleToggleAvailability}
+              checked={isOnline}
+              disabled={togglingOnline}
+              onCheckedChange={handleToggleOnline}
               className="accent-primary"
             />
           </div>
         </div>
 
-        {/* Service Area & Coverage Banner */}
+        {/* Hub Station & Driver Profile Banner */}
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <span className="font-semibold text-foreground">Assigned Jurisdiction:</span>
-            <Badge variant="outline" className="gap-1.5 font-mono text-xs text-foreground border-border bg-background">
+          <div className="flex items-center gap-2 flex-wrap text-muted-foreground">
+            <span className="font-semibold text-foreground">Stationed Hub:</span>
+            <Badge variant="outline" className="gap-1.5 font-mono text-xs text-primary border-primary/30 bg-primary/5 font-bold">
               <MapPin className="h-3 w-3 text-primary" />
-              {agentProfile?.serviceArea || "Bole Sub-City"} ({agentProfile?.travelRadiusKm || 5} km radius)
+              {agentProfile?.marketplaceHub || "Megenagna"}
             </Badge>
+
+            <Badge variant="secondary" className="gap-1 font-mono text-[11px]">
+              <Truck className="h-3 w-3" />
+              {agentProfile?.vehicleType || "ISUZU"} {agentProfile?.vehiclePlateNumber ? `(${agentProfile.vehiclePlateNumber})` : ""}
+            </Badge>
+
+            <Link href="/agent/wallet">
+              <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 text-[10px] gap-1 font-semibold hover:bg-emerald-500/20 cursor-pointer">
+                <Sparkles className="h-2.5 w-2.5" />
+                6-Month Free Intro Active • Wallet
+              </Badge>
+            </Link>
           </div>
 
           <div className="text-[11px] text-muted-foreground font-mono">
-            Operating Hours: <strong className="text-foreground">{agentProfile?.availableDaysHours || "Mon - Fri, 08:30 - 17:30 EAT"}</strong>
+            Operating Hours: <strong className="text-foreground">{agentProfile?.availableDaysHours || "Mon - Sat, 08:00 - 18:00 EAT"}</strong>
           </div>
         </div>
       </div>
@@ -934,16 +1027,29 @@ export function AgentLeadsView({
                         )}
 
                         {lead.status === GuidedLeadStatus.ASSIGNED && (
-                          <Button
-                            size="sm"
-                            disabled={isLoading}
-                            onClick={() => handleStartGuiding(lead.id)}
-                            className="gap-1.5 text-xs font-bold"
-                          >
-                            {isLoading && <Loader2 className="h-3 w-3 animate-spin" />}
-                            <ArrowRight className="h-3.5 w-3.5" />
-                            <span>Start Guiding</span>
-                          </Button>
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={isLoading}
+                              onClick={() => setDisputeModalLead(lead)}
+                              className="gap-1.5 text-xs text-amber-700 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10 font-semibold"
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" />
+                              <span>Unreachable / Dispute</span>
+                            </Button>
+
+                            <Button
+                              size="sm"
+                              disabled={isLoading}
+                              onClick={() => handleStartGuiding(lead.id)}
+                              className="gap-1.5 text-xs font-bold"
+                            >
+                              {isLoading && <Loader2 className="h-3 w-3 animate-spin" />}
+                              <ArrowRight className="h-3.5 w-3.5" />
+                              <span>Start Guiding</span>
+                            </Button>
+                          </>
                         )}
 
                         {lead.status === GuidedLeadStatus.GUIDING && (
@@ -1096,6 +1202,75 @@ export function AgentLeadsView({
                   <Loader2 className="h-3 w-3 animate-spin mr-1.5" />
                 )}
                 Close Lead
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dispute / Unreachable Buyer Dialog */}
+      <Dialog
+        open={!!disputeModalLead}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDisputeModalLead(null);
+            setDisputeReason("");
+            setDisputeSuccessMsg(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold flex items-center gap-2 text-amber-700 dark:text-amber-400">
+              <RotateCcw className="h-5 w-5" />
+              <span>Dispute Assignment / Unreachable Buyer</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              If the buyer is fake or unreachable after repeated calls, dispute this lead to receive an immediate 100 ETB job credit refund to your wallet.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleDisputeSubmit} className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Reason for Dispute *</Label>
+              <Textarea
+                required
+                value={disputeReason}
+                onChange={(e) => setDisputeReason(e.target.value)}
+                placeholder="e.g. Buyer's phone is switched off after 3 attempts across 2 hours, wrong material request, or fake order."
+                rows={3}
+                className="text-xs"
+              />
+            </div>
+
+            {disputeSuccessMsg && (
+              <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/30 p-3 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                <span>{disputeSuccessMsg}</span>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setDisputeModalLead(null);
+                  setDisputeReason("");
+                  setDisputeSuccessMsg(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={submittingDispute || !disputeReason.trim()}
+                className="bg-amber-600 hover:bg-amber-700 text-white font-bold gap-1.5"
+              >
+                {submittingDispute && <Loader2 className="h-3 w-3 animate-spin" />}
+                Submit Dispute & Claim Refund
               </Button>
             </div>
           </form>

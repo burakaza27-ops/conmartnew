@@ -61,6 +61,7 @@ export function ProductOffersView({ product, isAuthenticated = false }: ProductO
   );
   const [guidedOfferModal, setGuidedOfferModal] = useState<CompetingOffer | null>(null);
   const [expandedTiersListingId, setExpandedTiersListingId] = useState<string | null>(null);
+  const [selectedQty, setSelectedQty] = useState<number | null>(null);
 
   const unitLabel = getLocalizedUnit(product.unit, locale);
   const localizedCategory = getCategoryTitle(
@@ -158,6 +159,40 @@ export function ProductOffersView({ product, isAuthenticated = false }: ProductO
             <p className="text-xs text-muted-foreground mt-0.5">
               {t("offers_competing_depots_desc")}
             </p>
+          </div>
+        </div>
+
+        {/* Quick Quantity Selector */}
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          <span className="text-xs font-semibold text-muted-foreground mr-1">
+            {locale === "am" ? "ብዛት ምረጥ:" : "Quick select:"}
+          </span>
+          {[50, 100, 500, 1000].map((qty) => (
+            <button
+              key={qty}
+              onClick={() => setSelectedQty(selectedQty === qty ? null : qty)}
+              className={cn(
+                "rounded-md border px-3 py-1.5 text-xs font-bold tabular-nums transition-all touch-target",
+                selectedQty === qty
+                  ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                  : "border-border bg-muted/40 text-foreground hover:border-primary/50 hover:bg-primary/5"
+              )}
+            >
+              {qty.toLocaleString()} {unitLabel}
+            </button>
+          ))}
+          <div className="flex items-center gap-1.5">
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder={locale === "am" ? "ሌላ..." : "Custom..."}
+              className="w-20 rounded-md border border-border bg-background px-2 py-1.5 text-xs font-bold tabular-nums placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+              value={selectedQty && ![50, 100, 500, 1000].includes(selectedQty) ? selectedQty : ""}
+              onChange={(e) => {
+                const v = parseInt(e.target.value, 10);
+                setSelectedQty(v > 0 ? v : null);
+              }}
+            />
           </div>
         </div>
 

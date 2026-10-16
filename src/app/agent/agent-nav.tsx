@@ -1,6 +1,6 @@
 "use client";
 
-import { Briefcase, LogOut, MessageCircle, Package, Settings, UserCheck, DollarSign, ShieldCheck } from "lucide-react";
+import { Briefcase, LogOut, MessageCircle, Package, Settings, UserCheck, DollarSign, ShieldCheck, Wallet } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { MobileTabLink, SidebarNavLink } from "@/components/layout/nav-link";
@@ -11,8 +11,9 @@ export function AgentSidebarNav() {
   const { t, locale } = useLanguage();
 
   const links = [
-    { href: "/agent/leads", label: locale === "am" ? "የገዢዎች መሪዎች (Leads)" : "Guided Leads Inbox", icon: UserCheck, exact: true },
-    { href: "/agent/apply", label: locale === "am" ? "የወኪል ማመልከቻ" : "Onboarding & Vetting", icon: ShieldCheck, exact: true },
+    { href: "/agent/leads", label: locale === "am" ? "የገዢዎች መሪዎች (Leads)" : "Dispatch Leads", icon: UserCheck, exact: true },
+    { href: "/agent/wallet", label: locale === "am" ? "የስራ ክሬዲት ቦርሳ (Wallet)" : "Job Credits & Wallet", icon: Wallet, exact: true },
+    { href: "/agent/apply", label: locale === "am" ? "የወኪል ማመልከቻ" : "Driver Station & Vetting", icon: ShieldCheck, exact: true },
     { href: "/agent/commissions", label: locale === "am" ? "የኮሚሽን ሂሳብ" : "Commission Ledger", icon: DollarSign, exact: true },
     { href: "/agent", label: t("agent_job_board", "Legacy Job board"), icon: Briefcase, exact: true },
     { href: "/agent/messages", label: t("chat_inbox_title", "Messages"), icon: MessageCircle },
@@ -39,8 +40,8 @@ export function AgentBottomNav() {
   return (
     <>
       <MobileTabLink href="/agent/leads" label={locale === "am" ? "መሪዎች" : "Leads"} icon={UserCheck} exact />
+      <MobileTabLink href="/agent/wallet" label={locale === "am" ? "ቦርሳ" : "Wallet"} icon={Wallet} exact />
       <MobileTabLink href="/agent/commissions" label={locale === "am" ? "ኮሚሽን" : "Earned"} icon={DollarSign} exact />
-      <MobileTabLink href="/agent" label={t("agent_job_board", "Jobs")} icon={Briefcase} exact />
       <MobileTabLink href="/agent/messages" label={t("chat_inbox_title", "Messages")} icon={MessageCircle} />
 
       <MobileTabLink

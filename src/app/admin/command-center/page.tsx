@@ -41,7 +41,11 @@ import { WastageModerationTable } from "./wastage-moderation-table";
 export default async function CommandCenterPage() {
   await requireRole(["ADMIN"], "/admin/command-center");
 
-  const [orders, subscriptionsRes, guidedLeadsRes, disputesRes, sellersRes, agentsRes, wastages] = await Promise.all([
+  // ---------------------------------------------------------------------------
+  // Resilient data fetching: Promise.allSettled prevents a single query timeout
+  // or cold-start failure from crashing the entire admin operations page.
+  // ---------------------------------------------------------------------------
+  const results = await Promise.allSettled([
     fetchAllOrders(),
     getPendingSubscriptionPaymentsAction(),
     getGuidedLeadsAction(),
@@ -51,13 +55,22 @@ export default async function CommandCenterPage() {
     fetchAllSiteWastages(),
   ]);
 
+  // Safe extraction with typed defaults — a rejected promise yields []
+  const orders = results[0].status === "fulfilled" ? results[0].value : [];
+  const subscriptionsRes = results[1].status === "fulfilled" ? results[1].value : { success: false, data: [] };
+  const guidedLeadsRes = results[2].status === "fulfilled" ? results[2].value : { success: false, data: [] };
+  const disputesRes = results[3].status === "fulfilled" ? results[3].value : { success: false, data: [] };
+  const sellersRes = results[4].status === "fulfilled" ? results[4].value : { success: false, data: [] };
+  const agentsRes = results[5].status === "fulfilled" ? results[5].value : { success: false, data: [] };
+  const wastages = results[6].status === "fulfilled" ? results[6].value : [];
+
   const pendingPayments = subscriptionsRes.success && subscriptionsRes.data ? subscriptionsRes.data : [];
   const guidedLeads = guidedLeadsRes.success && guidedLeadsRes.data ? guidedLeadsRes.data : [];
   const disputes = disputesRes.success && disputesRes.data ? disputesRes.data : [];
   const sellers = sellersRes.success && sellersRes.data ? sellersRes.data : [];
   const agentApps = agentsRes.success && agentsRes.data ? agentsRes.data : [];
-  const pendingAgents = agentApps.filter((a) => a.approvalStatus === "UNDER_REVIEW" || a.approvalStatus === "SUBMITTED");
-  const pendingWastages = wastages.filter((w) => w.status === "PENDING");
+  const pendingAgents = agentApps.filter((a: any) => a.approvalStatus === "UNDER_REVIEW" || a.approvalStatus === "SUBMITTED");
+  const pendingWastages = wastages.filter((w: any) => w.status === "PENDING");
 
   return (
     <div className="space-y-8">
@@ -167,7 +180,7 @@ export default async function CommandCenterPage() {
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
-                5-point verification: Grade 12 certificates, National ID, guarantor backing, and service areas.
+                5-point verification: Kebele ID, Driver&apos;s License, Vehicle Libre, marketplace hub, and service area.
               </p>
             </div>
             <Link href="/admin/agents">

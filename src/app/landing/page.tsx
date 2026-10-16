@@ -395,8 +395,8 @@ function TrustCard({
 function HeroPreview() {
   const rows = [
     { name: "Dangote OPC 42.5R — 50kg", loc: "Kaliti Depot", price: "1,280", unit: "bag", phone: "0911 234 567" },
-    { name: "Zuquala Rebar \u00d816mm", loc: "Akaki Depot", price: "118,400", unit: "ton", phone: "0922 456 789" },
-    { name: "Mojo River Sand", loc: "Mojo Depot", price: "2,450", unit: "m\u00b3", phone: "0911 889 900" },
+    { name: "Standard Rebar Ø16mm", loc: "Akaki Depot", price: "118,400", unit: "ton", phone: "0922 456 789" },
+    { name: "Mojo River Sand", loc: "Mojo Depot", price: "2,450", unit: "m³", phone: "0911 889 900" },
     { name: "Holcim Hollow Blocks 20cm", loc: "Bole Bulbula", price: "32", unit: "piece", phone: "0933 112 233" },
   ];
 

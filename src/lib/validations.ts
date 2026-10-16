@@ -491,39 +491,65 @@ export const updateGuidedLeadStatusSchema = z.object({
 export type UpdateGuidedLeadStatusInput = z.infer<typeof updateGuidedLeadStatusSchema>;
 
 // =============================================================================
-// 01B — ONLINE AGENT APPLICATION & VETTING SCHEMAS
+// 01B — ONLINE AGENT & DRIVER REGISTRATION & VETTING SCHEMAS
 // =============================================================================
 
+export const ETHIOPIAN_MARKETPLACE_HUBS = [
+  "Megenagna",
+  "Gotera",
+  "Kality",
+  "Ayat",
+  "Lebu",
+  "Merkato",
+  "Akaki",
+  "Piassa",
+  "Saris",
+  "Tor Hailoch",
+  "Gerji",
+  "CMC",
+] as const;
+
+export type MarketplaceHub = (typeof ETHIOPIAN_MARKETPLACE_HUBS)[number];
+
 export const submitAgentApplicationSchema = z.object({
-  // Personal Details & Education (Screen 2)
+  // Personal Details (Screen 2)
   fullName: z.string().trim().min(2, "Full name is required").max(100),
   phone: ethiopianPhoneSchema,
   city: z.string().trim().min(2, "City is required").default("Addis Ababa"),
   subCity: z.string().trim().min(2, "Sub-city / woreda is required"),
-  grade12DocUrl: z.string().trim().min(1, "Grade 12 completion document is required"),
-  identityDocUrl: z.string().trim().min(1, "National identity document (ID) is required"),
-  photoUrl: z.string().trim().optional(),
-  nationalIdNumber: z.string().trim().max(50).optional(),
+  photoUrl: z.string().trim().optional().nullable(),
+  nationalIdNumber: z.string().trim().max(50).optional().nullable(),
 
-  // Work Area & Availability (Screen 3)
-  serviceArea: z.string().trim().min(2, "Service area is required"),
+  // Marketplace Hub Assignment & Service Capabilities (Screen 3)
+  marketplaceHub: z.string().trim().min(2, "Marketplace hub is required").default("Megenagna"),
+  additionalHubs: z.array(z.string()).default([]),
+  serviceType: z.enum(["SUPPLIER_ASSISTANCE", "TRANSPORT_DELIVERY", "BOTH"]).default("BOTH"),
+  vehicleType: z.enum(["PICKUP", "ISUZU", "SINO_TRUCK", "MOTORCYCLE", "NONE_FOOT"]).optional().nullable(),
+  vehiclePlateNumber: z.string().trim().max(30).optional().nullable(),
+
+  // Documents: Kebele ID, Driver's License, Vehicle Libre (Screen 4)
+  identityDocUrl: z.string().trim().min(1, "Kebele or National ID document is required"),
+  drivingLicenseDocUrl: z.string().trim().optional().nullable(),
+  vehicleLibreDocUrl: z.string().trim().optional().nullable(),
+
+  // Work Area & Availability (preserved & defaulted)
+  serviceArea: z.string().trim().optional().default("Addis Ababa"),
   latitude: z.number().optional().nullable(),
   longitude: z.number().optional().nullable(),
-  travelRadiusKm: z.number().min(1).max(50).default(5),
-  availableDaysHours: z.string().trim().min(2, "Available days & hours are required").default("Mon - Fri, 9:00 - 17:00"),
-  isAvailableForAssignments: z.boolean().default(true),
+  travelRadiusKm: z.number().min(1).max(50).optional().default(5),
+  availableDaysHours: z.string().trim().min(2).optional().default("Mon - Sat, 8:00 - 18:00"),
+  isAvailableForAssignments: z.boolean().optional().default(true),
 
-  // Guarantee & Consent (Screen 4)
-  guarantorType: z.enum(["GOVERNMENT_EMPLOYEE", "COMMUNITY_OR_OTHER"]),
-  guarantorName: z.string().trim().min(2, "Guarantor name is required"),
-  guarantorPhone: ethiopianPhoneSchema,
-  guarantorEmployer: z.string().trim().optional(),
-  guarantorRelationship: z.string().trim().optional(),
-  guarantorDocUrl: z.string().trim().optional(),
-  guarantorDescription: z.string().trim().optional(),
-  guarantorConsentObtained: z.boolean().refine((val) => val === true, {
-    message: "You must confirm that guarantor consent has been obtained",
-  }),
+  // Legacy fields (optional with defaults for backwards-compatibility)
+  grade12DocUrl: z.string().trim().optional().nullable(),
+  guarantorType: z.enum(["GOVERNMENT_EMPLOYEE", "COMMUNITY_OR_OTHER"]).optional().default("COMMUNITY_OR_OTHER"),
+  guarantorName: z.string().trim().optional().nullable(),
+  guarantorPhone: z.string().trim().optional().nullable(),
+  guarantorEmployer: z.string().trim().optional().nullable(),
+  guarantorRelationship: z.string().trim().optional().nullable(),
+  guarantorDocUrl: z.string().trim().optional().nullable(),
+  guarantorDescription: z.string().trim().optional().nullable(),
+  guarantorConsentObtained: z.boolean().optional().default(false),
 });
 export type SubmitAgentApplicationInput = z.infer<typeof submitAgentApplicationSchema>;
 
@@ -532,11 +558,28 @@ export const reviewAgentApplicationSchema = z.object({
   action: z.enum(["APPROVE", "REQUEST_CORRECTION", "REJECT", "SUSPEND"]),
   rejectionReason: z.string().trim().max(1000).optional(),
   checklistPhoneVerified: z.boolean().optional(),
-  checklistGrade12Reviewed: z.boolean().optional(),
   checklistIdentityReviewed: z.boolean().optional(),
-  checklistGuaranteeVerified: z.boolean().optional(),
+  checklistLicenseReviewed: z.boolean().optional(),
+  checklistLibreReviewed: z.boolean().optional(),
   checklistAreaConfirmed: z.boolean().optional(),
+  checklistGrade12Reviewed: z.boolean().optional(),
+  checklistGuaranteeVerified: z.boolean().optional(),
 });
 export type ReviewAgentApplicationInput = z.infer<typeof reviewAgentApplicationSchema>;
+
+export const topUpAgentCreditSchema = z.object({
+  amount: z.number().min(100, "Minimum deposit is 100 ETB").max(50000, "Maximum deposit is 50,000 ETB"),
+  referenceCode: z.string().trim().min(4, "Transaction reference code is required").max(60),
+  paymentMethod: z.enum(["TELEBIRR", "CBE_BIRR", "CBE_TRANSFER", "BOA", "OTHER"]).default("TELEBIRR"),
+  notes: z.string().trim().max(500).optional(),
+});
+export type TopUpAgentCreditInput = z.infer<typeof topUpAgentCreditSchema>;
+
+export const disputeLeadAssignmentSchema = z.object({
+  leadId: z.string().min(1, "Lead ID is required"),
+  reason: z.string().trim().min(5, "Please provide a reason for the dispute").max(1000),
+});
+export type DisputeLeadAssignmentInput = z.infer<typeof disputeLeadAssignmentSchema>;
+
 
 

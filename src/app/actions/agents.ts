@@ -18,16 +18,25 @@ import {
   submitAgentApplication,
   getAgentProfile,
   toggleAgentAvailability,
+  toggleAgentOnlineStatus,
   getAgentNearbyRequests,
   adminGetAgentApplications,
   adminReviewAgentApplication,
+  getAgentWalletStatus,
+  topUpAgentCredits,
+  chargeAgentLeadAssignment,
+  disputeAgentLeadAssignment,
 } from "@/lib/agents/agent-onboarding-service";
 import { assignGuidedLead, updateGuidedLeadStatus } from "@/lib/leads/guided-lead-service";
 import {
   submitAgentApplicationSchema,
   reviewAgentApplicationSchema,
+  topUpAgentCreditSchema,
+  disputeLeadAssignmentSchema,
   SubmitAgentApplicationInput,
   ReviewAgentApplicationInput,
+  TopUpAgentCreditInput,
+  DisputeLeadAssignmentInput,
 } from "@/lib/validations";
 import { toSafeErrorMessage } from "@/lib/errors";
 import { rateLimit, getClientIdentifier, rateLimitMessage } from "@/lib/security/rate-limit";
@@ -149,7 +158,8 @@ export async function getAgentNearbyRequestsAction() {
 
 /**
  * Accepts a nearby visit request.
- * Releases the full unmasked buyer phone number and assigns lead to this agent.
+ * Enforces 6-month free introductory access or ETB 100 job credit deduction,
+ * then atomically locks lead and reveals full mutual contact details.
  */
 export async function acceptNearbyRequestAction(leadId: string) {
   const auth = await authorize(["FIELD_AGENT", "ADMIN"]);
@@ -158,14 +168,145 @@ export async function acceptNearbyRequestAction(leadId: string) {
   }
 
   try {
+    // 1. Charge ETB 100 or verify 6-month free intro status
+    const chargeResult = await chargeAgentLeadAssignment(auth.user.id, leadId);
+
+    // 2. Atomically lock and assign the lead
     const assigned = await assignGuidedLead(leadId, auth.user.id);
+
     revalidatePath("/agent");
     revalidatePath("/agent/leads");
-    return { success: true as const, data: assigned };
+    revalidatePath("/agent/wallet");
+    revalidatePath("/admin/command-center");
+
+    return {
+      success: true as const,
+      data: assigned,
+      feeCharged: chargeResult.charged,
+      amountCharged: chargeResult.amount,
+    };
   } catch (err) {
     return {
       success: false as const,
       error: toSafeErrorMessage(err, "acceptNearbyRequestAction"),
+    };
+  }
+}
+
+/**
+ * Toggles the agent's real-time online/offline dispatch status.
+ */
+export async function toggleAgentOnlineStatusAction(isOnline: boolean) {
+  const auth = await authorize(["FIELD_AGENT", "ADMIN"]);
+  if (!auth.ok) {
+    return { success: false as const, error: auth.error };
+  }
+
+  try {
+    const updated = await toggleAgentOnlineStatus(auth.user.id, isOnline);
+    revalidatePath("/agent");
+    revalidatePath("/agent/leads");
+    revalidatePath("/agent/wallet");
+    return { success: true as const, data: updated };
+  } catch (err) {
+    return {
+      success: false as const,
+      error: toSafeErrorMessage(err, "toggleAgentOnlineStatusAction"),
+    };
+  }
+}
+
+/**
+ * Retrieves the agent's wallet status, 6-month intro countdown, and transaction ledger.
+ */
+export async function getAgentWalletStatusAction() {
+  const auth = await authorize(["FIELD_AGENT", "ADMIN"]);
+  if (!auth.ok) {
+    return { success: false as const, error: auth.error };
+  }
+
+  try {
+    const wallet = await getAgentWalletStatus(auth.user.id);
+    return { success: true as const, data: wallet };
+  } catch (err) {
+    return {
+      success: false as const,
+      error: toSafeErrorMessage(err, "getAgentWalletStatusAction"),
+    };
+  }
+}
+
+/**
+ * Submits a prepaid job credit deposit (Telebirr, CBE) to top up the agent's wallet.
+ */
+export async function topUpAgentCreditsAction(input: TopUpAgentCreditInput) {
+  const auth = await authorize(["FIELD_AGENT", "ADMIN"]);
+  if (!auth.ok) {
+    return { success: false as const, error: auth.error };
+  }
+
+  const parsed = topUpAgentCreditSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      success: false as const,
+      error: parsed.error.issues[0]?.message || "Invalid top-up details.",
+    };
+  }
+
+  try {
+    const result = await topUpAgentCredits(
+      auth.user.id,
+      parsed.data.amount,
+      parsed.data.referenceCode,
+      `${parsed.data.paymentMethod}: ${parsed.data.notes || "Deposit"}`
+    );
+
+    revalidatePath("/agent");
+    revalidatePath("/agent/wallet");
+    revalidatePath("/agent/leads");
+
+    return { success: true as const, data: result };
+  } catch (err) {
+    return {
+      success: false as const,
+      error: toSafeErrorMessage(err, "topUpAgentCreditsAction"),
+    };
+  }
+}
+
+/**
+ * Disputes an unreachable or fraudulent buyer request to receive an ETB 100 refund.
+ */
+export async function disputeLeadAssignmentAction(input: DisputeLeadAssignmentInput) {
+  const auth = await authorize(["FIELD_AGENT", "ADMIN"]);
+  if (!auth.ok) {
+    return { success: false as const, error: auth.error };
+  }
+
+  const parsed = disputeLeadAssignmentSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      success: false as const,
+      error: parsed.error.issues[0]?.message || "Invalid dispute details.",
+    };
+  }
+
+  try {
+    const result = await disputeAgentLeadAssignment(
+      auth.user.id,
+      parsed.data.leadId,
+      parsed.data.reason
+    );
+
+    revalidatePath("/agent");
+    revalidatePath("/agent/leads");
+    revalidatePath("/agent/wallet");
+
+    return { success: true as const, data: result };
+  } catch (err) {
+    return {
+      success: false as const,
+      error: toSafeErrorMessage(err, "disputeLeadAssignmentAction"),
     };
   }
 }

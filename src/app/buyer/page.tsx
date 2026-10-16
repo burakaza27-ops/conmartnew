@@ -80,7 +80,7 @@ export default async function BuyerCategoryHubPage() {
                 <Input
                   type="search"
                   name="search"
-                  placeholder="Search Dangote, Zuquala rebar, river sand, HCB, pipes…"
+                  placeholder="Search Dangote, Rebar, river sand, HCB, pipes…"
                   className="h-11 rounded-xl bg-background/70 pl-10 text-sm"
                 />
               </div>

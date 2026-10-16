@@ -7,6 +7,7 @@
 import React, { useState } from "react";
 import {
   AlertCircle,
+  AlertTriangle,
   FileText,
   ShieldCheck,
   Search,
@@ -16,7 +17,9 @@ import {
   UserCheck,
   Check,
   Loader2,
-  AlertTriangle,
+  Truck,
+  Radio,
+  Sparkles,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -40,13 +43,23 @@ export interface AgentApplicationRecord {
   approvalStatus: AgentApprovalStatus;
   serviceArea?: string | null;
   subCity?: string | null;
+  marketplaceHub?: string | null;
+  serviceType?: string | null;
+  vehicleType?: string | null;
+  vehiclePlateNumber?: string | null;
+  isOnline?: boolean | null;
+  introductoryEndsAt?: string | Date | null;
+  jobCreditBalance?: any | number | string | null;
   travelRadiusKm?: number | null;
   availableDaysHours?: string | null;
   experienceYears?: number | null;
   notes?: string | null;
   rejectionReason?: string | null;
-  grade12DocUrl?: string | null;
   identityDocUrl?: string | null;
+  drivingLicenseDocUrl?: string | null;
+  vehicleLibreDocUrl?: string | null;
+  photoUrl?: string | null;
+  grade12DocUrl?: string | null;
   guarantorDocUrl?: string | null;
   guarantorLetterDocUrl?: string | null;
   guarantorConsentObtained?: boolean | null;
@@ -55,10 +68,12 @@ export interface AgentApplicationRecord {
   guarantorEmployer?: string | null;
   guarantorDescription?: string | null;
   checklistPhoneVerified?: boolean | null;
-  checklistGrade12Reviewed?: boolean | null;
   checklistIdentityReviewed?: boolean | null;
-  checklistGuaranteeVerified?: boolean | null;
+  checklistLicenseReviewed?: boolean | null;
+  checklistLibreReviewed?: boolean | null;
   checklistAreaConfirmed?: boolean | null;
+  checklistGrade12Reviewed?: boolean | null;
+  checklistGuaranteeVerified?: boolean | null;
   createdAt: string | Date;
   updatedAt: string | Date;
   reviewedAt?: string | Date | null;
@@ -73,7 +88,7 @@ export interface AgentApplicationRecord {
   } | null;
 }
 
-type ChecklistKey = "phone" | "grade12" | "id" | "guarantee" | "area";
+type ChecklistKey = "phone" | "id" | "license" | "libre" | "hub";
 
 interface AgentReviewQueueProps {
   initialApplications: AgentApplicationRecord[];
@@ -90,33 +105,38 @@ export function AgentReviewQueue({ initialApplications }: AgentReviewQueueProps)
   const [loadingAppId, setLoadingAppId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Checklist state per application ID
+  // 5-Point Vetting Checklist state per application ID:
+  // 1. Phone Verified
+  // 2. Kebele / National ID Reviewed
+  // 3. Driver's License Reviewed (for transport)
+  // 4. Vehicle Libre Reviewed (for transport)
+  // 5. Marketplace Hub Confirmed
   const [checklists, setChecklists] = useState<
     Record<
       string,
       {
         phone: boolean;
-        grade12: boolean;
         id: boolean;
-        guarantee: boolean;
-        area: boolean;
+        license: boolean;
+        libre: boolean;
+        hub: boolean;
       }
     >
   >(() => {
-    const map: Record<string, { phone: boolean; grade12: boolean; id: boolean; guarantee: boolean; area: boolean }> = {};
+    const map: Record<string, { phone: boolean; id: boolean; license: boolean; libre: boolean; hub: boolean }> = {};
     for (const app of initialApplications) {
       map[app.id] = {
-        phone: app.checklistPhoneVerified || false,
-        grade12: app.grade12DocUrl ? true : app.checklistGrade12Reviewed || false,
-        id: app.identityDocUrl ? true : app.checklistIdentityReviewed || false,
-        guarantee: app.guarantorConsentObtained || app.checklistGuaranteeVerified || false,
-        area: app.checklistAreaConfirmed || false,
+        phone: app.checklistPhoneVerified ?? false,
+        id: app.identityDocUrl ? true : (app.checklistIdentityReviewed ?? false),
+        license: app.drivingLicenseDocUrl ? true : (app.checklistLicenseReviewed ?? false),
+        libre: app.vehicleLibreDocUrl ? true : (app.checklistLibreReviewed ?? false),
+        hub: app.checklistAreaConfirmed ?? true,
       };
     }
     return map;
   });
 
-  const toggleChecklist = (appId: string, key: "phone" | "grade12" | "id" | "guarantee" | "area") => {
+  const toggleChecklist = (appId: string, key: ChecklistKey) => {
     setChecklists((prev) => ({
       ...prev,
       [appId]: {
@@ -132,8 +152,10 @@ export function AgentReviewQueue({ initialApplications }: AgentReviewQueueProps)
       const q = search.toLowerCase();
       const matchName = app.user?.name?.toLowerCase().includes(q);
       const matchPhone = app.user?.phone?.includes(q);
+      const matchHub = app.marketplaceHub?.toLowerCase().includes(q);
       const matchArea = app.serviceArea?.toLowerCase().includes(q);
-      if (!matchName && !matchPhone && !matchArea) return false;
+      const matchPlate = app.vehiclePlateNumber?.toLowerCase().includes(q);
+      if (!matchName && !matchPhone && !matchHub && !matchArea && !matchPlate) return false;
     }
     return true;
   });
@@ -142,22 +164,28 @@ export function AgentReviewQueue({ initialApplications }: AgentReviewQueueProps)
     setLoadingAppId(app.id);
     setErrorMessage(null);
     try {
-      const currentChecklist = checklists[app.id] || {};
+      const currentChecklist = checklists[app.id] || {
+        phone: true,
+        id: true,
+        license: true,
+        libre: true,
+        hub: true,
+      };
       const res = await reviewAgentApplicationAction({
         agentProfileId: app.id,
         action: "APPROVE",
         checklistPhoneVerified: currentChecklist.phone ?? true,
-        checklistGrade12Reviewed: currentChecklist.grade12 ?? true,
         checklistIdentityReviewed: currentChecklist.id ?? true,
-        checklistGuaranteeVerified: currentChecklist.guarantee ?? true,
-        checklistAreaConfirmed: currentChecklist.area ?? true,
+        checklistLicenseReviewed: currentChecklist.license ?? true,
+        checklistLibreReviewed: currentChecklist.libre ?? true,
+        checklistAreaConfirmed: currentChecklist.hub ?? true,
       });
 
       if (!res.success) {
         setErrorMessage(res.error);
       } else {
         setApplications((prev) =>
-          prev.map((a) => (a.id === app.id ? { ...a, approvalStatus: AgentApprovalStatus.APPROVED } : a))
+          prev.map((a) => (a.id === app.id ? { ...a, approvalStatus: AgentApprovalStatus.APPROVED, isOnline: true } : a))
         );
       }
     } catch {
@@ -174,16 +202,22 @@ export function AgentReviewQueue({ initialApplications }: AgentReviewQueueProps)
     setLoadingAppId(reviewModalApp.id);
     setErrorMessage(null);
     try {
-      const currentChecklist = checklists[reviewModalApp.id] || {};
+      const currentChecklist = checklists[reviewModalApp.id] || {
+        phone: false,
+        id: false,
+        license: false,
+        libre: false,
+        hub: false,
+      };
       const res = await reviewAgentApplicationAction({
         agentProfileId: reviewModalApp.id,
         action: modalAction,
         rejectionReason: actionReason,
         checklistPhoneVerified: currentChecklist.phone,
-        checklistGrade12Reviewed: currentChecklist.grade12,
         checklistIdentityReviewed: currentChecklist.id,
-        checklistGuaranteeVerified: currentChecklist.guarantee,
-        checklistAreaConfirmed: currentChecklist.area,
+        checklistLicenseReviewed: currentChecklist.license,
+        checklistLibreReviewed: currentChecklist.libre,
+        checklistAreaConfirmed: currentChecklist.hub,
       });
 
       if (!res.success) {
@@ -332,10 +366,10 @@ export function AgentReviewQueue({ initialApplications }: AgentReviewQueueProps)
           filtered.map((app) => {
             const cl = checklists[app.id] || {
               phone: false,
-              grade12: false,
               id: false,
-              guarantee: false,
-              area: false,
+              license: false,
+              libre: false,
+              hub: false,
             };
             const isLoading = loadingAppId === app.id;
 
@@ -351,39 +385,60 @@ export function AgentReviewQueue({ initialApplications }: AgentReviewQueueProps)
                       {app.user?.name?.charAt(0) || "A"}
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-bold text-sm text-foreground">{app.user?.name}</h3>
                         {getStatusBadge(app.approvalStatus)}
+                        <Badge
+                          variant="outline"
+                          className="font-bold text-xs bg-primary/10 text-primary border-primary/30 gap-1"
+                        >
+                          <MapPin className="h-3 w-3" />
+                          Hub: {app.marketplaceHub || "Megenagna"}
+                        </Badge>
+                        {app.isOnline ? (
+                          <Badge className="bg-emerald-600 text-white text-[10px] gap-1">
+                            <span className="size-1.5 rounded-full bg-white animate-pulse" />
+                            Online
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-muted-foreground text-[10px]">
+                            Offline
+                          </Badge>
+                        )}
                       </div>
-                      <p className="text-xs font-mono text-muted-foreground">
+                      <p className="text-xs font-mono text-muted-foreground mt-0.5">
                         {app.user?.phone} • {app.user?.email || "No email"}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 text-xs">
-                    <Badge variant="outline" className="gap-1 font-mono text-primary border-primary/30">
-                      <MapPin className="h-3 w-3" />
-                      {app.serviceArea || app.subCity || "Addis Ababa"} ({app.travelRadiusKm || 5} km radius)
+                  <div className="flex items-center gap-2 flex-wrap text-xs">
+                    <Badge variant="secondary" className="gap-1 font-mono text-[11px]">
+                      <Truck className="h-3 w-3" />
+                      {app.vehicleType || "FOOT / RUNNER"}
+                      {app.vehiclePlateNumber ? ` (${app.vehiclePlateNumber})` : ""}
+                    </Badge>
+                    <Badge variant="outline" className="text-[11px] font-semibold">
+                      {app.serviceType || "BOTH"}
                     </Badge>
                   </div>
                 </div>
 
-                {/* Content Grid: Checklist + Documents + Guarantor */}
+                {/* Content Grid: Checklist + Documents + Driver Hub Profile */}
                 <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
                   {/* Column 1: Screen 5 Admin Review Checklist */}
                   <div className="space-y-3">
                     <span className="font-bold text-muted-foreground text-[11px] uppercase tracking-wider block">
-                      Admin Review Checklist
+                      Admin Vetting Checklist (5-Point)
                     </span>
 
                     <div className="space-y-2 bg-muted/20 p-3 rounded-xl border border-border/60">
                       {[
-                        { key: "phone", label: "Phone verified" },
-                        { key: "grade12", label: "Grade 12 evidence reviewed" },
-                        { key: "id", label: "Identity reviewed" },
-                        { key: "guarantee", label: "Guarantee verified" },
-                        { key: "area", label: "Service area confirmed" },
+                        { key: "phone", label: "Phone number verified" },
+                        { key: "id", label: "Kebele / National ID reviewed" },
+                        { key: "license", label: "Driver's License reviewed" },
+                        { key: "libre", label: "Vehicle Libre confirmed" },
+                        { key: "hub", label: `Marketplace Hub confirmed (${app.marketplaceHub || "Megenagna"})` },
                       ].map((item) => (
                         <label
                           key={item.key}
@@ -416,34 +471,15 @@ export function AgentReviewQueue({ initialApplications }: AgentReviewQueueProps)
                   {/* Column 2: Uploaded Documents */}
                   <div className="space-y-3">
                     <span className="font-bold text-muted-foreground text-[11px] uppercase tracking-wider block">
-                      Uploaded Documents
+                      Verified Documents
                     </span>
 
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-card">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-primary" />
-                          <span className="font-semibold text-xs">Grade 12 Certificate</span>
-                        </div>
-                        {app.grade12DocUrl ? (
-                          <a
-                            href={app.grade12DocUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
-                          >
-                            <span>View</span>
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
-                        ) : (
-                          <span className="text-[10px] text-muted-foreground">Not provided</span>
-                        )}
-                      </div>
-
+                      {/* Kebele ID */}
                       <div className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-card">
                         <div className="flex items-center gap-2">
                           <ShieldCheck className="h-4 w-4 text-primary" />
-                          <span className="font-semibold text-xs">National ID</span>
+                          <span className="font-semibold text-xs">Kebele / National ID</span>
                         </div>
                         {app.identityDocUrl ? (
                           <a
@@ -456,18 +492,19 @@ export function AgentReviewQueue({ initialApplications }: AgentReviewQueueProps)
                             <ExternalLink className="h-3 w-3" />
                           </a>
                         ) : (
-                          <span className="text-[10px] text-muted-foreground">Not provided</span>
+                          <span className="text-[10px] text-destructive font-semibold">Missing</span>
                         )}
                       </div>
 
-                      {app.guarantorDocUrl && (
-                        <div className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-card">
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4 text-emerald-600" />
-                            <span className="font-semibold text-xs">Guarantor Letter</span>
-                          </div>
+                      {/* Driver's License */}
+                      <div className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-card">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-primary" />
+                          <span className="font-semibold text-xs">Driver&apos;s License</span>
+                        </div>
+                        {app.drivingLicenseDocUrl ? (
                           <a
-                            href={app.guarantorDocUrl}
+                            href={app.drivingLicenseDocUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
@@ -475,39 +512,81 @@ export function AgentReviewQueue({ initialApplications }: AgentReviewQueueProps)
                             <span>View</span>
                             <ExternalLink className="h-3 w-3" />
                           </a>
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground">
+                            {app.vehicleType && app.vehicleType !== "NONE_FOOT" ? "Pending" : "N/A (Runner)"}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Vehicle Libre */}
+                      <div className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-card">
+                        <div className="flex items-center gap-2">
+                          <Truck className="h-4 w-4 text-emerald-600" />
+                          <span className="font-semibold text-xs">Vehicle Libre</span>
                         </div>
-                      )}
+                        {app.vehicleLibreDocUrl ? (
+                          <a
+                            href={app.vehicleLibreDocUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
+                          >
+                            <span>View</span>
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground">
+                            {app.vehicleType && app.vehicleType !== "NONE_FOOT" ? "Pending" : "N/A (Runner)"}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Column 3: Guarantor Details */}
+                  {/* Column 3: Driver Profile & Hub Details */}
                   <div className="space-y-3">
                     <span className="font-bold text-muted-foreground text-[11px] uppercase tracking-wider block">
-                      Guarantor Backing
+                      Driver & Dispatch Profile
                     </span>
 
-                    <div className="p-3 rounded-xl border border-border bg-muted/20 space-y-1.5 text-xs">
-                      <p className="font-bold text-foreground">
-                        {app.guarantorName || "No guarantor named"}
-                      </p>
-                      <p className="font-mono text-muted-foreground">
-                        {app.guarantorPhone || "—"}
-                      </p>
-                      {app.guarantorEmployer && (
-                        <p className="text-muted-foreground flex items-center gap-1">
-                          <Building2 className="h-3 w-3 text-muted-foreground" />
-                          {app.guarantorEmployer}
+                    <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-2 text-xs">
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-muted-foreground block">
+                          Assigned Marketplace Hub
+                        </span>
+                        <p className="font-bold text-foreground text-sm flex items-center gap-1.5 mt-0.5">
+                          <MapPin className="h-3.5 w-3.5 text-primary" />
+                          {app.marketplaceHub || "Megenagna"}
                         </p>
-                      )}
-                      {app.guarantorDescription && (
-                        <p className="text-muted-foreground italic text-[11px] pt-1">
-                          &ldquo;{app.guarantorDescription}&rdquo;
+                      </div>
+
+                      <div className="pt-1 border-t border-border/40">
+                        <span className="text-[10px] uppercase font-bold text-muted-foreground block">
+                          Service Capability
+                        </span>
+                        <p className="text-foreground font-medium">
+                          {app.serviceType === "TRANSPORT_DELIVERY"
+                            ? "Truck / Material Transport"
+                            : app.serviceType === "SUPPLIER_ASSISTANCE"
+                            ? "Supplier Finding & Pricing"
+                            : "Material Finding + Transport Delivery"}
                         </p>
-                      )}
-                      <div className="pt-1">
-                        <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-500/30">
-                          Consent Confirmed
+                      </div>
+
+                      <div className="pt-1 border-t border-border/40 flex items-center justify-between">
+                        <span className="text-muted-foreground">Intro Access:</span>
+                        <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 text-[10px] gap-1">
+                          <Sparkles className="h-2.5 w-2.5" />
+                          6-Month Free Intro
                         </Badge>
+                      </div>
+
+                      <div className="flex items-center justify-between text-muted-foreground pt-0.5">
+                        <span>Job Credits:</span>
+                        <span className="font-mono font-bold text-foreground">
+                          ETB {Number(app.jobCreditBalance || 0).toLocaleString()}
+                        </span>
                       </div>
                     </div>
                   </div>

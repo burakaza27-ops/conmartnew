@@ -297,6 +297,36 @@ enum CommissionPayoutStatus {
   @@map("commission_payout_status")
 }
 
+/// Agent service capability type.
+enum AgentServiceType {
+  SUPPLIER_ASSISTANCE
+  TRANSPORT_DELIVERY
+  BOTH
+
+  @@map("agent_service_type")
+}
+
+/// Vehicle type for transport agents/drivers.
+enum VehicleType {
+  PICKUP
+  ISUZU
+  SINO_TRUCK
+  MOTORCYCLE
+  NONE_FOOT
+
+  @@map("vehicle_type")
+}
+
+/// Agent prepaid job credit transaction types.
+enum AgentCreditTxType {
+  TOP_UP
+  ASSIGNMENT_FEE
+  DISPUTE_REFUND
+  ADMIN_ADJUSTMENT
+
+  @@map("agent_credit_tx_type")
+}
+
 // =============================================================================
 // MODELS
 // =============================================================================
@@ -688,7 +718,9 @@ model Zone {
   @@map("zones")
 }
 
-/// Field agent registration and 01B vetting profile against a service area.
+/// Field agent / driver registration and vetting profile.
+/// Supports both the legacy commission-agent model and the new
+/// marketplace-hub driver dispatch model (Megenagna, Gotera, etc.).
 model AgentProfile {
   id                         String              @id @default(cuid())
   userId                     String              @unique @map("user_id")
@@ -703,44 +735,92 @@ model AgentProfile {
   reviewedBy                 String?             @map("reviewed_by")
   reviewedAt                 DateTime?           @map("reviewed_at")
 
-  // Personal Details & Education
+  // Personal Details
   city                       String?             @default("Addis Ababa")
   subCity                    String?             @map("sub_city")
   photoUrl                   String?             @map("photo_url")
-  grade12DocUrl              String?             @map("grade12_doc_url")
   identityDocUrl             String?             @map("identity_doc_url")
 
-  // Work Area & Availability
+  // --- Marketplace Hub Assignment (Core dispatch matching field) ---
+  marketplaceHub             String              @default("Megenagna") @map("marketplace_hub")
+  additionalHubs             Json                @default("[]") @map("additional_hubs")
+
+  // --- Service Capabilities & Vehicle ---
+  serviceType                AgentServiceType    @default(BOTH) @map("service_type")
+  vehicleType                VehicleType?        @map("vehicle_type")
+  vehiclePlateNumber         String?             @map("vehicle_plate_number")
+
+  // --- Verified Documents (Kebele ID, License, Libre — no Grade 12 / guarantor) ---
+  drivingLicenseDocUrl       String?             @map("driving_license_doc_url")
+  vehicleLibreDocUrl         String?             @map("vehicle_libre_doc_url")
+
+  // --- Real-Time Dispatch Availability ---
+  isOnline                   Boolean             @default(false) @map("is_online")
+  lastOnlineAt               DateTime?           @map("last_online_at")
+
+  // --- Prepaid Job Credits & 6-Month Grace Period ---
+  introductoryEndsAt         DateTime?           @map("introductory_ends_at")
+  jobCreditBalance           Decimal             @default(0.00) @map("job_credit_balance") @db.Decimal(12, 2)
+
+  // Work Area & Availability (legacy fields preserved)
   serviceArea                String?             @map("service_area")
   latitude                   Float?
   longitude                  Float?
   travelRadiusKm             Float?              @default(5.0) @map("travel_radius_km")
   availableDaysHours         String?             @default("Mon - Fri, 9:00 - 17:00") @map("available_days_hours")
-  isAvailableForAssignments Boolean             @default(true) @map("is_available_for_assignments")
+  isAvailableForAssignments  Boolean             @default(true) @map("is_available_for_assignments")
 
-  // Guarantee & Consent
+  // Legacy Guarantee & Education fields (nullable, no longer required for new agents)
+  grade12DocUrl              String?             @map("grade12_doc_url")
   guarantorType              GuarantorType?      @default(GOVERNMENT_EMPLOYEE) @map("guarantor_type")
   guarantorName              String?             @map("guarantor_name")
   guarantorPhone             String?             @map("guarantor_phone")
   guarantorEmployer          String?             @map("guarantor_employer")
   guarantorRelationship      String?             @map("guarantor_relationship")
   guarantorDocUrl            String?             @map("guarantor_doc_url")
-  guarantorDescription        String?             @map("guarantor_description")
+  guarantorDescription       String?             @map("guarantor_description")
   guarantorConsentObtained   Boolean             @default(false) @map("guarantor_consent_obtained")
 
   // Admin Review Checklist Flags
   checklistPhoneVerified     Boolean             @default(false) @map("checklist_phone_verified")
-  checklistGrade12Reviewed   Boolean             @default(false) @map("checklist_grade12_reviewed")
   checklistIdentityReviewed  Boolean             @default(false) @map("checklist_identity_reviewed")
-  checklistGuaranteeVerified Boolean             @default(false) @map("checklist_guarantee_verified")
+  checklistLicenseReviewed   Boolean             @default(false) @map("checklist_license_reviewed")
+  checklistLibreReviewed     Boolean             @default(false) @map("checklist_libre_reviewed")
   checklistAreaConfirmed     Boolean             @default(false) @map("checklist_area_confirmed")
+
+  // Legacy checklist flags (preserved for existing data)
+  checklistGrade12Reviewed   Boolean             @default(false) @map("checklist_grade12_reviewed")
+  checklistGuaranteeVerified Boolean             @default(false) @map("checklist_guarantee_verified")
 
   createdAt                  DateTime            @default(now()) @map("created_at")
   updatedAt                  DateTime            @updatedAt @map("updated_at")
 
+  // Relations
+  creditTransactions         AgentCreditTx[]
+
   @@index([zoneId, isActive])
   @@index([approvalStatus, isAvailableForAssignments])
+  @@index([marketplaceHub, isOnline, approvalStatus])
   @@map("agent_profiles")
+}
+
+/// Immutable ledger of agent prepaid job credit transactions.
+/// Tracks top-ups (Telebirr/CBE deposits), per-lead assignment fees (ETB 100),
+/// dispute refunds for unreachable buyers, and admin adjustments.
+model AgentCreditTx {
+  id              String            @id @default(cuid())
+  agentProfileId  String            @map("agent_profile_id")
+  agentProfile    AgentProfile      @relation(fields: [agentProfileId], references: [id], onDelete: Cascade)
+  amount          Decimal           @db.Decimal(12, 2)
+  type            AgentCreditTxType
+  status          WalletTxStatus    @default(COMPLETED)
+  referenceCode   String?           @map("reference_code")
+  leadId          String?           @map("lead_id")
+  notes           String?
+  createdAt       DateTime          @default(now()) @map("created_at")
+
+  @@index([agentProfileId, createdAt])
+  @@map("agent_credit_txs")
 }
 
 /// Mediated deal for a FREE supplier. Subscribed suppliers never receive these.
