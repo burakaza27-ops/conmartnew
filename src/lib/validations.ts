@@ -541,16 +541,43 @@ export const submitAgentApplicationSchema = z.object({
   isAvailableForAssignments: z.boolean().optional().default(true),
 
   // Legacy fields (optional with defaults for backwards-compatibility)
-  grade12DocUrl: z.string().trim().optional().nullable(),
-  guarantorType: z.enum(["GOVERNMENT_EMPLOYEE", "COMMUNITY_OR_OTHER"]).optional().default("COMMUNITY_OR_OTHER"),
+  grade12DocUrl: z
+    .string()
+    .trim()
+    .min(1, "Grade 12 completion document is required")
+    .optional()
+    .nullable(),
+  guarantorType: z
+    .enum(["GOVERNMENT_EMPLOYEE", "COMMUNITY_OR_OTHER"])
+    .optional()
+    .default("COMMUNITY_OR_OTHER"),
   guarantorName: z.string().trim().optional().nullable(),
-  guarantorPhone: z.string().trim().optional().nullable(),
+  guarantorPhone: z
+    .string()
+    .trim()
+    .min(1)
+    .refine((val) => /^(?:\+251|0)[79]\d{8}$/.test(val.replace(/[\s-]/g, "")), {
+      message: "Please enter a valid Ethiopian mobile number (09... or +251 9...)",
+    })
+    .optional()
+    .nullable(),
   guarantorEmployer: z.string().trim().optional().nullable(),
   guarantorRelationship: z.string().trim().optional().nullable(),
   guarantorDocUrl: z.string().trim().optional().nullable(),
   guarantorDescription: z.string().trim().optional().nullable(),
   guarantorConsentObtained: z.boolean().optional().default(false),
-});
+}).refine(
+  (data) => {
+    if (data.guarantorName && data.guarantorName.trim().length > 0) {
+      return data.guarantorConsentObtained === true;
+    }
+    return true;
+  },
+  {
+    message: "You must confirm that guarantor consent has been obtained",
+    path: ["guarantorConsentObtained"],
+  }
+);
 export type SubmitAgentApplicationInput = z.infer<typeof submitAgentApplicationSchema>;
 
 export const reviewAgentApplicationSchema = z.object({
