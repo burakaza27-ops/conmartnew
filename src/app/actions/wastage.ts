@@ -23,6 +23,7 @@ export interface ActionResponse<T = unknown> {
 
 export const submitGuestWastageSchema = z.object({
   imageUrl: z.string().min(1, "Please provide or snap a photo of the material"),
+  imageUrls: z.array(z.string()).optional(),
   title: z
     .string()
     .trim()
@@ -59,6 +60,11 @@ export async function submitGuestWastageAction(
     const validated = submitGuestWastageSchema.parse(rawInput);
     const id = `wastage_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
+    const allImages = validated.imageUrls && validated.imageUrls.length > 0
+      ? validated.imageUrls
+      : [validated.imageUrl];
+    const storedImageUrl = allImages.length > 1 ? JSON.stringify(allImages) : validated.imageUrl;
+
     await db.$executeRawUnsafe(
       `
       INSERT INTO site_wastages (
@@ -81,7 +87,7 @@ export async function submitGuestWastageAction(
       id,
       validated.title,
       validated.description || null,
-      validated.imageUrl,
+      storedImageUrl,
       validated.quantity,
       validated.unit,
       validated.askingPrice,

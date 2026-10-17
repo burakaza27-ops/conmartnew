@@ -274,277 +274,290 @@ export async function getInboxAction() {
   }
 
   const user = auth.user;
-  const [rooms, unreadNotifs] = await Promise.all([
-    db.chatRoom.findMany({
-      where:
-        user.role === "ADMIN"
-          ? {}
-          : {
-              OR: [
-                { buyerId: user.id },
-                { sellerId: user.id },
-                { agentId: user.id },
-              ],
-            },
-      include: {
-        messages: {
-          orderBy: { createdAt: "desc" },
-          take: 1,
-          select: { body: true, createdAt: true, senderId: true },
+  try {
+    const [rooms, unreadNotifs] = await Promise.all([
+      db.chatRoom.findMany({
+        where:
+          user.role === "ADMIN"
+            ? {}
+            : {
+                OR: [
+                  { buyerId: user.id },
+                  { sellerId: user.id },
+                  { agentId: user.id },
+                ],
+              },
+        include: {
+          messages: {
+            orderBy: { createdAt: "desc" },
+            take: 1,
+            select: { body: true, createdAt: true, senderId: true },
+          },
+          dealTicket: {
+            select: { id: true, referenceCode: true, status: true },
+          },
+          listing: {
+            select: { product: { select: { title: true } } },
+          },
+          buyer: { select: { name: true, companyName: true } },
+          seller: { select: { name: true, companyName: true } },
+          agent: { select: { name: true, companyName: true } },
         },
-        dealTicket: {
-          select: { id: true, referenceCode: true, status: true },
+        orderBy: { updatedAt: "desc" },
+        take: 80,
+      }),
+      db.appNotification.findMany({
+        where: {
+          userId: user.id,
+          type: "MESSAGE_RECEIVED",
+          readAt: null,
         },
-        listing: {
-          select: { product: { select: { title: true } } },
-        },
-        buyer: { select: { name: true, companyName: true } },
-        seller: { select: { name: true, companyName: true } },
-        agent: { select: { name: true, companyName: true } },
-      },
-      orderBy: { updatedAt: "desc" },
-      take: 80,
-    }),
-    db.appNotification.findMany({
-      where: {
-        userId: user.id,
-        type: "MESSAGE_RECEIVED",
-        readAt: null,
-      },
-      select: { meta: true },
-    }),
-  ]);
+        select: { meta: true },
+      }),
+    ]);
 
-  const unreadCountByRoom: Record<string, number> = {};
-  for (const n of unreadNotifs) {
-    const meta = n.meta as { roomId?: string } | null;
-    if (meta?.roomId) {
-      unreadCountByRoom[meta.roomId] = (unreadCountByRoom[meta.roomId] ?? 0) + 1;
+    const unreadCountByRoom: Record<string, number> = {};
+    for (const n of unreadNotifs) {
+      const meta = n.meta as { roomId?: string } | null;
+      if (meta?.roomId) {
+        unreadCountByRoom[meta.roomId] = (unreadCountByRoom[meta.roomId] ?? 0) + 1;
+      }
     }
-  }
 
-  return {
-    success: true as const,
-    data: rooms
-      .filter((room) => isRoomParticipant(room, user.id) || user.role === "ADMIN")
-      .map((room) => ({
-        id: room.id,
-        type: room.type,
-        ticketId: room.dealTicket?.id ?? null,
-        ticketReference: room.dealTicket?.referenceCode ?? null,
-        ticketStatus: room.dealTicket?.status ?? null,
-        listingTitle: room.listing?.product.title ?? null,
-        counterpartName: counterpartName(room, user.id, user.role),
-        lastMessage: room.messages[0]?.body ?? null,
-        lastMessageAt: room.messages[0]?.createdAt.toISOString() ?? room.updatedAt.toISOString(),
-        unreadCount: unreadCountByRoom[room.id] ?? 0,
-      })),
-  };
+    return {
+      success: true as const,
+      data: rooms
+        .filter((room) => isRoomParticipant(room, user.id) || user.role === "ADMIN")
+        .map((room) => ({
+          id: room.id,
+          type: room.type,
+          ticketId: room.dealTicket?.id ?? null,
+          ticketReference: room.dealTicket?.referenceCode ?? null,
+          ticketStatus: room.dealTicket?.status ?? null,
+          listingTitle: room.listing?.product?.title ?? null,
+          counterpartName: counterpartName(room, user.id, user.role),
+          lastMessage: room.messages[0]?.body ?? null,
+          lastMessageAt: room.messages[0]?.createdAt.toISOString() ?? room.updatedAt.toISOString(),
+          unreadCount: unreadCountByRoom[room.id] ?? 0,
+        })),
+    };
+  } catch (error) {
+    console.error("[getInboxAction] Failed to retrieve inbox rooms:", error);
+    return {
+      success: true as const,
+      data: [],
+    };
+  }
 }
 
 export async function getChatRoomAction(roomId: string) {
-  const auth = await authorize(["BUYER", "SELLER", "FIELD_AGENT", "ADMIN"]);
-  if (!auth.ok) {
-    return { success: false as const, error: auth.error };
-  }
-
-  // Clear unread message notifications for this room when viewed
   try {
-    const unreadForRoom = await db.appNotification.findMany({
-      where: {
-        userId: auth.user.id,
-        type: "MESSAGE_RECEIVED",
-        readAt: null,
-      },
-      select: { id: true, meta: true },
-    });
-    const idsToMark = unreadForRoom
-      .filter((n) => (n.meta as { roomId?: string } | null)?.roomId === roomId)
-      .map((n) => n.id);
-    if (idsToMark.length > 0) {
-      await db.appNotification.updateMany({
-        where: { id: { in: idsToMark } },
-        data: { readAt: new Date() },
-      });
+    const auth = await authorize(["BUYER", "SELLER", "FIELD_AGENT", "ADMIN"]);
+    if (!auth.ok) {
+      return { success: false as const, error: auth.error };
     }
-  } catch {
-    // Non-blocking
-  }
 
-  const room = await db.chatRoom.findUnique({
-    where: { id: roomId },
-    include: {
-      messages: {
-        orderBy: { createdAt: "asc" },
-        take: 200,
-        select: {
-          id: true,
-          body: true,
-          senderId: true,
-          createdAt: true,
-          sender: { select: { name: true, role: true } },
+    // Clear unread message notifications for this room when viewed
+    try {
+      const unreadForRoom = await db.appNotification.findMany({
+        where: {
+          userId: auth.user.id,
+          type: "MESSAGE_RECEIVED",
+          readAt: null,
         },
-      },
-      dealTicket: {
-        select: {
-          id: true,
-          referenceCode: true,
-          status: true,
-          zone: { select: { name: true } },
-          listing: {
-            select: {
-              id: true,
-              location: true,
-              imageUrl: true,
-              brand: true,
-              product: { select: { id: true, title: true, unit: true, imageUrl: true } },
-              priceTiers: {
-                orderBy: { minQty: "asc" },
-                select: { minQty: true, maxQty: true, unitPrice: true },
+        select: { id: true, meta: true },
+      });
+      const idsToMark = unreadForRoom
+        .filter((n) => (n.meta as { roomId?: string } | null)?.roomId === roomId)
+        .map((n) => n.id);
+      if (idsToMark.length > 0) {
+        await db.appNotification.updateMany({
+          where: { id: { in: idsToMark } },
+          data: { readAt: new Date() },
+        });
+      }
+    } catch {
+      // Non-blocking
+    }
+
+    const room = await db.chatRoom.findUnique({
+      where: { id: roomId },
+      include: {
+        messages: {
+          orderBy: { createdAt: "asc" },
+          take: 200,
+          select: {
+            id: true,
+            body: true,
+            senderId: true,
+            createdAt: true,
+            sender: { select: { name: true, role: true } },
+          },
+        },
+        dealTicket: {
+          select: {
+            id: true,
+            referenceCode: true,
+            status: true,
+            zone: { select: { name: true } },
+            listing: {
+              select: {
+                id: true,
+                location: true,
+                imageUrl: true,
+                brand: true,
+                product: { select: { id: true, title: true, unit: true, imageUrl: true } },
+                priceTiers: {
+                  orderBy: { minQty: "asc" },
+                  select: { minQty: true, maxQty: true, unitPrice: true },
+                },
               },
             },
           },
         },
-      },
-      listing: {
-        select: {
-          id: true,
-          location: true,
-          imageUrl: true,
-          brand: true,
-          product: { select: { id: true, title: true, unit: true, imageUrl: true } },
-          priceTiers: {
-            orderBy: { minQty: "asc" },
-            select: { minQty: true, maxQty: true, unitPrice: true },
-          },
-        },
-      },
-      buyer: { select: { id: true, name: true, companyName: true, phone: true } },
-      seller: {
-        select: {
-          id: true,
-          name: true,
-          companyName: true,
-          phone: true,
-          sellerProfile: {
-            select: {
-              subscriptionTier: true,
-              subscriptionStatus: true,
-              verificationStatus: true,
-              workingHours: true,
-              address: true,
-              responseTimeAvgMinutes: true,
-              whatsappNumber: true,
-              directPhone: true,
+        listing: {
+          select: {
+            id: true,
+            location: true,
+            imageUrl: true,
+            brand: true,
+            product: { select: { id: true, title: true, unit: true, imageUrl: true } },
+            priceTiers: {
+              orderBy: { minQty: "asc" },
+              select: { minQty: true, maxQty: true, unitPrice: true },
             },
           },
         },
+        buyer: { select: { id: true, name: true, companyName: true, phone: true } },
+        seller: {
+          select: {
+            id: true,
+            name: true,
+            companyName: true,
+            phone: true,
+            sellerProfile: {
+              select: {
+                subscriptionTier: true,
+                subscriptionStatus: true,
+                verificationStatus: true,
+                workingHours: true,
+                address: true,
+                responseTimeAvgMinutes: true,
+                whatsappNumber: true,
+                directPhone: true,
+              },
+            },
+          },
+        },
+        agent: { select: { id: true, name: true, companyName: true, phone: true } },
       },
-      agent: { select: { id: true, name: true, companyName: true, phone: true } },
-    },
-  });
+    });
 
-  if (!room) {
-    return { success: false as const, error: "Conversation not found." };
-  }
+    if (!room) {
+      return { success: false as const, error: "Conversation not found." };
+    }
 
-  if (!isRoomParticipant(room, auth.user.id) && auth.user.role !== "ADMIN") {
-    return { success: false as const, error: "You are not a participant in this conversation." };
-  }
+    if (!isRoomParticipant(room, auth.user.id) && auth.user.role !== "ADMIN") {
+      return { success: false as const, error: "You are not a participant in this conversation." };
+    }
 
-  const isBuyer = auth.user.id === room.buyerId;
-  const isSeller = auth.user.id === room.sellerId;
-  const isAgent = auth.user.id === room.agentId;
+    const isBuyer = auth.user.id === room.buyerId;
+    const isSeller = auth.user.id === room.sellerId;
+    const isAgent = auth.user.id === room.agentId;
 
-  let counterpartUser = room.seller;
-  let counterpartRole = "SELLER";
-  let counterpartSellerProfile = room.seller?.sellerProfile ?? null;
+    let counterpartUser = room.seller;
+    let counterpartRole = "SELLER";
+    let counterpartSellerProfile = room.seller?.sellerProfile ?? null;
 
-  if (isSeller) {
-    counterpartUser = room.buyer as typeof room.seller;
-    counterpartRole = "BUYER";
-    counterpartSellerProfile = null;
-  } else if (isBuyer && room.type === "BUYER_AGENT") {
-    counterpartUser = room.agent as typeof room.seller;
-    counterpartRole = "FIELD_AGENT";
-    counterpartSellerProfile = null;
-  } else if (isAgent) {
-    if (room.type === "BUYER_AGENT") {
+    if (isSeller) {
       counterpartUser = room.buyer as typeof room.seller;
       counterpartRole = "BUYER";
       counterpartSellerProfile = null;
-    } else {
-      counterpartUser = room.seller;
-      counterpartRole = "SELLER";
-      counterpartSellerProfile = room.seller?.sellerProfile ?? null;
-    }
-  }
-
-  const activeListing = room.listing ?? room.dealTicket?.listing ?? null;
-  const priceTiers = activeListing?.priceTiers ?? [];
-  const minPrice =
-    priceTiers.length > 0 ? Math.min(...priceTiers.map((t) => Number(t.unitPrice))) : null;
-  const maxPrice =
-    priceTiers.length > 0 ? Math.max(...priceTiers.map((t) => Number(t.unitPrice))) : null;
-  const minOrder = priceTiers[0]?.minQty ?? 1;
-
-  const productContext = activeListing
-    ? {
-        listingId: activeListing.id,
-        productId: activeListing.product.id,
-        title: activeListing.product.title,
-        unit: activeListing.product.unit,
-        imageUrl: activeListing.imageUrl || activeListing.product.imageUrl || null,
-        location: activeListing.location,
-        brand: activeListing.brand ?? null,
-        minOrder,
-        minPrice,
-        maxPrice,
+    } else if (isBuyer && room.type === "BUYER_AGENT") {
+      counterpartUser = room.agent as typeof room.seller;
+      counterpartRole = "FIELD_AGENT";
+      counterpartSellerProfile = null;
+    } else if (isAgent) {
+      if (room.type === "BUYER_AGENT") {
+        counterpartUser = room.buyer as typeof room.seller;
+        counterpartRole = "BUYER";
+        counterpartSellerProfile = null;
+      } else {
+        counterpartUser = room.seller;
+        counterpartRole = "SELLER";
+        counterpartSellerProfile = room.seller?.sellerProfile ?? null;
       }
-    : null;
+    }
 
-  return {
-    success: true as const,
-    data: {
-      id: room.id,
-      type: room.type,
-      viewerId: auth.user.id,
-      viewerName: auth.user.name,
-      viewerRole: auth.user.role,
-      counterpartName: counterpartName(room, auth.user.id, auth.user.role),
-      counterpart: {
-        id: counterpartUser?.id ?? null,
-        name: counterpartName(room, auth.user.id, auth.user.role),
-        companyName: counterpartUser?.companyName ?? null,
-        role: counterpartRole,
-        subscriptionTier: counterpartSellerProfile?.subscriptionTier ?? null,
-        isSubscribed: counterpartSellerProfile?.subscriptionStatus === "ACTIVE",
-        isVerified: counterpartSellerProfile?.verificationStatus === "VERIFIED",
-        workingHours: counterpartSellerProfile?.workingHours ?? "Mon - Sat: 8:00 AM - 6:00 PM",
-        responseTimeAvgMinutes: counterpartSellerProfile?.responseTimeAvgMinutes ?? 30,
-        address: counterpartSellerProfile?.address ?? null,
+    const activeListing = room.listing ?? room.dealTicket?.listing ?? null;
+    const priceTiers = activeListing?.priceTiers ?? [];
+    const minPrice =
+      priceTiers.length > 0 ? Math.min(...priceTiers.map((t) => Number(t.unitPrice))) : null;
+    const maxPrice =
+      priceTiers.length > 0 ? Math.max(...priceTiers.map((t) => Number(t.unitPrice))) : null;
+    const minOrder = priceTiers[0]?.minQty ?? 1;
+
+    const productContext = (activeListing && activeListing.product)
+      ? {
+          listingId: activeListing.id,
+          productId: activeListing.product.id,
+          title: activeListing.product.title,
+          unit: activeListing.product.unit,
+          imageUrl: activeListing.imageUrl || activeListing.product.imageUrl || null,
+          location: activeListing.location,
+          brand: activeListing.brand ?? null,
+          minOrder,
+          minPrice,
+          maxPrice,
+        }
+      : null;
+
+    return {
+      success: true as const,
+      data: {
+        id: room.id,
+        type: room.type,
+        viewerId: auth.user.id,
+        viewerName: auth.user.name,
+        viewerRole: auth.user.role,
+        counterpartName: counterpartName(room, auth.user.id, auth.user.role),
+        counterpart: {
+          id: counterpartUser?.id ?? null,
+          name: counterpartName(room, auth.user.id, auth.user.role),
+          companyName: counterpartUser?.companyName ?? null,
+          role: counterpartRole,
+          subscriptionTier: counterpartSellerProfile?.subscriptionTier ?? null,
+          isSubscribed: counterpartSellerProfile?.subscriptionStatus === "ACTIVE",
+          isVerified: counterpartSellerProfile?.verificationStatus === "VERIFIED",
+          workingHours: counterpartSellerProfile?.workingHours ?? "Mon - Sat: 8:00 AM - 6:00 PM",
+          responseTimeAvgMinutes: counterpartSellerProfile?.responseTimeAvgMinutes ?? 30,
+          address: counterpartSellerProfile?.address ?? null,
+        },
+        productContext,
+        listingTitle: activeListing?.product?.title ?? null,
+        ticket: room.dealTicket
+          ? {
+              id: room.dealTicket.id,
+              referenceCode: room.dealTicket.referenceCode,
+              status: room.dealTicket.status,
+              zoneName: room.dealTicket.zone.name,
+            }
+          : null,
+        messages: room.messages.map((message) => ({
+          id: message.id,
+          body: message.body,
+          senderId: message.senderId,
+          senderName: message.sender.name,
+          senderRole: message.sender.role,
+          createdAt: message.createdAt.toISOString(),
+          mine: message.senderId === auth.user.id,
+        })),
       },
-      productContext,
-      listingTitle: activeListing?.product.title ?? null,
-      ticket: room.dealTicket
-        ? {
-            id: room.dealTicket.id,
-            referenceCode: room.dealTicket.referenceCode,
-            status: room.dealTicket.status,
-            zoneName: room.dealTicket.zone.name,
-          }
-        : null,
-      messages: room.messages.map((message) => ({
-        id: message.id,
-        body: message.body,
-        senderId: message.senderId,
-        senderName: message.sender.name,
-        senderRole: message.sender.role,
-        createdAt: message.createdAt.toISOString(),
-        mine: message.senderId === auth.user.id,
-      })),
-    },
-  };
+    };
+  } catch (error) {
+    console.error("[getChatRoomAction] Unexpected error:", error);
+    return { success: false as const, error: "Unable to load conversation." };
+  }
 }
 
 export async function getAgentJobBoardAction() {

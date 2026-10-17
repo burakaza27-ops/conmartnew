@@ -46,7 +46,10 @@ export function GuestWastageModal({
 }: GuestWastageModalProps) {
   const { locale } = useLanguage();
 
-  const [imageUrl, setImageUrl] = useState<string>("");
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+
   const [title, setTitle] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [unit, setUnit] = useState("PIECE");
@@ -62,10 +65,15 @@ export function GuestWastageModal({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successReference, setSuccessReference] = useState<string | null>(null);
 
+  const cameraInputRef = React.useRef<HTMLInputElement>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
   if (!isOpen) return null;
 
   const handleReset = () => {
-    setImageUrl("");
+    setPhotos([]);
+    setIsUploadingPhoto(false);
+    setPhotoError(null);
     setTitle("");
     setQuantity("1");
     setUnit("PIECE");
@@ -84,15 +92,77 @@ export function GuestWastageModal({
     onClose();
   };
 
+  const handlePhotoUpload = async (file: File) => {
+    setPhotoError(null);
+
+    if (photos.length >= 4) {
+      setPhotoError(
+        locale === "am"
+          ? "ከ4 ፎቶ በላይ ማያያዝ አይቻልም።"
+          : "Maximum 4 photos allowed per post."
+      );
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setPhotoError(
+        locale === "am"
+          ? "እባክዎ ትክክለኛ የፎቶ ፋይል (JPEG, PNG, WebP) ያያይዙ።"
+          : "Please upload a valid image file (JPEG, PNG, WebP)."
+      );
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoError(
+        locale === "am"
+          ? "የፎቶው መጠን ከ5MB መብለጥ የለበትም።"
+          : "Photo size exceeds 5MB limit."
+      );
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload/wastage-photo", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to upload photo.");
+      }
+
+      setPhotos((prev) => [...prev, data.url]);
+    } catch (err) {
+      setPhotoError(
+        err instanceof Error ? err.message : "Failed to upload photo."
+      );
+    } finally {
+      setIsUploadingPhoto(false);
+      if (cameraInputRef.current) cameraInputRef.current.value = "";
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemovePhoto = (indexToRemove: number) => {
+    setPhotos((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
-    if (!imageUrl) {
+    if (photos.length === 0) {
       setErrorMessage(
         locale === "am"
-          ? "እባክዎ የዕቃውን ፎቶ ከስልክዎ ወይም ከካሜራ ያያይዙ።"
-          : "Please take or upload a photo of the material."
+          ? "እባክዎ የዕቃውን ፎቶ በቀጥታ በካሜራ አንስተው ያያይዙ።"
+          : "Please snap at least one live photo of the material with your camera."
       );
       return;
     }
@@ -123,7 +193,8 @@ export function GuestWastageModal({
       : customLandmark || "Addis Ababa";
 
     const res = await submitGuestWastageAction({
-      imageUrl,
+      imageUrl: photos[0],
+      imageUrls: photos,
       title: title.trim(),
       quantity: Number(quantity) || 1,
       unit,
@@ -220,19 +291,165 @@ export function GuestWastageModal({
                 </div>
               )}
 
-              {/* 1. Photo Capture / Upload */}
-              <div className="space-y-1.5">
+              {/* 1. Photo Capture / Upload (Anti-Broker Camera First) */}
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-semibold flex items-center gap-1.5">
                     <Camera className="size-3.5 text-primary" />
-                    <span>{locale === "am" ? "1. የዕቃው ፎቶ (ካሜራ ወይም ፋይል) *" : "1. Material Photo *"}</span>
+                    <span>
+                      {locale === "am"
+                        ? "1. የቀጥታ ሳይት ፎቶ (ካሜራ) *"
+                        : "1. Live Site Photo (Camera Capture) *"}
+                    </span>
                   </Label>
-                  <span className="text-[10px] text-muted-foreground">
-                    {locale === "am" ? "ፎቶ ማንሳት ግዴታ ነው" : "Photo is mandatory"}
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    {photos.length}/4 {locale === "am" ? "ፎቶዎች" : "photos"}
                   </span>
                 </div>
 
-                <ImageUploader value={imageUrl} onChange={setImageUrl} />
+                {/* Hidden camera & file inputs */}
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handlePhotoUpload(f);
+                  }}
+                />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handlePhotoUpload(f);
+                  }}
+                />
+
+                {photoError && (
+                  <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive flex items-center gap-1.5">
+                    <AlertCircle className="size-3.5 shrink-0" />
+                    <span>{photoError}</span>
+                  </div>
+                )}
+
+                {/* Snapped Photos Grid */}
+                {photos.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                    {photos.map((url, idx) => (
+                      <div
+                        key={url}
+                        className="relative aspect-square rounded-xl overflow-hidden border border-border/80 bg-muted group shadow-2xs"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={url}
+                          alt={`Wastage photo ${idx + 1}`}
+                          className="h-full w-full object-cover"
+                        />
+                        <span className="absolute bottom-1 left-1 rounded bg-black/75 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-xs">
+                          {idx === 0
+                            ? locale === "am"
+                              ? "ዋና ፎቶ"
+                              : "Primary"
+                            : `#${idx + 1}`}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemovePhoto(idx)}
+                          className="absolute top-1 right-1 size-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-90 hover:opacity-100 transition-opacity shadow-xs"
+                          title="Remove photo"
+                        >
+                          <X className="size-3.5" />
+                        </button>
+                      </div>
+                    ))}
+
+                    {/* Add Another Angle Button */}
+                    {photos.length < 4 && (
+                      <button
+                        type="button"
+                        disabled={isUploadingPhoto}
+                        onClick={() => cameraInputRef.current?.click()}
+                        className="aspect-square rounded-xl border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 flex flex-col items-center justify-center gap-1 text-primary transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        {isUploadingPhoto ? (
+                          <Loader2 className="size-5 animate-spin" />
+                        ) : (
+                          <>
+                            <Camera className="size-5" />
+                            <span className="text-[10px] font-bold">
+                              {locale === "am" ? "+ ተጨማሪ አንግል" : "+ Add Angle"}
+                            </span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Primary Camera Capture Button when no photos yet */}
+                {photos.length === 0 && (
+                  <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 p-4 text-center space-y-3">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="size-12 rounded-full bg-primary/15 text-primary flex items-center justify-center shadow-xs">
+                        <Camera className="size-6" />
+                      </div>
+                      <div className="space-y-0.5">
+                        <p className="text-xs font-bold text-foreground">
+                          {locale === "am"
+                            ? "በቀጥታ ከሳይቱ በካሜራ ፎቶ ያንሱ"
+                            : "Take Live Photo with Mobile Camera"}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground max-w-xs">
+                          {locale === "am"
+                            ? "ደላሎች የድሮ ወይም የቴሌግራም ፎቶ እንዳይለጥፉ የቀጥታ ካሜራ ፎቶ ብቻ ይፈቀዳል።"
+                            : "Anti-broker protection: Live camera photo required to verify actual site lot."}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={isUploadingPhoto}
+                        onClick={() => cameraInputRef.current?.click()}
+                        className="w-full sm:w-auto font-bold gap-1.5 bg-primary text-primary-foreground shadow-xs"
+                      >
+                        {isUploadingPhoto ? (
+                          <>
+                            <Loader2 className="size-3.5 animate-spin" />
+                            <span>{locale === "am" ? "በመጫን ላይ..." : "Uploading..."}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Camera className="size-4" />
+                            <span>
+                              {locale === "am" ? "ካሜራ ክፈትና አንሳ" : "Snap Live Camera"}
+                            </span>
+                          </>
+                        )}
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={isUploadingPhoto}
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full sm:w-auto text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        <Upload className="size-3.5 mr-1" />
+                        <span>{locale === "am" ? "ከፋይል ምረጥ" : "Select from files"}</span>
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* 2. Material Title */}

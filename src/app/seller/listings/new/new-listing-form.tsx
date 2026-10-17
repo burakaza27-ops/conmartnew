@@ -114,6 +114,7 @@ export function NewListingForm({
     handleSubmit,
     watch,
     setValue,
+    getValues,
     setError,
     formState: { errors, isSubmitting },
   } = useForm<ListingFormInput, unknown, CreateListingFormData>({
@@ -436,10 +437,10 @@ export function NewListingForm({
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label className="text-[11px] text-muted-foreground">
-                      {t("seller_form_spec_brand")}
+                      {t("seller_form_spec_brand")} (ፋብሪካ / ብራንድ)
                     </Label>
                     <Input
-                      placeholder="e.g. Dangote, Mugher, Zuquala"
+                      placeholder="e.g. Kebron Steel, Dangote, Zuquala"
                       {...register("brand")}
                       className="h-8 text-xs"
                     />
@@ -449,8 +450,17 @@ export function NewListingForm({
                       {t("seller_form_spec_grade")}
                     </Label>
                     <Input
-                      placeholder="e.g. 42.5R, Grade 60, Class A"
-                      {...register("grade")}
+                      placeholder="e.g. 42.5R, Grade 60, Grade 75"
+                      {...register("grade", {
+                        onChange: (e) => {
+                          const val = e.target.value;
+                          const currentTitle = getValues("title");
+                          if (/Grade\s+\d+/i.test(currentTitle) && val) {
+                            setValue("title", currentTitle.replace(/Grade\s+\d+/i, val));
+                          }
+                          setValue("existingProductId", "custom");
+                        },
+                      })}
                       className="h-8 text-xs"
                     />
                   </div>

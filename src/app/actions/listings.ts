@@ -141,6 +141,19 @@ export async function createSellerListing(input: CreateListingInput) {
       // 1. Link to existing curated Product or create new definition
       let targetProductId = input.existingProductId;
 
+      if (targetProductId) {
+        const existingProd = await tx.product.findUnique({
+          where: { id: targetProductId },
+          select: { title: true },
+        });
+        if (
+          !existingProd ||
+          existingProd.title.trim().toLowerCase() !== input.title.trim().toLowerCase()
+        ) {
+          targetProductId = undefined;
+        }
+      }
+
       if (!targetProductId) {
         const product = await tx.product.create({
           data: {
@@ -236,6 +249,7 @@ export interface BatchListingItemInput {
   brand?: string;
   imageUrl?: string;
   existingProductId?: string;
+  specs?: Record<string, string>;
   stockState?: StockState;
   vatMode?: "included" | "excluded" | "confirm";
 }
@@ -357,14 +371,31 @@ export async function createBatchSellerListingsAction(input: CreateBatchListings
     for (const item of input.items) {
       let targetProductId = item.existingProductId;
 
+      if (targetProductId) {
+        const existingProd = await db.product.findUnique({
+          where: { id: targetProductId },
+          select: { title: true },
+        });
+        if (
+          !existingProd ||
+          existingProd.title.trim().toLowerCase() !== item.title.trim().toLowerCase()
+        ) {
+          targetProductId = undefined;
+        }
+      }
+
       if (!targetProductId) {
+        const productSpecs: Record<string, string> = { ...(item.specs || {}) };
+        if (item.brand?.trim()) {
+          productSpecs.brand = item.brand.trim();
+        }
         const product = await db.product.create({
           data: {
             categoryId: item.categoryId,
             title: item.title.trim(),
             unit: item.unit,
             imageUrl: item.imageUrl || null,
-            specs: item.brand ? { brand: item.brand.trim() } : {},
+            specs: productSpecs,
           },
         });
         targetProductId = product.id;

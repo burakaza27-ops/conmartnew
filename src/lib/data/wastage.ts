@@ -16,6 +16,7 @@ export interface SiteWastageItem {
   title: string;
   description: string | null;
   imageUrl: string;
+  images: string[];
   quantity: number;
   unit: string;
   askingPrice: number;
@@ -49,12 +50,30 @@ interface RawWastageRow {
   updated_at: Date | string;
 }
 
+function parseImages(imageUrlStr: string): { primary: string; all: string[] } {
+  if (!imageUrlStr) return { primary: "", all: [] };
+  if (imageUrlStr.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(imageUrlStr);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return { primary: String(parsed[0]), all: parsed.map(String) };
+      }
+    } catch {
+      // fallback
+    }
+  }
+  const split = imageUrlStr.split(",").map((s) => s.trim()).filter(Boolean);
+  return { primary: split[0] || imageUrlStr, all: split.length > 0 ? split : [imageUrlStr] };
+}
+
 function mapRow(row: RawWastageRow): SiteWastageItem {
+  const { primary, all } = parseImages(row.image_url);
   return {
     id: row.id,
     title: row.title,
     description: row.description,
-    imageUrl: row.image_url,
+    imageUrl: primary,
+    images: all,
     quantity: Number(row.quantity),
     unit: row.unit,
     askingPrice: Number(row.asking_price),

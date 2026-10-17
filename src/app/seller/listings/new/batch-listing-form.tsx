@@ -116,13 +116,18 @@ interface BatchItemRow {
 }
 
 const POPULAR_BRANDS = [
+  "Kebron Steel",
+  "C&E Brothers Steel",
+  "Zuquala Steel",
+  "Steely RMI",
+  "Abyssinia Steel",
+  "Kombolcha Steel",
+  "Tietto Steel",
   "Dangote",
   "Derba",
   "Mugher",
   "National",
   "Habesha",
-  "Steel R",
-  "Abyssinia Cold Rolled",
   "Kadisco",
   "Super Mega",
   "Bright",
@@ -582,10 +587,28 @@ export function BatchListingForm({
       prev.map((item) => {
         if (item.id !== rowId) return item;
         const newSpecs = { ...item.specs, [specLabel]: value };
-        const updated = { ...item, specs: newSpecs };
+        let updatedTitle = item.title;
+
+        // If user changed Grade, update any existing Grade in title
+        if (specLabel.toLowerCase() === "grade" && value) {
+          if (/Grade\s+\d+/i.test(updatedTitle)) {
+            updatedTitle = updatedTitle.replace(/Grade\s+\d+/i, value);
+          }
+        }
+
+        const updated: BatchItemRow = {
+          ...item,
+          specs: newSpecs,
+          // Decouple from seed template product so custom grade is not overridden
+          existingProductId: undefined,
+        };
+
         if (!item.titleManuallyEdited) {
           updated.title = generateAutoTitle(updated);
+        } else {
+          updated.title = updatedTitle;
         }
+
         return updated;
       })
     );
@@ -731,6 +754,7 @@ export function BatchListingForm({
         brand: it.brand.trim() || undefined,
         imageUrl: it.imageUrl.trim() || undefined,
         existingProductId: it.existingProductId || undefined,
+        specs: it.specs,
         stockState: it.stockState,
         vatMode: it.vatMode,
       });
