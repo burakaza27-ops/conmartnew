@@ -13,7 +13,13 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { ethiopianPhoneSchema } from "@/lib/validations";
 import { requireRole } from "@/lib/auth/session";
-import { fetchPendingSiteWastages, fetchAllSiteWastages, fetchApprovedSiteWastages, type SiteWastageItem } from "@/lib/data/wastage";
+import {
+  fetchPendingSiteWastages,
+  fetchAllSiteWastages,
+  fetchApprovedSiteWastages,
+  ensureSiteWastagesTable,
+  type SiteWastageItem,
+} from "@/lib/data/wastage";
 
 export interface ActionResponse<T = unknown> {
   success: boolean;
@@ -57,6 +63,7 @@ export async function submitGuestWastageAction(
   rawInput: SubmitGuestWastageInput
 ): Promise<ActionResponse<{ id: string; referenceCode: string }>> {
   try {
+    await ensureSiteWastagesTable();
     const validated = submitGuestWastageSchema.parse(rawInput);
     const id = `wastage_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
@@ -65,8 +72,7 @@ export async function submitGuestWastageAction(
       : [validated.imageUrl];
     const storedImageUrl = allImages.length > 1 ? JSON.stringify(allImages) : validated.imageUrl;
 
-    await db.$executeRawUnsafe(
-      `
+    await db.$executeRaw`
       INSERT INTO site_wastages (
         id,
         title,
@@ -82,20 +88,23 @@ export async function submitGuestWastageAction(
         status,
         created_at,
         updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'PENDING', NOW(), NOW());
-    `,
-      id,
-      validated.title,
-      validated.description || null,
-      storedImageUrl,
-      validated.quantity,
-      validated.unit,
-      validated.askingPrice,
-      validated.isNegotiable,
-      validated.location,
-      validated.contactName,
-      validated.contactPhone,
-    );
+      ) VALUES (
+        ${id},
+        ${validated.title},
+        ${validated.description || null},
+        ${storedImageUrl},
+        ${validated.quantity},
+        ${validated.unit},
+        ${validated.askingPrice},
+        ${validated.isNegotiable},
+        ${validated.location},
+        ${validated.contactName},
+        ${validated.contactPhone},
+        'PENDING',
+        NOW(),
+        NOW()
+      );
+    `;
 
     revalidatePath("/admin/command-center");
     revalidatePath("/buyer/category/reusable-site-wastage");
@@ -158,22 +167,17 @@ export async function moderateWastageAction(input: {
 }): Promise<ActionResponse<SiteWastageItem>> {
   try {
     const admin = await requireRole(["ADMIN"], "/admin/command-center");
+    await ensureSiteWastagesTable();
 
-    await db.$executeRawUnsafe(
-      `
+    await db.$executeRaw`
       UPDATE site_wastages
       SET 
-        status = $1,
-        moderated_by = $2,
-        moderation_notes = $3,
+        status = ${input.status},
+        moderated_by = ${admin.id},
+        moderation_notes = ${input.moderationNotes || null},
         updated_at = NOW()
-      WHERE id = $4;
-    `,
-      input.status,
-      admin.id,
-      input.moderationNotes || null,
-      input.wastageId
-    );
+      WHERE id = ${input.wastageId};
+    `;
 
     revalidatePath("/admin/command-center");
     revalidatePath("/buyer/category/reusable-site-wastage");

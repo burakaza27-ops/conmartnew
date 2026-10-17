@@ -6,6 +6,8 @@ import { getSessionUser } from "@/lib/auth/session";
 import { PASSWORD_RECOVERY_COOKIE } from "@/lib/auth/password-recovery";
 import { ResetPasswordForm } from "./reset-password-form";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Choose a New Password",
   description: "Set a new password for your ECON account.",

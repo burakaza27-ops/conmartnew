@@ -4,6 +4,8 @@ import { requireRole } from "@/lib/auth/session";
 import { getInboxAction } from "@/app/actions/marketplace";
 import { InboxView } from "@/components/chat/inbox-view";
 
+export const dynamic = "force-dynamic";
+
 export default async function BuyerMessagesPage() {
   const user = await requireRole(["BUYER", "FIELD_AGENT", "ADMIN"], "/buyer/messages");
 

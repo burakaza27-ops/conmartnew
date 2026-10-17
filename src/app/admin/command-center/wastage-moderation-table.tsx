@@ -37,7 +37,11 @@ export function WastageModerationTable({
 }: WastageModerationTableProps) {
   const [items, setItems] = useState<SiteWastageItem[]>(initialItems);
   const [filterStatus, setFilterStatus] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("PENDING");
-  const [activePhotoModal, setActivePhotoModal] = useState<string | null>(null);
+  const [activePhotoModal, setActivePhotoModal] = useState<{
+    images: string[];
+    index: number;
+    title: string;
+  } | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -135,7 +139,16 @@ export function WastageModerationTable({
                 {/* Photo & Material Specs */}
                 <div className="flex items-start gap-3.5 flex-1 min-w-0">
                   <div
-                    onClick={() => setActivePhotoModal(item.imageUrl)}
+                    onClick={() =>
+                      setActivePhotoModal({
+                        images:
+                          item.images && item.images.length > 0
+                            ? item.images
+                            : [item.imageUrl],
+                        index: 0,
+                        title: item.title,
+                      })
+                    }
                     className="relative size-16 sm:size-20 rounded-xl overflow-hidden border border-border/80 bg-muted shrink-0 cursor-pointer group shadow-2xs"
                   >
                     <Image
@@ -145,6 +158,11 @@ export function WastageModerationTable({
                       className="object-cover group-hover:scale-105 transition-transform"
                       sizes="80px"
                     />
+                    {item.images && item.images.length > 1 && (
+                      <span className="absolute bottom-1 right-1 rounded bg-black/80 px-1 py-0.5 text-[9px] font-bold text-white font-mono z-10">
+                        +{item.images.length - 1}
+                      </span>
+                    )}
                     <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
                       <Eye className="size-4" />
                     </div>
@@ -270,21 +288,78 @@ export function WastageModerationTable({
       {activePhotoModal && (
         <div
           onClick={() => setActivePhotoModal(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 animate-in fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-xs p-4 animate-in fade-in"
         >
-          <div className="relative max-w-2xl max-h-[85vh] w-full h-[70vh] rounded-2xl overflow-hidden bg-black">
-            <Image
-              src={activePhotoModal}
-              alt="Site Wastage Photo"
-              fill
-              className="object-contain"
-            />
-            <button
-              onClick={() => setActivePhotoModal(null)}
-              className="absolute top-3 right-3 bg-black/60 text-white p-2 rounded-full hover:bg-black/80 transition-colors"
-            >
-              ✕
-            </button>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-3xl max-h-[90vh] w-full flex flex-col rounded-2xl overflow-hidden bg-card border border-border shadow-2xl"
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
+              <div className="min-w-0 pr-4">
+                <h4 className="text-sm font-bold text-foreground truncate">
+                  {activePhotoModal.title}
+                </h4>
+                <p className="text-[11px] text-muted-foreground">
+                  Photo {activePhotoModal.index + 1} of {activePhotoModal.images.length}
+                </p>
+              </div>
+              <button
+                onClick={() => setActivePhotoModal(null)}
+                className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="relative w-full h-[60vh] bg-black/90 flex items-center justify-center">
+              <Image
+                src={activePhotoModal.images[activePhotoModal.index] || activePhotoModal.images[0]}
+                alt="Site Wastage Photo"
+                fill
+                className="object-contain"
+              />
+
+              {activePhotoModal.images.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActivePhotoModal((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              index:
+                                (prev.index - 1 + prev.images.length) %
+                                prev.images.length,
+                            }
+                          : null
+                      );
+                    }}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 size-9 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center transition-colors shadow-md text-xl"
+                  >
+                    ‹
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActivePhotoModal((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              index: (prev.index + 1) % prev.images.length,
+                            }
+                          : null
+                      );
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 size-9 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center transition-colors shadow-md text-xl"
+                  >
+                    ›
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}

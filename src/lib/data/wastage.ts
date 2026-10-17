@@ -89,11 +89,50 @@ function mapRow(row: RawWastageRow): SiteWastageItem {
   };
 }
 
+let hasEnsuredTable = false;
+
+/**
+ * Self-healing bootstrap: Ensures the site_wastages table and its performance indexes
+ * exist in PostgreSQL even before or without manual migrations.
+ */
+export async function ensureSiteWastagesTable(): Promise<void> {
+  if (hasEnsuredTable) return;
+  try {
+    await db.$executeRaw`
+      CREATE TABLE IF NOT EXISTS site_wastages (
+        id VARCHAR(64) PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        image_url TEXT NOT NULL,
+        quantity NUMERIC(12, 2) NOT NULL,
+        unit VARCHAR(32) NOT NULL,
+        asking_price NUMERIC(12, 2) NOT NULL DEFAULT 0,
+        is_negotiable BOOLEAN NOT NULL DEFAULT true,
+        location VARCHAR(255) NOT NULL,
+        contact_name VARCHAR(100) NOT NULL,
+        contact_phone VARCHAR(50) NOT NULL,
+        status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+        moderated_by VARCHAR(64),
+        moderation_notes TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+    `;
+    await db.$executeRaw`
+      CREATE INDEX IF NOT EXISTS idx_site_wastages_status ON site_wastages(status, created_at DESC);
+    `;
+    hasEnsuredTable = true;
+  } catch (err) {
+    console.error("Failed to ensure site_wastages table exists:", err);
+  }
+}
+
 /**
  * Fetches all approved site wastages for the public buyer catalog.
  */
 export async function fetchApprovedSiteWastages(): Promise<SiteWastageItem[]> {
   try {
+    await ensureSiteWastagesTable();
     const rows = await db.$queryRaw<RawWastageRow[]>`
       SELECT * FROM site_wastages
       WHERE status = 'APPROVED'
@@ -111,6 +150,7 @@ export async function fetchApprovedSiteWastages(): Promise<SiteWastageItem[]> {
  */
 export async function fetchPendingSiteWastages(): Promise<SiteWastageItem[]> {
   try {
+    await ensureSiteWastagesTable();
     const rows = await db.$queryRaw<RawWastageRow[]>`
       SELECT * FROM site_wastages
       WHERE status = 'PENDING'
@@ -128,6 +168,7 @@ export async function fetchPendingSiteWastages(): Promise<SiteWastageItem[]> {
  */
 export async function fetchAllSiteWastages(): Promise<SiteWastageItem[]> {
   try {
+    await ensureSiteWastagesTable();
     const rows = await db.$queryRaw<RawWastageRow[]>`
       SELECT * FROM site_wastages
       ORDER BY created_at DESC;
