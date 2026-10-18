@@ -135,168 +135,7 @@ const POPULAR_BRANDS = [
   "Standard Ethiopian",
 ];
 
-// ---------------------------------------------------------------------------
-// Searchable Template Combobox Component
-// ---------------------------------------------------------------------------
 
-interface SearchableTemplateComboboxProps {
-  templates: CuratedProductOption[];
-  onSelect: (curatedId: string) => void;
-  locale: "en" | "am";
-  selectedTitle?: string;
-}
-
-function SearchableTemplateCombobox({
-  templates,
-  onSelect,
-  locale,
-  selectedTitle,
-}: SearchableTemplateComboboxProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const popoverRef = React.useRef<HTMLDivElement>(null);
-
-  React.useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [isOpen]);
-
-  const filtered = useMemo(() => {
-    if (!search.trim()) return templates;
-    const q = search.toLowerCase();
-    return templates.filter((t) => {
-      const matchTitle = t.title.toLowerCase().includes(q);
-      const matchBrand = (t.specs.brand || "").toLowerCase().includes(q);
-      const matchSpecs = Object.values(t.specs).some((v) =>
-        String(v).toLowerCase().includes(q)
-      );
-      return matchTitle || matchBrand || matchSpecs;
-    });
-  }, [templates, search]);
-
-  return (
-    <div className="relative" ref={popoverRef}>
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full text-xs h-8 rounded-md border border-input bg-background px-2.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary flex items-center justify-between gap-1 text-left hover:border-primary/50 transition-colors"
-      >
-        <span className="truncate">
-          {selectedTitle ||
-            (templates.length > 0
-              ? locale === "am"
-                ? "ቁሳቁስ ምረጥ ወይም ፈልግ..."
-                : "Choose or search material..."
-              : locale === "am"
-              ? "ለዚህ ምድብ ቅድመ-ዝርዝር የለም"
-              : "No templates for category")}
-        </span>
-        <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
-      </button>
-
-      {isOpen && (
-        <div className="absolute z-50 left-0 right-0 top-full mt-1 rounded-lg border border-border/80 bg-popover text-popover-foreground shadow-xl p-2 space-y-2 animate-in fade-in zoom-in-95">
-          {/* Search Input */}
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={
-                locale === "am"
-                  ? "ቁሳቁስ ወይም ብራንድ ፈልግ..."
-                  : "Search material, brand, or specs..."
-              }
-              className="text-xs h-7 pl-8 pr-7"
-              autoFocus
-            />
-            {search && (
-              <button
-                type="button"
-                onClick={() => setSearch("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            )}
-          </div>
-
-          {/* Options list */}
-          <div className="max-h-52 overflow-y-auto space-y-1 pr-1 text-xs">
-            {filtered.length === 0 ? (
-              <div className="p-3 text-center text-muted-foreground text-[11px]">
-                {locale === "am" ? "ምንም አልተገኘም" : "No matching materials found"}
-              </div>
-            ) : (
-              filtered.map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => {
-                    onSelect(t.id);
-                    setIsOpen(false);
-                    setSearch("");
-                  }}
-                  className="w-full text-left p-2 rounded-md hover:bg-muted transition-colors flex items-start justify-between gap-2 group"
-                >
-                  <div className="min-w-0">
-                    <p className="font-semibold text-foreground truncate group-hover:text-primary">
-                      {t.title}
-                    </p>
-                    <div className="flex flex-wrap gap-1 mt-0.5">
-                      {t.specs.brand && (
-                        <span className="text-[10px] text-muted-foreground font-medium">
-                          {t.specs.brand} ·
-                        </span>
-                      )}
-                      {Object.entries(t.specs)
-                        .filter(([k]) => k !== "brand")
-                        .slice(0, 2)
-                        .map(([k, v]) => (
-                          <span key={k} className="text-[10px] text-muted-foreground">
-                            {v}
-                          </span>
-                        ))}
-                    </div>
-                  </div>
-                  <Badge variant="outline" className="text-[9px] shrink-0 font-normal">
-                    {t.unit}
-                  </Badge>
-                </button>
-              ))
-            )}
-
-            {/* Custom material fallback */}
-            <div className="border-t border-border/50 pt-1 mt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsOpen(false);
-                  setSearch("");
-                }}
-                className="w-full text-left p-1.5 rounded-md hover:bg-muted text-[11px] text-primary font-medium flex items-center gap-1.5"
-              >
-                <Plus className="h-3 w-3" />
-                <span>
-                  {locale === "am"
-                    ? "ሌላ ቁሳቁስ (በእጅ አስገባ)"
-                    : "Other material (enter custom specs)"}
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Component
@@ -491,30 +330,7 @@ export function BatchListingForm({
     );
   };
 
-  /**
-   * Auto-fill from curated product template — only show templates matching
-   * the currently selected category.
-   */
-  const handlePickCurated = (rowId: string, curatedId: string) => {
-    if (!curatedId) return;
-    const prod = curatedProducts.find((p) => p.id === curatedId);
-    if (!prod) return;
 
-    // Extract specs from template (minus brand which is separate)
-    const templateSpecs = { ...prod.specs };
-    delete templateSpecs.brand;
-
-    updateItem(rowId, {
-      title: prod.title,
-      titleManuallyEdited: false, // template overwrites → auto-title still active
-      categoryId: prod.categoryId,
-      unit: prod.unit,
-      imageUrl: prod.imageUrl || "",
-      brand: prod.specs.brand || "",
-      existingProductId: prod.id,
-      specs: templateSpecs,
-    });
-  };
 
   /**
    * Update a single spec value and optionally re-generate the auto-title.
@@ -1248,10 +1064,7 @@ export function BatchListingForm({
             const catSlug = categoryMatch?.slug || "";
             const suitableUnits = getUnitsForCategory(catSlug);
 
-            // Filter curated products by selected category
-            const filteredTemplates = curatedProducts.filter(
-              (cp) => cp.categoryId === item.categoryId
-            );
+
 
             // Category-specific spec fields to render
             const specHints = CATEGORY_SPEC_HINTS[catSlug] || [];
