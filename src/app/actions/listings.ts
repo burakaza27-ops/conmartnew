@@ -49,6 +49,20 @@ export async function createSellerListing(input: CreateListingInput) {
     }
     const dbUser = auth.user;
 
+    // Gate: For SELLER accounts, verify that their business registration has been approved by an admin
+    if (dbUser.role === "SELLER") {
+      const sellerProfile = await db.sellerProfile.findUnique({
+        where: { userId: dbUser.id },
+        select: { verificationStatus: true },
+      });
+      if (!sellerProfile || sellerProfile.verificationStatus !== "VERIFIED") {
+        return {
+          error:
+            "Supplier verification required. Your business registration is pending admin approval. You will be able to publish live listings once verified by an Econ administrator.",
+        };
+      }
+    }
+
     // Rate-limit: 30 listing creations per hour per seller
     const clientId = await getClientIdentifier();
     const rl = await rateLimit(`listing:create:${dbUser.id}`, { limit: 30, windowSeconds: 3600 });
@@ -273,6 +287,20 @@ export async function createBatchSellerListingsAction(input: CreateBatchListings
       return { error: auth.error };
     }
     const dbUser = auth.user;
+
+    // Gate: For SELLER accounts, verify that their business registration has been approved by an admin
+    if (dbUser.role === "SELLER") {
+      const sellerProfile = await db.sellerProfile.findUnique({
+        where: { userId: dbUser.id },
+        select: { verificationStatus: true },
+      });
+      if (!sellerProfile || sellerProfile.verificationStatus !== "VERIFIED") {
+        return {
+          error:
+            "Supplier verification required. Your business registration is pending admin approval. You will be able to publish live listings once verified by an Econ administrator.",
+        };
+      }
+    }
 
     const clientId = await getClientIdentifier();
     const rl = await rateLimit(`listing:batch-create:${dbUser.id}`, { limit: 20, windowSeconds: 3600 });
@@ -512,6 +540,19 @@ export async function toggleListingStatus(listingId: string, active: boolean) {
 
     if (listing.sellerId !== dbUser.id && dbUser.role !== "ADMIN") {
       return { error: "You are not authorized to modify this listing." };
+    }
+
+    if (active && dbUser.role === "SELLER") {
+      const sellerProfile = await db.sellerProfile.findUnique({
+        where: { userId: dbUser.id },
+        select: { verificationStatus: true },
+      });
+      if (!sellerProfile || sellerProfile.verificationStatus !== "VERIFIED") {
+        return {
+          error:
+            "Cannot activate listing. Your supplier account is awaiting admin approval.",
+        };
+      }
     }
 
     const updated = await db.listing.update({

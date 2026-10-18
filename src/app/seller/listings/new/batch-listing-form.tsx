@@ -92,6 +92,7 @@ interface BatchListingFormProps {
   curatedProducts?: CuratedProductOption[];
   sellerCompanyName: string;
   savedLocations?: string[];
+  verificationStatus?: string;
   onSuccess?: () => void;
 }
 
@@ -306,11 +307,13 @@ export function BatchListingForm({
   curatedProducts = [],
   sellerCompanyName,
   savedLocations = [],
+  verificationStatus = "VERIFIED",
   onSuccess,
 }: BatchListingFormProps) {
   const { locale } = useLanguage();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const isVerified = verificationStatus === "VERIFIED";
 
   // Structured Location state
   const [selectedRegion, setSelectedRegion] = useState<string>("addis-ababa");
@@ -376,31 +379,7 @@ export function BatchListingForm({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successCount, setSuccessCount] = useState<number | null>(null);
 
-  // Multi-Select Catalog state
-  const [isMultiSelectOpen, setIsMultiSelectOpen] = useState(false);
-  const [multiSelectCategory, setMultiSelectCategory] = useState<string>("all");
-  const [multiSelectSearch, setMultiSelectSearch] = useState<string>("");
-  const [selectedCatalogIds, setSelectedCatalogIds] = useState<string[]>([]);
 
-  // Filter curated products for multi-select dialog
-  const filteredCuratedForModal = useMemo(() => {
-    let list = curatedProducts;
-    if (multiSelectCategory !== "all") {
-      list = list.filter((cp) => cp.categoryId === multiSelectCategory);
-    }
-    if (multiSelectSearch.trim()) {
-      const q = multiSelectSearch.toLowerCase().trim();
-      list = list.filter((cp) => {
-        const matchTitle = cp.title.toLowerCase().includes(q);
-        const matchBrand = (cp.specs.brand || "").toLowerCase().includes(q);
-        const matchSpecs = Object.values(cp.specs).some((v) =>
-          String(v).toLowerCase().includes(q)
-        );
-        return matchTitle || matchBrand || matchSpecs;
-      });
-    }
-    return list;
-  }, [curatedProducts, multiSelectCategory, multiSelectSearch]);
 
   // -------------------------------------------------------------------------
   // Row Factory
@@ -442,49 +421,7 @@ export function BatchListingForm({
     setItems((prev) => [...prev, createInitialRow(prev.length + 1)]);
   };
 
-  const handleAddMultipleTemplates = () => {
-    if (selectedCatalogIds.length === 0) return;
 
-    const newRows: BatchItemRow[] = [];
-    for (const tId of selectedCatalogIds) {
-      const prod = curatedProducts.find((p) => p.id === tId);
-      if (!prod) continue;
-      const templateSpecs = { ...prod.specs };
-      delete templateSpecs.brand;
-
-      newRows.push({
-        id: `row-${crypto.randomUUID()}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        title: prod.title,
-        titleManuallyEdited: false,
-        categoryId: prod.categoryId,
-        description: "",
-        unit: prod.unit,
-        unitPrice: "",
-        priceMode: "enter",
-        availableQty: "",
-        stockState: StockState.IN_STOCK,
-        brand: prod.specs.brand || "",
-        imageUrl: prod.imageUrl || "",
-        existingProductId: prod.id,
-        specs: templateSpecs,
-        packageSize: "",
-        vatMode: "included",
-        showMoreDetails: false,
-      });
-    }
-
-    if (newRows.length > 0) {
-      setItems((prev) => {
-        if (prev.length === 1 && !prev[0].title && !prev[0].unitPrice && !prev[0].brand) {
-          return newRows;
-        }
-        return [...prev, ...newRows];
-      });
-    }
-
-    setSelectedCatalogIds([]);
-    setIsMultiSelectOpen(false);
-  };
 
   const handleRemoveItem = (id: string) => {
     if (items.length <= 1) return;
@@ -639,6 +576,15 @@ export function BatchListingForm({
     if (isPending) return;
     setErrorMsg(null);
     setSuccessCount(null);
+
+    if (!isVerified) {
+      setErrorMsg(
+        locale === "am"
+          ? "መለያዎ በአስተዳዳሪው እስኪረጋገጥ ድረስ እቃዎችን ማተም አይቻልም። እባክዎ ማረጋገጫውን ይጠብቁ።"
+          : "Cannot publish listings: Your supplier account is awaiting admin approval."
+      );
+      return;
+    }
 
     if (!location.trim()) {
       setErrorMsg(
@@ -850,6 +796,28 @@ export function BatchListingForm({
               {locale === "am" ? "ጨርሻለሁ — ዳሽቦርድ ይመልከቱ" : "Done — go to dashboard"}
             </Button>
           </div>
+        </div>
+      )}
+
+      {/* Account Verification Status Alert */}
+      {!isVerified && (
+        <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-amber-900 dark:text-amber-200 space-y-2">
+          <div className="flex items-center gap-2 font-bold text-sm">
+            <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
+            <span>
+              {locale === "am"
+                ? "መለያዎ በአስተዳዳሪ ማረጋገጫ በመጠባበቅ ላይ ነው (Pending Admin Approval)"
+                : "Account Pending Admin Approval"}
+            </span>
+            <Badge variant="outline" className="border-amber-500/50 bg-amber-500/20 text-amber-700 dark:text-amber-300 text-[10px] uppercase font-bold">
+              {verificationStatus}
+            </Badge>
+          </div>
+          <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-300">
+            {locale === "am"
+              ? "የንግድ ፈቃድዎና ምዝገባዎ በEcon አስተዳዳሪ እስኪረጋገጥ ድረስ እቃዎችን በቀጥታ መለጠፍ አይቻልም። የእቃ ዝርዝርዎን ማዘጋጀት ይችላሉ፤ አስተዳዳሪው እንዳጸደቀው ወዲያውኑ ለገዢዎች ይታያል።"
+              : "To protect contractors and guarantee legal trade compliance, new supplier accounts must be verified by an Econ administrator before materials are published live to the buyer catalog. You can draft your materials now, but posting requires admin approval."}
+          </p>
         </div>
       )}
 
@@ -1265,19 +1233,6 @@ export function BatchListingForm({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setIsMultiSelectOpen(true)}
-                className="gap-1.5 text-xs font-bold border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 shadow-2xs"
-              >
-                <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                <span>
-                  {locale === "am" ? "⚡ በጅምላ ምረጥ" : "⚡ Multi-Select from Catalog"}
-                </span>
-              </Button>
-
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
                 onClick={handleAddItem}
                 className="gap-1.5 text-xs font-bold border-dashed border-primary/50 text-primary hover:bg-primary/5"
               >
@@ -1374,33 +1329,48 @@ export function BatchListingForm({
                       </select>
                     </div>
 
-                    {/* 2. Material Template (filtered by category with searchable dropdown) */}
+                    {/* 2. Custom Material Name / Title */}
                     <div className="lg:col-span-4 space-y-1">
-                      <Label className="text-[11px] font-semibold flex items-center gap-1">
-                        <Sparkles className="h-3 w-3 text-amber-500" />
-                        <span>{locale === "am" ? "ቁሳቁስ ምረጥ" : "Choose a material"}</span>
+                      <Label className="text-[11px] font-semibold flex items-center justify-between">
+                        <span className="flex items-center gap-1">
+                          <Tag className="h-3 w-3 text-primary" />
+                          <span>{locale === "am" ? "የእቃው ስም" : "Material Name / Title"}</span>
+                          <span className="text-destructive">*</span>
+                        </span>
+                        <span className="text-[10px] text-muted-foreground font-normal">
+                          {locale === "am" ? "በእጅ ይጻፉ" : "Custom fill"}
+                        </span>
                       </Label>
-                      <SearchableTemplateCombobox
-                        templates={filteredTemplates}
-                        onSelect={(curatedId) => handlePickCurated(item.id, curatedId)}
-                        locale={locale}
-                        selectedTitle={
-                          item.existingProductId
-                            ? filteredTemplates.find((t) => t.id === item.existingProductId)?.title
-                            : undefined
+                      <Input
+                        value={item.title}
+                        onChange={(e) =>
+                          updateItem(item.id, {
+                            title: e.target.value,
+                            titleManuallyEdited: true,
+                            existingProductId: undefined,
+                          })
                         }
+                        placeholder={
+                          locale === "am"
+                            ? "ምሳሌ፡ አቢሲኒያ 16ሚሜ ብረት ወይም ሲሚንቶ"
+                            : "e.g. Abyssinia Rebar 16mm or Portland Cement"
+                        }
+                        className="text-xs h-8 font-medium"
                       />
                     </div>
 
-                    {/* 3. Brand */}
+                    {/* 3. Brand / Manufacturer (Custom text input) */}
                     <div className="lg:col-span-4 space-y-1">
-                      <Label className="text-[11px] font-semibold">
-                        {locale === "am" ? "ብራንድ / ፋብሪካ" : "Brand / Manufacturer"}
+                      <Label className="text-[11px] font-semibold flex items-center justify-between">
+                        <span>{locale === "am" ? "ብራንድ / ፋብሪካ" : "Brand / Manufacturer"}</span>
+                        <span className="text-[10px] text-muted-foreground font-normal">
+                          {locale === "am" ? "አማራጭ" : "Custom"}
+                        </span>
                       </Label>
                       <Input
                         value={item.brand}
                         onChange={(e) => updateBrand(item.id, e.target.value)}
-                        placeholder="e.g. Dangote, Derba"
+                        placeholder={locale === "am" ? "ምሳሌ፡ አቢሲኒያ፣ ኬብሮን፣ ዳንጎቴ" : "e.g. Abyssinia, Kebron, Dangote"}
                         className="text-xs h-8"
                         list={`brands-list-${item.id}`}
                       />
@@ -1726,40 +1696,7 @@ export function BatchListingForm({
                       )}
                     </div>
 
-                    {/* 9. Auto-generated Title (editable) */}
-                    <div className="lg:col-span-12 space-y-1">
-                      <Label className="text-[11px] font-semibold flex items-center gap-1.5">
-                        <Tag className="h-3 w-3" />
-                        <span>{locale === "am" ? "የዝርዝር ርዕስ" : "Listing Title"}</span>
-                        <span className="text-destructive">*</span>
-                        {!item.titleManuallyEdited && item.title && (
-                          <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-normal text-muted-foreground">
-                            {locale === "am" ? "ራስ-ሰር" : "auto-generated"}
-                          </Badge>
-                        )}
-                      </Label>
-                      <Input
-                        value={item.title}
-                        onChange={(e) => {
-                          updateItem(item.id, {
-                            title: e.target.value,
-                            titleManuallyEdited: true,
-                          });
-                        }}
-                        placeholder={
-                          locale === "am"
-                            ? "ምሳሌ: ዳንጎቴ ሲሚንቶ — 42.5R (50 ኪ.ግ ከረጢት)"
-                            : "e.g. Dangote Cement — 42.5R (50 kg bag)"
-                        }
-                        className="text-xs h-8"
-                      />
-                      <p className="text-[9px] text-muted-foreground">
-                        {locale === "am"
-                          ? "ይህ ርዕስ ከብራንድ፣ ምድብ እና ዝርዝር መግለጫ ራስ-ሰር ይፈጠራል።"
-                          : "Auto-generated from brand, category & specs. Edit directly if needed."}
-                      </p>
                     </div>
-                  </div>
 
                   {/* ===== MORE DETAILS (Collapsible) ===== */}
                   <div className="space-y-2">
@@ -1896,13 +1833,22 @@ export function BatchListingForm({
               <Button
                 type="submit"
                 size="sm"
-                disabled={isPending}
+                disabled={isPending || !isVerified}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs gap-2 px-5 py-2"
               >
                 {isPending ? (
                   <>
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     <span>{locale === "am" ? "እየተመዘገበ ነው..." : "Publishing..."}</span>
+                  </>
+                ) : !isVerified ? (
+                  <>
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    <span>
+                      {locale === "am"
+                        ? "የአስተዳዳሪ ማረጋገጫ ይጠብቃል"
+                        : "Awaiting Admin Verification"}
+                    </span>
                   </>
                 ) : (
                   <>
@@ -2061,181 +2007,6 @@ export function BatchListingForm({
         </Dialog>
       )}
 
-      {/* Multi-Select Material Dialog */}
-      <Dialog open={isMultiSelectOpen} onOpenChange={setIsMultiSelectOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0 overflow-hidden">
-          <DialogHeader className="p-4 sm:p-5 border-b border-border/60 bg-muted/20">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-amber-500" />
-              <DialogTitle className="text-base font-bold text-foreground">
-                {locale === "am" ? "የቁሳቁሶች ካታሎግ (በጅምላ ይምረጡ)" : "Select Multiple Materials from Standard Catalog"}
-              </DialogTitle>
-            </div>
-            <DialogDescription className="text-xs text-muted-foreground">
-              {locale === "am"
-                ? "የሚሸጧቸውን ወይም የሚያቀርቧቸውን እቃዎች በሙሉ ምልክት ያድርጉባቸው፤ በአንድ ጊዜ ዝርዝር ውስጥ ይገባሉ።"
-                : "Check all materials you supply. They will be added to your batch list at once."}
-            </DialogDescription>
-          </DialogHeader>
-
-          {/* Filters & Search */}
-          <div className="p-4 border-b border-border/40 space-y-3 bg-card/60">
-            <div className="flex flex-col sm:flex-row gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input
-                  value={multiSelectSearch}
-                  onChange={(e) => setMultiSelectSearch(e.target.value)}
-                  placeholder={locale === "am" ? "በስም፣ በብራንድ ወይም በመጠን ፈልግ..." : "Search by name, brand, or size (e.g. 12mm, Derba)..."}
-                  className="pl-8 text-xs h-8"
-                />
-              </div>
-
-              <select
-                value={multiSelectCategory}
-                onChange={(e) => setMultiSelectCategory(e.target.value)}
-                className="text-xs h-8 rounded-md border border-input bg-background px-2 text-foreground focus:outline-none focus:ring-1 focus:ring-primary min-w-[150px]"
-              >
-                <option value="all">
-                  {locale === "am" ? "ሁሉም ምድቦች" : "All Categories"}
-                </option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {getCategoryTitle(c.slug, c.name, locale)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Quick selection toolbar */}
-            <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
-              <span>
-                {filteredCuratedForModal.length} {locale === "am" ? "የሚገኙ እቃዎች" : "materials found"} ·{" "}
-                <strong className="text-foreground">{selectedCatalogIds.length}</strong> {locale === "am" ? "ተመርጠዋል" : "selected"}
-              </span>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const allIds = filteredCuratedForModal.map((c) => c.id);
-                    setSelectedCatalogIds(Array.from(new Set([...selectedCatalogIds, ...allIds])));
-                  }}
-                  className="text-[11px] text-primary hover:underline font-semibold"
-                >
-                  {locale === "am" ? "ሁሉንም ምረጥ" : "Select all visible"}
-                </button>
-                {selectedCatalogIds.length > 0 && (
-                  <>
-                    <span>•</span>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedCatalogIds([])}
-                      className="text-[11px] text-muted-foreground hover:text-foreground"
-                    >
-                      {locale === "am" ? "አጽዳ" : "Clear selection"}
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Material List with Checkboxes */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-2">
-            {filteredCuratedForModal.length === 0 ? (
-              <div className="py-12 text-center text-xs text-muted-foreground">
-                {locale === "am" ? "ምንም የሚዛመድ ቁሳቁስ አልተገኘም" : "No materials match your search"}
-              </div>
-            ) : (
-              filteredCuratedForModal.map((cp) => {
-                const isSelected = selectedCatalogIds.includes(cp.id);
-                const cat = categories.find((c) => c.id === cp.categoryId);
-                const catName = cat ? getCategoryTitle(cat.slug, cat.name, locale) : "";
-
-                return (
-                  <label
-                    key={cp.id}
-                    className={cn(
-                      "flex items-center gap-3 p-2.5 rounded-lg border transition-colors cursor-pointer select-none",
-                      isSelected
-                        ? "border-primary bg-primary/5 text-foreground shadow-2xs"
-                        : "border-border/60 hover:bg-muted/40 text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedCatalogIds((prev) => [...prev, cp.id]);
-                        } else {
-                          setSelectedCatalogIds((prev) => prev.filter((id) => id !== cp.id));
-                        }
-                      }}
-                      className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-                    />
-
-                    <div className="relative h-10 w-10 rounded-md overflow-hidden bg-muted shrink-0 border border-border/50">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={cp.imageUrl || getProductFallback(cat?.slug || "")}
-                        alt={cp.title}
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-foreground leading-snug line-clamp-2">
-                        {cp.title}
-                      </p>
-                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
-                        <span className="font-semibold text-primary">{catName}</span>
-                        {cp.specs.brand && (
-                          <>
-                            <span>•</span>
-                            <span>{cp.specs.brand}</span>
-                          </>
-                        )}
-                        <span>•</span>
-                        <span>{getUnitLabel(cp.unit, locale)}</span>
-                      </div>
-                    </div>
-                  </label>
-                );
-              })
-            )}
-          </div>
-
-          {/* Dialog Footer */}
-          <div className="p-3 sm:p-4 border-t border-border/60 bg-muted/20 flex items-center justify-between gap-3">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsMultiSelectOpen(false)}
-              className="text-xs"
-            >
-              {locale === "am" ? "ሰርዝ" : "Cancel"}
-            </Button>
-
-            <Button
-              type="button"
-              size="sm"
-              disabled={selectedCatalogIds.length === 0}
-              onClick={handleAddMultipleTemplates}
-              className="text-xs font-bold gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              <span>
-                {locale === "am"
-                  ? `${selectedCatalogIds.length} የተመረጡ እቃዎችን ጨምር`
-                  : `Add ${selectedCatalogIds.length} Selected to Batch`}
-              </span>
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

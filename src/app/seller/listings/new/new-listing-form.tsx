@@ -85,6 +85,7 @@ interface NewListingFormProps {
   curatedProducts?: CuratedProductOption[];
   sellerCompanyName: string;
   savedLocations?: string[];
+  verificationStatus?: string;
 }
 
 // Helper component to display a Zod field error, translated to current locale
@@ -103,10 +104,12 @@ export function NewListingForm({
   curatedProducts = [],
   sellerCompanyName,
   savedLocations = [],
+  verificationStatus = "VERIFIED",
 }: NewListingFormProps) {
   const { t, locale } = useLanguage();
   const router = useRouter();
   const [mode, setMode] = useState<"BATCH" | "SINGLE">("BATCH");
+  const isVerified = verificationStatus === "VERIFIED";
 
   const {
     register,
@@ -307,9 +310,31 @@ export function NewListingForm({
           curatedProducts={curatedProducts}
           sellerCompanyName={sellerCompanyName}
           savedLocations={savedLocations}
+          verificationStatus={verificationStatus}
         />
       ) : (
         <>
+          {!isVerified && (
+            <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-amber-900 dark:text-amber-200 space-y-2">
+              <div className="flex items-center gap-2 font-bold text-sm">
+                <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
+                <span>
+                  {locale === "am"
+                    ? "መለያዎ በአስተዳዳሪ ማረጋገጫ በመጠባበቅ ላይ ነው (Pending Admin Approval)"
+                    : "Account Pending Admin Approval"}
+                </span>
+                <Badge variant="outline" className="border-amber-500/50 bg-amber-500/20 text-amber-700 dark:text-amber-300 text-[10px] uppercase font-bold">
+                  {verificationStatus}
+                </Badge>
+              </div>
+              <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-300">
+                {locale === "am"
+                  ? "የንግድ ፈቃድዎና ምዝገባዎ በEcon አስተዳዳሪ እስኪረጋገጥ ድረስ እቃዎችን በቀጥታ መለጠፍ አይቻልም። የእቃ ዝርዝርዎን ማዘጋጀት ይችላሉ፤ አስተዳዳሪው እንዳጸደቀው ወዲያውኑ ለገዢዎች ይታያል።"
+                  : "To protect contractors and guarantee legal trade compliance, new supplier accounts must be verified by an Econ administrator before materials are published live to the buyer catalog. You can draft your materials now, but posting requires admin approval."}
+              </p>
+            </div>
+          )}
+
           {errors.root?.message && (
             <div className="flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive font-medium">
               <AlertCircle className="h-4 w-4 shrink-0" />
@@ -742,13 +767,22 @@ export function NewListingForm({
             </Link>
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !isVerified}
               className="h-9 gap-2 text-xs font-bold px-6 shadow-md"
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
                   {t("seller_form_submitting_btn")}
+                </>
+              ) : !isVerified ? (
+                <>
+                  <AlertCircle className="h-4 w-4" />
+                  <span>
+                    {locale === "am"
+                      ? "የአስተዳዳሪ ማረጋገጫ ይጠብቃል"
+                      : "Awaiting Admin Verification"}
+                  </span>
                 </>
               ) : (
                 <>

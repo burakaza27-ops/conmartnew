@@ -229,8 +229,8 @@ async function _fetchCatalogListings(
     },
     seller: {
       OR: [
-        { sellerProfile: null },
-        { sellerProfile: { verificationStatus: { not: "SUSPENDED" } } },
+        { role: "ADMIN" },
+        { sellerProfile: { verificationStatus: "VERIFIED" } },
       ],
     },
   };
@@ -898,8 +898,8 @@ async function _fetchProductsCatalog(
           : {}),
         seller: {
           OR: [
-            { sellerProfile: null },
-            { sellerProfile: { verificationStatus: { not: "SUSPENDED" } } },
+            { role: "ADMIN" },
+            { sellerProfile: { verificationStatus: "VERIFIED" } },
           ],
         },
       },
@@ -932,8 +932,8 @@ async function _fetchProductsCatalog(
           updatedAt: { gte: sixMonthsAgo },
           seller: {
             OR: [
-              { sellerProfile: null },
-              { sellerProfile: { verificationStatus: { not: "SUSPENDED" } } },
+              { role: "ADMIN" },
+              { sellerProfile: { verificationStatus: "VERIFIED" } },
             ],
           },
         },
@@ -1298,8 +1298,8 @@ async function _fetchProductWithCompetingOffers(
           active: true,
           seller: {
             OR: [
-              { sellerProfile: null },
-              { sellerProfile: { verificationStatus: { not: "SUSPENDED" } } },
+              { role: "ADMIN" },
+              { sellerProfile: { verificationStatus: "VERIFIED" } },
             ],
           },
         },

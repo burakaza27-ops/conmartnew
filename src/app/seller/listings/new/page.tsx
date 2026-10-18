@@ -15,11 +15,17 @@ export default async function NewListingPage() {
     redirect("/login?redirect=/seller/listings/new");
   }
 
-  let dbUser: { companyName: string; role: string } | null = null;
+  let dbUser: { companyName: string; role: string; sellerProfile: { verificationStatus: string } | null } | null = null;
   try {
     dbUser = await db.user.findUnique({
       where: { authId: user.id },
-      select: { companyName: true, role: true },
+      select: {
+        companyName: true,
+        role: true,
+        sellerProfile: {
+          select: { verificationStatus: true },
+        },
+      },
     });
   } catch (err) {
     console.error("[seller/listings/new] db.user.findUnique failed:", err);
@@ -28,6 +34,11 @@ export default async function NewListingPage() {
   if (!dbUser || (dbUser.role !== "SELLER" && dbUser.role !== "ADMIN")) {
     redirect("/unauthorized");
   }
+
+  const verificationStatus =
+    dbUser.role === "ADMIN"
+      ? "VERIFIED"
+      : (dbUser.sellerProfile?.verificationStatus ?? "UNVERIFIED");
 
   await ensureDefaultCategories();
 
@@ -85,6 +96,7 @@ export default async function NewListingPage() {
       curatedProducts={curatedProducts}
       sellerCompanyName={dbUser.companyName || "Your Company"}
       savedLocations={savedLocations}
+      verificationStatus={verificationStatus}
     />
   );
 }
