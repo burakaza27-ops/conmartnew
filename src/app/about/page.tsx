@@ -494,12 +494,12 @@ export default function AboutPage() {
                     1
                   </div>
                   <h3 className="font-bold text-sm text-foreground">
-                    {locale === "am" ? "መጋዘኖችን በአካል ማረጋገጥ" : "1. Depot Yard Verification"}
+                    {locale === "am" ? "ማን ኤጀንት መሆን ይችላል?" : "1. Who Can Register?"}
                   </h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     {locale === "am"
-                      ? "የአካባቢ መጋዘኖችን በአካል በመጎብኘት የዕቃ ክምችትን ማረጋገጥ እና የGPS ካርታ መመዝገብ።"
-                      : "Inspect local depot inventory on-ground, capture GPS coordinates, and confirm stock legitimacy."}
+                      ? "በገበያ ቦታዎች (መገናኛ፣ ጎተራ፣ ቃሊቲ፣ አያት፣ ለቡ ወዘተ) የሚሰሩ ደላሎች፣ ሹፌሮች (አይሱዙ/ፒክአፕ)፣ ጫኝና አውራጆች ወይም ማንኛውም በገበያው ያለ ሰው መመዝገብ ይችላል።"
+                      : "Local brokers (ደላላ), truck/pickup drivers (አሽከርካሪዎች), loading crews, and on-ground market locators stationed at key building trade hubs."}
                   </p>
                 </Card>
 
@@ -508,26 +508,26 @@ export default function AboutPage() {
                     2
                   </div>
                   <h3 className="font-bold text-sm text-foreground">
-                    {locale === "am" ? "ለገዢዎች ናሙና ማሳየት" : "2. Material Sampling"}
+                    {locale === "am" ? "የአቅራቢዎችን ሱቅ ማሳየት" : "2. Show Supplier Shops"}
                   </h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     {locale === "am"
-                      ? "ለተቋራጮች ትክክለኛ የብረትና ሲሚንቶ ናሙና ማሳየት እና የጥራት ደረጃውን መመስከር።"
-                      : "Assist site engineers with material physical sampling and verified laboratory test certificates."}
+                      ? "የኤጀንት ዋነኛ ስራ በሲስተሙ ላልተመዘገቡ ወይም ኦንላይን ላልገቡ የአካባቢ አቅራቢዎች ደንበኞችን በአካል ሱቃቸውና መጋዘናቸው ድረስ ወስዶ ማሳየት ነው።"
+                      : "An agent personally guides buyers to physical material suppliers' shops and yards — especially for suppliers who are not subscribed on the online system."}
                   </p>
                 </Card>
 
-                <Card className="border-border/70 bg-card p-5 space-y-3">
-                  <div className="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-500 font-extrabold flex items-center justify-center text-sm border border-emerald-500/20">
+                <Card className="border-border/70 bg-card p-5 space-y-3 border-emerald-500/30 bg-emerald-500/5">
+                  <div className="h-8 w-8 rounded-lg bg-emerald-600 text-white font-extrabold flex items-center justify-center text-sm">
                     3
                   </div>
                   <h3 className="font-bold text-sm text-foreground">
-                    {locale === "am" ? "የጭነትና ትራንስፖርት ድጋፍ" : "3. Loading & Logistics"}
+                    {locale === "am" ? "ክፍያ ከአቅራቢው ብቻ (0 ETB)" : "3. Paid by Suppliers Only"}
                   </h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     {locale === "am"
-                      ? "ከመጋዘን ወደ ግንባታ ቦታ የሚደረገውን የጭነት መኪናዎች ቅንጅትና ጭነት መቆጣጠር።"
-                      : "Coordinate Sino/Isuzu transport dispatch and ensure accurate piece counts at loading bays."}
+                      ? "ኤጀንቱ ኮሚሽኑን የሚያገኘው ከአቅራቢው ብቻ ነው። ገዢው ለኤጀንቱ ምንም አይነት ተጨማሪ ክፍያ አይከፍልም (0 ETB)።"
+                      : "The agent is compensated strictly by the material suppliers. Buyers pay ZERO additional commission or service fees to the agent."}
                   </p>
                 </Card>
 
@@ -536,12 +536,12 @@ export default function AboutPage() {
                     4
                   </div>
                   <h3 className="font-bold text-sm text-foreground">
-                    {locale === "am" ? "የታመነ ኮሚሽን ገቢ" : "4. Transparent Commission"}
+                    {locale === "am" ? "በአካል ማረጋገጥና መተማመን" : "4. Physical Inspection First"}
                   </h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     {locale === "am"
-                      ? "በተሳካ ሁኔታ ለተጠናቀቀ እያንዳንዱ ግብይት ግልጽና ህጋዊ የኤጀንሲ ገቢ በዋሌት መቀበል።"
-                      : "Earn guaranteed platform facilitation payouts upon successful deal completion and site delivery."}
+                      ? "ኤጀንቱ የቀበሌ መታወቂያው የተረጋገጠ ነው። ገዢው ዕቃውን መጋዘን ውስጥ በአካል አይቶ ሳያረጋግጥ ምንም ክፍያ ለአቅራቢውም አይሰጥም።"
+                      : "All agents are vetted with Kebele IDs. The buyer physically inspects materials at the depot before settling payment directly with the merchant."}
                   </p>
                 </Card>
               </div>
@@ -775,6 +775,22 @@ export default function AboutPage() {
                   {locale === "am"
                     ? "በመድረኩ ላይ የሚታዩ ዋጋዎች አመላካች የጅምላ ዋጋዎች ናቸው። የመጨረሻው የሽያጭ ዋጋ እና የክፍያ ውል በገዢው እና በአቅራቢው መካከል በሚደረግ ቀጥታ ስምምነት የሚወሰን ሲሆን፣ ሁሉም የንግድ ሽያጮች ህጋዊ የ15% ቫት ደረሰኝ ሊኖራቸው ይገባል።"
                     : "Prices listed in the catalog reflect current depot volume tiers. Final commercial rates, delivery surcharges, and payment modalities are directly agreed between buyer and merchant, and must conform strictly to Ethiopian tax regulations."}
+                </p>
+              </div>
+
+              <div className="space-y-2 border-t border-border/40 pt-4">
+                <h3 className="font-bold text-foreground text-sm flex items-center gap-2">
+                  <UserCheck className="h-4 w-4 text-emerald-600" />
+                  <span>
+                    {locale === "am"
+                      ? "4.4 የመስክ ኤጀንቶች (Field Agents) ስራ፣ ክፍያ እና የገዢዎች ነፃ አገልግሎት"
+                      : "4.4 Field Agents Role, Supplier-Paid Commission & Zero Buyer Cost"}
+                  </span>
+                </h3>
+                <p>
+                  {locale === "am"
+                    ? "የኢኮን የመስክ ወኪሎች (Agents) በሲስተሙ ላልገቡ ወይም ኦንላይን ለማይጠቀሙ የአካባቢ አቅራቢዎች ደንበኞችን በአካል ሱቃቸው ድረስ ወስደው የሚያሳዩ የአካባቢ ደላሎች፣ አሽከርካሪዎች እና አስጎብኚዎች ናቸው። ኤጀንቱ ክፍያ የሚያገኘው ከአቅራቢው ብቻ ሲሆን፣ ገዢው ምንም ዓይነት ተጨማሪ የኤጀንት ክፍያ (0 ETB) አይከፍልም። ገዢው ማንኛውንም ክፍያ ከመስጠቱ በፊት መጋዘኑ ድረስ በአካል ሄዶ ዕቃውን ማረጋገጥ አለበት።"
+                    : "ConMart Field Agents are vetted local market navigators (brokers, drivers, loading crews, and area guides) whose primary role is to personally guide buyers to physical material suppliers' shops and yards — especially for suppliers who are not subscribed online. Agents are compensated strictly by material suppliers; buyers pay ZERO additional commission or fees. Buyers remain strictly obligated to physically inspect stock at the depot before issuing payment directly to the merchant."}
                 </p>
               </div>
             </div>

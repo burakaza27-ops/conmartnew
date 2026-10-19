@@ -33,8 +33,18 @@ export default function AdminErrorBoundary({
         A temporary error occurred loading administrative orders or stats. Click retry to reconnect to the database.
       </p>
 
-      <div className="mt-6 flex items-center gap-3">
-        <Button size="sm" onClick={() => reset()} className="gap-1.5 font-semibold">
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+        <Button
+          size="sm"
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              window.location.reload();
+            } else {
+              reset();
+            }
+          }}
+          className="gap-1.5 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs"
+        >
           <RotateCcw className="h-3.5 w-3.5" />
           Reconnect
         </Button>
@@ -42,6 +52,16 @@ export default function AdminErrorBoundary({
           <Button size="sm" variant="outline" className="gap-1.5">
             <ShieldCheck className="h-3.5 w-3.5" />
             Command Center
+          </Button>
+        </Link>
+        <Link href="/admin/subscriptions">
+          <Button size="sm" variant="ghost" className="text-xs text-muted-foreground hover:text-foreground">
+            Subscriptions
+          </Button>
+        </Link>
+        <Link href="/admin/agents">
+          <Button size="sm" variant="ghost" className="text-xs text-muted-foreground hover:text-foreground">
+            Agents
           </Button>
         </Link>
       </div>

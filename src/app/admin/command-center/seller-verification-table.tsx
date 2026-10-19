@@ -83,7 +83,11 @@ export function SellerVerificationTable({ initialSellers }: SellerVerificationTa
 
       if (res.success) {
         setSellers((prev) =>
-          prev.map((s) => (s.profileId === profileId ? { ...s, verificationStatus: newStatus } : s))
+          prev.map((s) =>
+            s.profileId === profileId || s.id === profileId
+              ? { ...s, verificationStatus: newStatus }
+              : s
+          )
         );
         setStatusMsg({
           type: "success",
@@ -104,7 +108,11 @@ export function SellerVerificationTable({ initialSellers }: SellerVerificationTa
       const res = await toggleSellerReverificationAction(profileId, needed);
       if (res.success) {
         setSellers((prev) =>
-          prev.map((s) => (s.profileId === profileId ? { ...s, reverificationNeeded: needed } : s))
+          prev.map((s) =>
+            s.profileId === profileId || s.id === profileId
+              ? { ...s, reverificationNeeded: needed }
+              : s
+          )
         );
         setStatusMsg({
           type: "success",
@@ -302,60 +310,64 @@ export function SellerVerificationTable({ initialSellers }: SellerVerificationTa
                       </td>
 
                       <td className="p-3 text-right">
-                        {s.profileId && (
-                          <div className="inline-flex items-center gap-1.5">
-                            {s.verificationStatus !== "VERIFIED" && (
-                              <Button
-                                size="sm"
-                                variant="default"
-                                disabled={isPending}
-                                onClick={() => handleUpdateStatus(s.profileId!, "VERIFIED")}
-                                className="h-7 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
-                              >
-                                {isPending && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
-                                Verify
-                              </Button>
-                            )}
+                        {(() => {
+                          const targetId = s.profileId || s.id;
+                          if (!targetId) return null;
+                          return (
+                            <div className="inline-flex items-center gap-1.5">
+                              {s.verificationStatus !== "VERIFIED" && (
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  disabled={isPending}
+                                  onClick={() => handleUpdateStatus(targetId, "VERIFIED")}
+                                  className="h-7 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
+                                >
+                                  {isPending && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
+                                  Verify
+                                </Button>
+                              )}
 
-                            {s.verificationStatus !== "SUSPENDED" ? (
+                              {s.verificationStatus !== "SUSPENDED" ? (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={isPending}
+                                  onClick={() => handleUpdateStatus(targetId, "SUSPENDED")}
+                                  className="h-7 text-xs font-semibold text-destructive hover:bg-destructive/10"
+                                >
+                                  Suspend
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={isPending}
+                                  onClick={() => handleUpdateStatus(targetId, "UNVERIFIED")}
+                                  className="h-7 text-xs font-semibold"
+                                >
+                                  Reinstate
+                                </Button>
+                              )}
                               <Button
                                 size="sm"
                                 variant="outline"
                                 disabled={isPending}
-                                onClick={() => handleUpdateStatus(s.profileId!, "SUSPENDED")}
-                                className="h-7 text-xs font-semibold text-destructive hover:bg-destructive/10"
+                                onClick={() =>
+                                  handleToggleReverification(targetId, !s.reverificationNeeded)
+                                }
+                                className={`h-7 text-xs font-semibold ${
+                                  s.reverificationNeeded
+                                    ? "border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-500/10"
+                                    : ""
+                                }`}
+                                title="Flag listing for 30-60 day re-verification"
                               >
-                                Suspend
+                                {s.reverificationNeeded ? "Clear Re-check" : "Flag Re-check"}
                               </Button>
-                            ) : (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={isPending}
-                                onClick={() => handleUpdateStatus(s.profileId!, "UNVERIFIED")}
-                                className="h-7 text-xs font-semibold"
-                              >
-                                Reinstate
-                              </Button>
-                            )}
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={isPending}
-                              onClick={() =>
-                                handleToggleReverification(s.profileId!, !s.reverificationNeeded)
-                              }
-                              className={`h-7 text-xs font-semibold ${
-                                s.reverificationNeeded
-                                  ? "border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-500/10"
-                                  : ""
-                              }`}
-                              title="Flag listing for 30-60 day re-verification"
-                            >
-                              {s.reverificationNeeded ? "Clear Re-check" : "Flag Re-check"}
-                            </Button>
-                          </div>
-                        )}
+                            </div>
+                          );
+                        })()}
                       </td>
                     </tr>
                   );

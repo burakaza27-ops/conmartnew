@@ -21,60 +21,69 @@ export async function getAdminSellersAction() {
     return { success: false, error: auth.error };
   }
 
-  const sellers = await db.user.findMany({
-    where: { role: "SELLER" },
-    include: {
-      sellerProfile: true,
-      wallet: {
-        select: {
-          cashBalance: true,
-          creditBalance: true,
+  try {
+    const sellers = await db.user.findMany({
+      where: { role: "SELLER" },
+      include: {
+        sellerProfile: true,
+        wallet: {
+          select: {
+            cashBalance: true,
+            creditBalance: true,
+          },
+        },
+        _count: {
+          select: {
+            sellerListings: true,
+            sellerEnquiries: true,
+          },
         },
       },
-      _count: {
-        select: {
-          sellerListings: true,
-          sellerEnquiries: true,
-        },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+      orderBy: { createdAt: "desc" },
+    });
 
-  return {
-    success: true,
-    data: sellers.map((s) => ({
-      id: s.id,
-      name: s.name,
-      phone: s.phone,
-      companyName: s.companyName,
-      createdAt: s.createdAt.toISOString(),
-      profileId: s.sellerProfile?.id || null,
-      sellerType: s.sellerProfile?.sellerType || "RETAILER",
-      verificationStatus: s.sellerProfile?.verificationStatus || "UNVERIFIED",
-      licenseNumber: s.sellerProfile?.licenseNumber || null,
-      tinNumber: s.sellerProfile?.tinNumber || null,
-      vatNumber: s.sellerProfile?.vatNumber || null,
-      vatRegistered: s.sellerProfile?.vatRegistered ?? false,
-      licenseExpiry: s.sellerProfile?.licenseExpiry ? s.sellerProfile.licenseExpiry.toISOString() : null,
-      tinExpiry: s.sellerProfile?.tinExpiry ? s.sellerProfile.tinExpiry.toISOString() : null,
-      completedDealsCount: s.sellerProfile?.completedDealsCount || 0,
-      failedDealsCount: s.sellerProfile?.failedDealsCount || 0,
-      responseTimeAvgMinutes: s.sellerProfile?.responseTimeAvgMinutes || 60,
-      listingCount: s._count.sellerListings,
-      enquiryCount: s._count.sellerEnquiries,
-      cashBalance: Number(s.wallet?.cashBalance ?? 0),
-      creditBalance: Number(s.wallet?.creditBalance ?? 0),
-      subscriptionStatus: resolveSubscription(s.sellerProfile),
-      subscriptionTier: s.sellerProfile?.subscriptionTier ?? "BASIC",
-      reverificationNeeded: s.sellerProfile?.reverificationNeeded ?? false,
-      lastVerifiedAt: s.sellerProfile?.lastVerifiedAt ? s.sellerProfile.lastVerifiedAt.toISOString() : null,
-      storedSubscriptionStatus: s.sellerProfile?.subscriptionStatus ?? "FREE",
-      subscriptionExpiresAt: s.sellerProfile?.subscriptionExpiresAt
-        ? s.sellerProfile.subscriptionExpiresAt.toISOString()
-        : null,
-    })),
-  };
+    return {
+      success: true,
+      data: sellers.map((s) => ({
+        id: s.id,
+        name: s.name,
+        phone: s.phone,
+        companyName: s.companyName,
+        createdAt: s.createdAt.toISOString(),
+        profileId: s.sellerProfile?.id || null,
+        sellerType: s.sellerProfile?.sellerType || "RETAILER",
+        verificationStatus: s.sellerProfile?.verificationStatus || "UNVERIFIED",
+        licenseNumber: s.sellerProfile?.licenseNumber || null,
+        tinNumber: s.sellerProfile?.tinNumber || null,
+        vatNumber: s.sellerProfile?.vatNumber || null,
+        vatRegistered: s.sellerProfile?.vatRegistered ?? false,
+        licenseExpiry: s.sellerProfile?.licenseExpiry ? s.sellerProfile.licenseExpiry.toISOString() : null,
+        tinExpiry: s.sellerProfile?.tinExpiry ? s.sellerProfile.tinExpiry.toISOString() : null,
+        completedDealsCount: s.sellerProfile?.completedDealsCount || 0,
+        failedDealsCount: s.sellerProfile?.failedDealsCount || 0,
+        responseTimeAvgMinutes: s.sellerProfile?.responseTimeAvgMinutes || 60,
+        listingCount: s._count?.sellerListings || 0,
+        enquiryCount: s._count?.sellerEnquiries || 0,
+        cashBalance: Number(s.wallet?.cashBalance ?? 0),
+        creditBalance: Number(s.wallet?.creditBalance ?? 0),
+        subscriptionStatus: resolveSubscription(s.sellerProfile),
+        subscriptionTier: s.sellerProfile?.subscriptionTier ?? "BASIC",
+        reverificationNeeded: s.sellerProfile?.reverificationNeeded ?? false,
+        lastVerifiedAt: s.sellerProfile?.lastVerifiedAt ? s.sellerProfile.lastVerifiedAt.toISOString() : null,
+        storedSubscriptionStatus: s.sellerProfile?.subscriptionStatus ?? "FREE",
+        subscriptionExpiresAt: s.sellerProfile?.subscriptionExpiresAt
+          ? s.sellerProfile.subscriptionExpiresAt.toISOString()
+          : null,
+      })),
+    };
+  } catch (error) {
+    console.error("[getAdminSellersAction] error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to load supplier list.",
+      data: [],
+    };
+  }
 }
 
 export async function updateSellerVerificationAction({
@@ -91,22 +100,67 @@ export async function updateSellerVerificationAction({
     return { success: false, error: auth.error };
   }
 
-  await db.sellerProfile.update({
-    where: { id: sellerProfileId },
-    data: {
-      verificationStatus: status,
-      ...(sellerType ? { sellerType } : {}),
-      ...(status === "VERIFIED" ? { lastVerifiedAt: new Date(), reverificationNeeded: false } : {}),
-    },
-  });
+  try {
+    // 1. Locate seller profile by ID or by userId
+    let profile = await db.sellerProfile.findUnique({
+      where: { id: sellerProfileId },
+    });
 
-  revalidatePath("/admin/command-center");
-  revalidatePath("/seller/dashboard");
-  revalidatePath("/buyer", "layout");
-  revalidatePath("/buyer/catalog");
-  revalidatePath("/buyer/category/all");
+    if (!profile) {
+      profile = await db.sellerProfile.findUnique({
+        where: { userId: sellerProfileId },
+      });
+    }
 
-  return { success: true };
+    if (!profile) {
+      // Check if sellerProfileId is a valid User ID with SELLER role, then create seller profile
+      const user = await db.user.findUnique({
+        where: { id: sellerProfileId },
+        select: { id: true, role: true },
+      });
+
+      if (user && user.role === "SELLER") {
+        profile = await db.sellerProfile.create({
+          data: {
+            userId: user.id,
+            verificationStatus: status,
+            sellerType: sellerType || "RETAILER",
+            ...(status === "VERIFIED" ? { lastVerifiedAt: new Date(), reverificationNeeded: false } : {}),
+          },
+        });
+      } else {
+        return { success: false, error: "Supplier profile not found in database." };
+      }
+    } else {
+      await db.sellerProfile.update({
+        where: { id: profile.id },
+        data: {
+          verificationStatus: status,
+          ...(sellerType ? { sellerType } : {}),
+          ...(status === "VERIFIED" ? { lastVerifiedAt: new Date(), reverificationNeeded: false } : {}),
+        },
+      });
+    }
+
+    // Safe revalidation: caught so failure to revalidate never bubbles an exception
+    try {
+      revalidatePath("/admin/command-center");
+      revalidatePath("/seller/dashboard");
+      revalidatePath("/buyer", "layout");
+      revalidatePath("/buyer/catalog");
+      revalidatePath("/buyer/category/all");
+    } catch (revalErr) {
+      console.warn("[updateSellerVerificationAction] revalidatePath warning:", revalErr);
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("[updateSellerVerificationAction] error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to update supplier verification status.",
+    };
+  }
 }
 
 export async function toggleSellerReverificationAction(sellerProfileId: string, needed: boolean) {
@@ -115,14 +169,41 @@ export async function toggleSellerReverificationAction(sellerProfileId: string, 
     return { success: false, error: auth.error };
   }
 
-  await db.sellerProfile.update({
-    where: { id: sellerProfileId },
-    data: {
-      reverificationNeeded: needed,
-      ...(!needed ? { lastVerifiedAt: new Date() } : {}),
-    },
-  });
+  try {
+    let profile = await db.sellerProfile.findUnique({
+      where: { id: sellerProfileId },
+    });
 
-  revalidatePath("/admin/command-center");
-  return { success: true };
+    if (!profile) {
+      profile = await db.sellerProfile.findUnique({
+        where: { userId: sellerProfileId },
+      });
+    }
+
+    if (!profile) {
+      return { success: false, error: "Supplier profile not found." };
+    }
+
+    await db.sellerProfile.update({
+      where: { id: profile.id },
+      data: {
+        reverificationNeeded: needed,
+        ...(!needed ? { lastVerifiedAt: new Date() } : {}),
+      },
+    });
+
+    try {
+      revalidatePath("/admin/command-center");
+    } catch (revalErr) {
+      console.warn("[toggleSellerReverificationAction] revalidatePath warning:", revalErr);
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("[toggleSellerReverificationAction] error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to toggle re-verification status.",
+    };
+  }
 }

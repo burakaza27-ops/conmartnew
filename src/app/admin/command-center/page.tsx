@@ -55,25 +55,25 @@ export default async function CommandCenterPage() {
   ]);
 
   // Safe extraction with typed defaults — a rejected promise yields []
-  const orders = results[0].status === "fulfilled" ? results[0].value : [];
-  const subscriptionsRes = results[1].status === "fulfilled" ? results[1].value : { success: false, data: [] };
-  const guidedLeadsRes = results[2].status === "fulfilled" ? results[2].value : { success: false, data: [] };
-  const disputesRes = results[3].status === "fulfilled" ? results[3].value : { success: false, data: [] };
-  const sellersRes = results[4].status === "fulfilled" ? results[4].value : { success: false, data: [] };
-  const agentsRes = results[5].status === "fulfilled" ? results[5].value : { success: false, data: [] };
-  const wastages = results[6].status === "fulfilled" ? results[6].value : [];
+  const orders = results[0].status === "fulfilled" && Array.isArray(results[0].value) ? results[0].value : [];
+  const subscriptionsRes = results[1].status === "fulfilled" && results[1].value ? results[1].value : { success: false, data: [] };
+  const guidedLeadsRes = results[2].status === "fulfilled" && results[2].value ? results[2].value : { success: false, data: [] };
+  const disputesRes = results[3].status === "fulfilled" && results[3].value ? results[3].value : { success: false, data: [] };
+  const sellersRes = results[4].status === "fulfilled" && results[4].value ? results[4].value : { success: false, data: [] };
+  const agentsRes = results[5].status === "fulfilled" && results[5].value ? results[5].value : { success: false, data: [] };
+  const wastages = results[6].status === "fulfilled" && Array.isArray(results[6].value) ? results[6].value : [];
 
-  const pendingPayments = subscriptionsRes.success && subscriptionsRes.data ? subscriptionsRes.data : [];
-  const guidedLeads = guidedLeadsRes.success && guidedLeadsRes.data ? guidedLeadsRes.data : [];
-  const disputes = disputesRes.success && disputesRes.data ? disputesRes.data : [];
-  const sellers = sellersRes.success && sellersRes.data ? sellersRes.data : [];
-  const agentApps = agentsRes.success && agentsRes.data ? agentsRes.data : [];
+  const pendingPayments = subscriptionsRes?.success && Array.isArray(subscriptionsRes?.data) ? subscriptionsRes.data : [];
+  const guidedLeads = guidedLeadsRes?.success && Array.isArray(guidedLeadsRes?.data) ? guidedLeadsRes.data : [];
+  const disputes = disputesRes?.success && Array.isArray(disputesRes?.data) ? disputesRes.data : [];
+  const sellers = sellersRes?.success && Array.isArray(sellersRes?.data) ? sellersRes.data : [];
+  const agentApps = agentsRes?.success && Array.isArray(agentsRes?.data) ? agentsRes.data : [];
   const pendingAgents = agentApps.filter(
     (a: { approvalStatus?: string }) =>
-      a.approvalStatus === "UNDER_REVIEW" || a.approvalStatus === "SUBMITTED"
+      a?.approvalStatus === "UNDER_REVIEW" || a?.approvalStatus === "SUBMITTED"
   );
   const pendingWastages = wastages.filter(
-    (w: { status?: string }) => w.status === "PENDING"
+    (w: { status?: string }) => w?.status === "PENDING"
   );
 
   return (
@@ -119,18 +119,18 @@ export default async function CommandCenterPage() {
         <StatCard
           icon={<ShieldCheck className="h-4 w-4 text-emerald-500" />}
           label="Verified Yds"
-          value={sellers.filter((s) => s.verificationStatus === "VERIFIED").length.toString()}
+          value={sellers.filter((s) => s?.verificationStatus === "VERIFIED").length.toString()}
         />
         <StatCard
           icon={<Building2 className="h-4 w-4 text-blue-500" />}
           label="Audit Due"
-          value={sellers.filter((s) => s.reverificationNeeded).length.toString()}
+          value={sellers.filter((s) => s?.reverificationNeeded).length.toString()}
         />
         <StatCard
           icon={<ShieldAlert className="h-4 w-4 text-rose-500" />}
           label="Disputes"
-          value={disputes.filter((d) => d.status === "OPEN" || d.status === "MEDIATING").length.toString()}
-          badge={disputes.filter((d) => d.status === "OPEN").length > 0 ? "Open" : undefined}
+          value={disputes.filter((d) => d?.status === "OPEN" || d?.status === "MEDIATING").length.toString()}
+          badge={disputes.filter((d) => d?.status === "OPEN").length > 0 ? "Open" : undefined}
         />
         <StatCard
           icon={<Inbox className="h-4 w-4 text-indigo-500" />}

@@ -163,31 +163,66 @@ export default async function BuyerCategoryHubPage() {
       )}
 
       {/* ============================================================
-          HOW IT WORKS
+          HOW IT WORKS & AGENT TRUST
       ============================================================ */}
-      <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
-        <h2 className="text-base sm:text-lg font-bold tracking-tight">
-          How introductions work
-        </h2>
-        <p className="mt-1 max-w-lg text-xs sm:text-sm leading-relaxed text-muted-foreground">
-          You never pay to browse. If the supplier subscribes, you get their direct phone number — otherwise our agents take you to their shop at no extra cost.
-        </p>
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+      <section className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-6">
+        <div>
+          <h2 className="text-base sm:text-lg font-bold tracking-tight">
+            How introductions work
+          </h2>
+          <p className="mt-1 max-w-2xl text-xs sm:text-sm leading-relaxed text-muted-foreground">
+            You never pay to browse. If the supplier subscribes, you get their direct phone number — otherwise our local agents guide you directly to their shop or yard at no extra cost.
+          </p>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-3">
           <Guarantee
             icon={Building2}
             title="Verified depots"
-            body="Trade licenses and mill certificates verified before any listing is published."
+            body="Trade licenses and mill certificates verified by admin before listings appear in the catalog."
           />
           <Guarantee
             icon={Coins}
             title="Direct supplier contact"
-            body="Subscribers share their phone number with you instantly — no middleman, no markup."
+            body="Subscribed suppliers share their direct phone number instantly — no middleman markups."
           />
           <Guarantee
             icon={Store}
             title="Free agent-guided visit"
-            body="If a deal is agent-led, our local agent takes you to the supplier's shop. You pay nothing extra."
+            body="For unsubscribed shops, our local field agent personally guides you to the depot. You pay 0 ETB extra."
           />
+        </div>
+
+        {/* Buyer Trust & Agent FAQ Box */}
+        <div className="rounded-xl border border-primary/25 bg-primary/5 p-4 sm:p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
+              ?
+            </span>
+            <h3 className="text-xs sm:text-sm font-bold text-foreground">
+              What is an Agent and how can you trust them? (የመስክ ኤጀንት ማነው? እንዴትስ ልናምናቸው እንችላለን?)
+            </h3>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3 text-xs leading-relaxed text-foreground/90">
+            <div className="space-y-1 bg-background/70 p-3 rounded-lg border border-border/50">
+              <span className="font-bold text-primary block">1. Their Role</span>
+              <p className="text-muted-foreground text-[11px]">
+                An agent is a verified local partner (driver, local broker, or area guide) who shows you physical supplier shops and depots for suppliers not subscribed online.
+              </p>
+            </div>
+            <div className="space-y-1 bg-background/70 p-3 rounded-lg border border-border/50">
+              <span className="font-bold text-emerald-600 block">2. 0 ETB from Buyer</span>
+              <p className="text-muted-foreground text-[11px]">
+                The agent is paid strictly by the supplier upon successful purchase. You never pay any commission, fee, or tip to the agent.
+              </p>
+            </div>
+            <div className="space-y-1 bg-background/70 p-3 rounded-lg border border-border/50">
+              <span className="font-bold text-amber-600 block">3. Inspect Before Payment</span>
+              <p className="text-muted-foreground text-[11px]">
+                The agent will guide you to the depot. You physically inspect the material specs and quantity before making any payment directly to the supplier.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
     </div>

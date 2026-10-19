@@ -369,57 +369,143 @@ export function AgentApplyWizard({ user, existingProfile }: AgentApplyWizardProp
             </div>
           </CardHeader>
           <CardContent className="p-6 sm:p-8 space-y-8">
-            {/* 3 Pillars */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="rounded-2xl border border-border/70 p-5 space-y-3 bg-card">
-                <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <MapPin className="size-5" />
+            {/* 4 Core Principles: Role, Eligibility, Compensation & Trust */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* 1. What is the Job of an Agent? */}
+              <div className="rounded-2xl border-2 border-primary/30 p-5 space-y-2.5 bg-primary/5">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-sm">
+                    1
+                  </div>
+                  <h3 className="font-extrabold text-sm text-foreground">
+                    {locale === "am"
+                      ? "የኤጀንት ስራ ምንድነው? (What is the Job?)"
+                      : "The Job of a ConMart Agent"}
+                  </h3>
                 </div>
-                <h3 className="font-bold text-sm text-foreground">Marketplace Hub Stationing</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Register at your primary hub (e.g. Megenagna, Gotera, Kality). When a contractor orders materials from your hub, only online partners at that location get notified.
+                <p className="text-xs text-foreground/90 leading-relaxed font-medium">
+                  {locale === "am"
+                    ? "የኤጀንት ዋነኛ ስራ በሲስተሙ ላልተመዘገቡ ወይም ኦንላይን ላልገቡ የአካባቢ የግንባታ እቃ አቅራቢዎች ደንበኞችን በአካል ሱቃቸው ወይም መጋዘናቸው ድረስ ወስዶ ማሳየት እና ማገናኘት ነው።"
+                    : "An agent is an on-the-ground guide who personally shows and navigates buyers to physical material suppliers' shops and yards — especially for suppliers who are not subscribed or active on the online platform."}
                 </p>
+                <div className="text-[11px] text-muted-foreground">
+                  {locale === "am"
+                    ? "✓ ከመጋዘን ባለቤቶች ጋር ደንበኛን ማገናኘት እና የትክክለኛውን እቃ ናሙና ማሳየት"
+                    : "✓ Bridge offline depot yards with buyers and coordinate physical depot visits"}
+                </div>
               </div>
 
-              <div className="rounded-2xl border border-border/70 p-5 space-y-3 bg-card">
-                <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
-                  <Phone className="size-5" />
+              {/* 2. Who Can Register as an Agent? */}
+              <div className="rounded-2xl border-2 border-emerald-500/30 p-5 space-y-2.5 bg-emerald-500/5">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-600 text-white font-bold text-sm">
+                    2
+                  </div>
+                  <h3 className="font-extrabold text-sm text-foreground">
+                    {locale === "am"
+                      ? "ማን ኤጀንት ሆኖ መመዝገብ ይችላል? (Who Can Register?)"
+                      : "Who Can Register as an Agent?"}
+                  </h3>
                 </div>
-                <h3 className="font-bold text-sm text-foreground">Mutual Direct Phone Reveal</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  The moment you accept a request, you immediately receive the buyer’s full phone number and project details. The buyer also gets your name, phone, and truck details.
+                <p className="text-xs text-foreground/90 leading-relaxed font-medium">
+                  {locale === "am"
+                    ? "በግንባታ ገበያ ቦታዎች (መገናኛ፣ ጎተራ፣ ቃሊቲ፣ አያት፣ ለቡ፣ መርካቶ ወዘተ) የሚሰሩ ደላሎች፣ የመኪና/አይሱዙ/ፒክአፕ አሽከርካሪዎች፣ ጫኝና አውራጆች ወይም ማንኛውም በገበያው ያለ ሰው መመዝገብ ይችላል።"
+                    : "Anyone working in local construction market areas — local brokers (ደላላ), truck/pickup/Isuzu drivers (አሽከርካሪዎች), loading workers (ጫኝ/አውራጅ), or depot locators available on-ground."}
                 </p>
+                <div className="text-[11px] text-muted-foreground">
+                  {locale === "am"
+                    ? "✓ የ12ኛ ክፍል ሰርተፍኬት ወይም የመንግስት ሰራተኛ ዋስ አይጠየቅም"
+                    : "✓ No Grade 12 educational certificate or government employee guarantor required"}
+                </div>
               </div>
 
-              <div className="rounded-2xl border border-border/70 p-5 space-y-3 bg-card">
-                <div className="flex size-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600">
-                  <Sparkles className="size-5" />
+              {/* 3. Payment: From Suppliers Only (0 ETB from Buyer) */}
+              <div className="rounded-2xl border-2 border-amber-500/30 p-5 space-y-2.5 bg-amber-500/5">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex size-9 items-center justify-center rounded-xl bg-amber-600 text-white font-bold text-sm">
+                    3
+                  </div>
+                  <h3 className="font-extrabold text-sm text-foreground">
+                    {locale === "am"
+                      ? "ክፍያ ከአቅራቢው ብቻ — ከገዢው ምንም አይጠየቅም"
+                      : "Paid by Suppliers Only (0 ETB from Buyer)"}
+                  </h3>
                 </div>
-                <h3 className="font-bold text-sm text-foreground">6-Month Free Intro Period</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Zero lead fees for your first 6 months. After the introductory period, access leads with a simple prepaid 100 ETB per confirmed lead credit model with automatic dispute refunds.
+                <p className="text-xs text-foreground/90 leading-relaxed font-medium">
+                  {locale === "am"
+                    ? "ኤጀንቱ ኮሚሽኑን የሚያገኘው ከዕቃ አቅራቢዎች ብቻ ነው። ገዢው ምንም ዓይነት ተጨማሪ የኤጀንት ወይም የድካም ክፍያ አይከፍልም።"
+                    : "An agent gets payment strictly from the material suppliers upon successful sales. There is NO additional payment or fee charged to the buyer whatsoever."}
                 </p>
+                <div className="text-[11px] text-muted-foreground">
+                  {locale === "am"
+                    ? "✓ ገዢዎች በነጻነት ይጠቀማሉ፤ እርስዎ ሙሉ ኮሚሽንዎን ከአቅራቢው ያገኛሉ"
+                    : "✓ Buyers pay zero fees for agent guidance; you earn directly from supplier deal commissions"}
+                </div>
+              </div>
+
+              {/* 4. Trust & Safety: Physical Inspection First */}
+              <div className="rounded-2xl border-2 border-blue-500/30 p-5 space-y-2.5 bg-blue-500/5">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex size-9 items-center justify-center rounded-xl bg-blue-600 text-white font-bold text-sm">
+                    4
+                  </div>
+                  <h3 className="font-extrabold text-sm text-foreground">
+                    {locale === "am"
+                      ? "ገዢዎች ለምን ያምኗችኋል? (Trust & Security)"
+                      : "Why Buyers Trust ConMart Agents"}
+                  </h3>
+                </div>
+                <p className="text-xs text-foreground/90 leading-relaxed font-medium">
+                  {locale === "am"
+                    ? "የቀበሌ መታወቂያ እና ህጋዊ ሰነዶቻቸው የተረጋገጠ ነው። ገዢው ዕቃውን መጋዘን ውስጥ በአካል አይቶ ሳያረጋግጥ ምንም ክፍያ ለአቅራቢውም አይሰጥም።"
+                    : "All agents submit verified Kebele IDs and phone numbers. Agents never collect material funds; buyers physically inspect stock at the yard before settling directly with the supplier."}
+                </p>
+                <div className="text-[11px] text-muted-foreground">
+                  {locale === "am"
+                    ? "✓ ቀጥታ የአቅራቢና ገዢ ግንኙነት በግልጽነት እና በህጋዊ ደህንነት ይጠበቃል"
+                    : "✓ Transparent, direct transactions with physical depot inspection before any settlement"}
+                </div>
               </div>
             </div>
 
-            {/* No Grade 12 / Guarantor Notice */}
-            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 flex items-start gap-3.5">
-              <BadgeCheck className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <h4 className="text-xs font-bold text-emerald-950 dark:text-emerald-300">
-                  Zero Educational or Guarantor Roadblocks
-                </h4>
-                <p className="text-xs text-emerald-800 dark:text-emerald-400 leading-relaxed">
-                  We verify only who you are (Kebele ID / National ID) and your vehicle credentials (Driver’s License & Libre). No high school diploma (Grade 12) or government employee guarantor required.
+            {/* Hub Stationing & 6-Month Intro Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+              <div className="rounded-xl border border-border/70 p-4 space-y-2 bg-card">
+                <div className="flex items-center gap-2 text-primary font-bold text-xs">
+                  <MapPin className="size-4" />
+                  <span>Marketplace Hub Stationing</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Choose your primary station (Megenagna, Gotera, Kality, Ayat, Lebu...). When a buyer near your hub needs assistance, you receive immediate dispatch.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border/70 p-4 space-y-2 bg-card">
+                <div className="flex items-center gap-2 text-emerald-600 font-bold text-xs">
+                  <Phone className="size-4" />
+                  <span>Direct Contact Reveal</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Mutual phone reveal: the buyer gets your name and contact, and you get the buyer’s direct number to coordinate physical arrival at the yard.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border/70 p-4 space-y-2 bg-card">
+                <div className="flex items-center gap-2 text-purple-600 font-bold text-xs">
+                  <Sparkles className="size-4" />
+                  <span>6-Month Free Intro Access</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  0 ETB registration or platform fee during your first 6 months. Keep 100% of your earnings from suppliers and truck transport.
                 </p>
               </div>
             </div>
 
             <Button
               onClick={() => setCurrentStep(2)}
-              className="w-full sm:w-auto font-bold gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-sm rounded-xl"
+              className="w-full sm:w-auto font-bold gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-sm rounded-xl shadow-md"
             >
-              <span>Begin Application</span>
+              <span>{locale === "am" ? "ምዝገባውን ይጀምሩ" : "Begin Agent Registration"}</span>
               <ArrowRight className="h-4 w-4" />
             </Button>
           </CardContent>
@@ -611,21 +697,21 @@ export function AgentApplyWizard({ user, existingProfile }: AgentApplyWizardProp
                   [
                     {
                       id: "BOTH",
-                      title: "Both (Recommended)",
-                      amharic: "ዕቃ ማፈላለግ እና ትራንስፖርት",
-                      desc: "Material sourcing + Truck delivery",
-                    },
-                    {
-                      id: "TRANSPORT_DELIVERY",
-                      title: "Transport / Truck Delivery",
-                      amharic: "የትራንስፖርት እና ጭነት ማድረስ",
-                      desc: "Pickup, Isuzu or Sino delivery",
+                      title: "Depot Guide + Transport (Recommended)",
+                      amharic: "የመጋዘን ዕቃ ማሳየት እና ትራንስፖርት",
+                      desc: "Show offline supplier shops to buyers + truck delivery",
                     },
                     {
                       id: "SUPPLIER_ASSISTANCE",
-                      title: "Supplier Finding Only",
-                      amharic: "የመጋዘን ዕቃ ማፈላለግ ብቻ",
-                      desc: "Depot runner on foot / transit",
+                      title: "Supplier Shop Guide Only",
+                      amharic: "የአቅራቢዎች ሱቅ ማሳየት ብቻ (ደላላ/አገናኝ)",
+                      desc: "Guide buyers to unsubscribed/offline supplier shops on foot",
+                    },
+                    {
+                      id: "TRANSPORT_DELIVERY",
+                      title: "Transport / Truck Delivery Only",
+                      amharic: "የትራንስፖርት እና ጭነት ማድረስ (ሹፌር)",
+                      desc: "Isuzu, Pickup, or Sino delivery directly from depots",
                     },
                   ] as const
                 ).map((st) => (
