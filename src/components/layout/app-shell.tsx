@@ -1,13 +1,13 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { Settings, LogOut } from "lucide-react";
+import { Settings } from "lucide-react";
 
 import { Logo } from "@/components/brand/logo";
 import { LanguageToggle } from "@/components/language-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationBell } from "@/components/notification-bell";
 import { PortalSwitcher } from "@/components/layout/portal-switcher";
-import { signOut } from "@/app/actions/auth";
+import { SignOutButton } from "@/components/auth/sign-out-button";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@prisma/client";
 
@@ -121,16 +121,7 @@ export function AppShell({
           >
             <Settings className="size-4.5" />
           </Link>
-          <form action={signOut}>
-            <button
-              type="submit"
-              aria-label="Sign out"
-              title="Sign out"
-              className="inline-flex size-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-            >
-              <LogOut className="size-4.5" />
-            </button>
-          </form>
+          <SignOutButton variant="header-icon" />
           {mobileActions}
         </div>
       </header>

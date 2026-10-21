@@ -4,7 +4,6 @@ import {
   LayoutGrid,
   Package,
   SendHorizontal,
-  LogOut,
   MessageCircle,
   Handshake,
   Briefcase,
@@ -13,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { MobileTabLink, SidebarNavLink } from "@/components/layout/nav-link";
+import { SignOutButton } from "@/components/auth/sign-out-button";
 import { useLanguage } from "@/lib/i18n/language-context";
 
 interface BuyerNavProps {
@@ -55,7 +55,7 @@ export function BuyerMobileBottomNav({
   signOutAction,
   assistMode = false,
 }: {
-  signOutAction: () => Promise<void>;
+  signOutAction?: () => Promise<void>;
   assistMode?: boolean;
 }) {
   const { t } = useLanguage();
@@ -78,15 +78,7 @@ export function BuyerMobileBottomNav({
       {links.map((item) => (
         <MobileTabLink key={item.href} {...item} />
       ))}
-      <form action={signOutAction} className="flex flex-1">
-        <button
-          type="submit"
-          className="flex w-full flex-col items-center gap-0.5 px-1 py-1 text-2xs font-medium text-muted-foreground hover:text-foreground"
-        >
-          <LogOut className="size-5" />
-          <span>{t("nav_sign_out", "Sign out")}</span>
-        </button>
-      </form>
+      <SignOutButton variant="mobile-tab" />
     </>
   );
 }

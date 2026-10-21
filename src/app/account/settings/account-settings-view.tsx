@@ -47,6 +47,7 @@ import {
   signOut,
   switchUserRoleAction,
 } from "@/app/actions/auth";
+import { SignOutButton } from "@/components/auth/sign-out-button";
 import { useLanguage } from "@/lib/i18n/language-context";
 
 interface AccountSettingsViewProps {
@@ -143,16 +144,7 @@ export function AccountSettingsView({
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
-          <form action={signOut}>
-            <Button
-              type="submit"
-              variant="destructive"
-              className="w-full sm:w-auto font-semibold gap-2"
-            >
-              <LogOut className="size-4" />
-              {t("nav_sign_out", "Sign out")}
-            </Button>
-          </form>
+          <SignOutButton variant="button" />
         </CardContent>
       </Card>
     </div>

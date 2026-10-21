@@ -13,10 +13,20 @@ interface ProductOffersPageProps {
 
 export default async function ProductOffersPage({ params }: ProductOffersPageProps) {
   const { productId } = await params;
-  const [productWithOffers, user] = await Promise.all([
-    fetchProductWithCompetingOffers(productId),
-    getSessionUser(),
-  ]);
+  let productWithOffers = null;
+  let user = null;
+
+  try {
+    [productWithOffers, user] = await Promise.all([
+      fetchProductWithCompetingOffers(productId).catch((err) => {
+        console.error(`[ProductOffersPage] Failed to fetch product ${productId}:`, err);
+        return null;
+      }),
+      getSessionUser().catch(() => null),
+    ]);
+  } catch (err) {
+    console.error(`[ProductOffersPage] Unhandled exception loading ${productId}:`, err);
+  }
 
   if (!productWithOffers) {
     notFound();

@@ -3,11 +3,16 @@
 // =============================================================================
 // Catches unhandled client and server errors gracefully, prevents blank screens,
 // and provides instant retry recovery without crashing the session.
+//
+// Recovery strategy:
+// 1. First click → Next.js reset() (re-renders the server component).
+// 2. Second click → Hard browser reload (window.location.reload) which clears
+//    stale in-memory state, router cache, and re-fetches server data.
 // =============================================================================
 
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { AlertTriangle, RotateCcw, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,6 +23,8 @@ interface ErrorBoundaryProps {
 }
 
 export default function ErrorBoundary({ error, reset }: ErrorBoundaryProps) {
+  const retryCount = useRef(0);
+
   useEffect(() => {
     // Log exception for telemetry/monitoring
     console.error("ECON Root Error Boundary caught exception:", {
@@ -25,7 +32,21 @@ export default function ErrorBoundary({ error, reset }: ErrorBoundaryProps) {
       digest: error?.digest,
       stack: error?.stack,
     });
+    // Reset retry counter on new error identity
+    retryCount.current = 0;
   }, [error]);
+
+  const handleRetry = () => {
+    if (retryCount.current >= 1) {
+      // Second attempt: force a hard page reload to clear all stale state
+      if (typeof window !== "undefined") {
+        window.location.reload();
+      }
+      return;
+    }
+    retryCount.current += 1;
+    reset();
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 text-center">
@@ -48,7 +69,7 @@ export default function ErrorBoundary({ error, reset }: ErrorBoundaryProps) {
       )}
 
       <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-        <Button onClick={() => reset()} className="gap-2 font-semibold">
+        <Button onClick={handleRetry} className="gap-2 font-semibold">
           <RotateCcw className="size-4" />
           Try again
         </Button>

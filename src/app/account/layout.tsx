@@ -1,10 +1,8 @@
 import type { ReactNode } from "react";
-import { LogOut } from "lucide-react";
 
 import { AppShell } from "@/components/layout/app-shell";
-import { Button } from "@/components/ui/button";
 import { ALL_APP_ROLES, requireRole } from "@/lib/auth/session";
-import { signOut } from "@/app/actions/auth";
+import { SignOutButton } from "@/components/auth/sign-out-button";
 
 import { BuyerSidebarNav, BuyerMobileBottomNav } from "@/app/buyer/buyer-nav";
 import {
@@ -92,20 +90,8 @@ export default async function AccountLayout({
       userId={user.id}
       userRole={user.role}
       sidebarNav={<BuyerSidebarNav />}
-      sidebarFooter={
-        <form action={signOut}>
-          <Button
-            type="submit"
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-2 text-muted-foreground"
-          >
-            <LogOut className="size-4" />
-            Sign out
-          </Button>
-        </form>
-      }
-      mobileNav={<BuyerMobileBottomNav signOutAction={signOut} />}
+      sidebarFooter={<SignOutButton variant="sidebar-item" />}
+      mobileNav={<BuyerMobileBottomNav />}
     >
       {children}
     </AppShell>

@@ -1,11 +1,9 @@
 import { redirect } from "next/navigation";
-import { LogOut } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { AppShell } from "@/components/layout/app-shell";
 import { PublicBrowseShell } from "@/components/layout/public-browse-shell";
 import { getSessionUser, defaultRouteForRole } from "@/lib/auth/session";
-import { signOut } from "@/app/actions/auth";
+import { SignOutButton } from "@/components/auth/sign-out-button";
 import { getUnreadCountAction } from "@/app/actions/notifications";
 import { BuyerSidebarNav, BuyerMobileBottomNav } from "./buyer-nav";
 
@@ -46,20 +44,8 @@ export default async function BuyerLayout({
       userRole={user.role}
       unreadNotifications={unreadNotifications}
       sidebarNav={<BuyerSidebarNav assistMode={assistMode} />}
-      sidebarFooter={
-        <form action={signOut}>
-          <Button
-            type="submit"
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-2 text-muted-foreground"
-          >
-            <LogOut className="size-4" />
-            Sign out
-          </Button>
-        </form>
-      }
-      mobileNav={<BuyerMobileBottomNav signOutAction={signOut} assistMode={assistMode} />}
+      sidebarFooter={<SignOutButton variant="sidebar-item" />}
+      mobileNav={<BuyerMobileBottomNav assistMode={assistMode} />}
     >
       {children}
     </AppShell>

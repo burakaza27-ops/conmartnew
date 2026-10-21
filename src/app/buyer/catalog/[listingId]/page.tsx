@@ -18,17 +18,33 @@ export default async function ListingDetailPage({
   params,
 }: ListingDetailPageProps) {
   const { listingId } = await params;
-  const [listing, user] = await Promise.all([
-    fetchListingDetail(listingId),
-    getSessionUser(),
-  ]);
+  let listing = null;
+  let user = null;
+
+  try {
+    [listing, user] = await Promise.all([
+      fetchListingDetail(listingId).catch((err) => {
+        console.error(`[ListingDetailPage] Failed to fetch listing ${listingId}:`, err);
+        return null;
+      }),
+      getSessionUser().catch(() => null),
+    ]);
+  } catch (err) {
+    console.error(`[ListingDetailPage] Unhandled error loading listing ${listingId}:`, err);
+  }
 
   if (!listing || !listing.active) {
     notFound();
   }
 
-  // Fetch other active materials from this same depot/supplier
-  const depotListings = await fetchDepotListings(listing.seller.id, listing.id);
+  // Fetch other active materials from this same depot/supplier safely
+  let depotListings: Awaited<ReturnType<typeof fetchDepotListings>> = [];
+  try {
+    depotListings = await fetchDepotListings(listing.seller.id, listing.id);
+  } catch (err) {
+    console.warn(`[ListingDetailPage] Non-fatal depot listings fetch error:`, err);
+  }
+
   const adminPhone = process.env.NEXT_PUBLIC_ADMIN_PHONE ?? "+251 91 100 0000";
 
   return (

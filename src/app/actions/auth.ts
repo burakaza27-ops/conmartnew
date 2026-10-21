@@ -347,12 +347,16 @@ async function rollbackAuthUser(authId: string): Promise<void> {
 export async function signOut(): Promise<void> {
   try {
     const supabase = await createSupabaseServerClient();
-    await supabase.auth.signOut();
+    // 2-second timeout guard: never hang if Supabase auth server is slow
+    await Promise.race([
+      supabase.auth.signOut(),
+      new Promise((res) => setTimeout(res, 2000)),
+    ]);
   } catch (err) {
     console.error("[signOut] Supabase signOut error:", err);
   }
 
-  // Clear auth session cookies explicitly to guarantee sign out in all circumstances
+  // Clear auth session cookies explicitly with path='/' and maxAge=0 to guarantee sign out
   try {
     const cookieStore = await cookies();
     const all = cookieStore.getAll();
@@ -363,8 +367,28 @@ export async function signOut(): Promise<void> {
         cookie.name.includes("token") ||
         cookie.name.includes("session")
       ) {
+        cookieStore.set(cookie.name, "", {
+          path: "/",
+          maxAge: 0,
+          expires: new Date(0),
+        });
+        cookieStore.delete({ name: cookie.name, path: "/" });
         cookieStore.delete(cookie.name);
       }
+    }
+
+    // Explicitly delete known Supabase cookie patterns as a safety net
+    const knownAuthCookies = [
+      "sb-access-token",
+      "sb-refresh-token",
+      "supabase-auth-token",
+      "supabase.auth.token",
+      "conmart-session",
+    ];
+    for (const name of knownAuthCookies) {
+      cookieStore.set(name, "", { path: "/", maxAge: 0, expires: new Date(0) });
+      cookieStore.delete({ name, path: "/" });
+      cookieStore.delete(name);
     }
   } catch (err) {
     console.error("[signOut] cookie cleanup error:", err);

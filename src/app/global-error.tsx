@@ -36,7 +36,11 @@ export default function GlobalError({
           </p>
 
           <button
-            onClick={() => reset()}
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.location.href = "/";
+              }
+            }}
             style={{
               padding: "10px 24px",
               backgroundColor: "#2563eb",

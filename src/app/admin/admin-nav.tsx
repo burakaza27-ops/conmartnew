@@ -4,8 +4,8 @@ import { BarChart3, CreditCard, LogOut, Settings, UserCheck, Users } from "lucid
 
 import { Button } from "@/components/ui/button";
 import { MobileTabLink, SidebarNavLink } from "@/components/layout/nav-link";
+import { SignOutButton } from "@/components/auth/sign-out-button";
 import { useLanguage } from "@/lib/i18n/language-context";
-import { signOut } from "@/app/actions/auth";
 
 export function AdminSidebarNav() {
   const { t, locale } = useLanguage();
@@ -76,33 +76,11 @@ export function AdminBottomNav() {
         exact
       />
 
-      <form action={signOut} className="flex flex-1">
-        <button
-          type="submit"
-          className="flex w-full flex-col items-center gap-0.5 px-1 py-1 text-2xs font-medium text-muted-foreground hover:text-foreground"
-        >
-          <LogOut className="size-5" />
-          <span>{t("nav_sign_out")}</span>
-        </button>
-      </form>
+      <SignOutButton variant="mobile-tab" />
     </>
   );
 }
 
 export function AdminSignOutButton() {
-  const { t } = useLanguage();
-
-  return (
-    <form action={signOut}>
-      <Button
-        type="submit"
-        variant="ghost"
-        size="sm"
-        className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive"
-      >
-        <LogOut className="size-4" />
-        {t("nav_sign_out")}
-      </Button>
-    </form>
-  );
+  return <SignOutButton variant="sidebar-item" />;
 }
