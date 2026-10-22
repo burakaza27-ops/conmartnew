@@ -66,7 +66,7 @@ function buildSslConfig(): ConnectionOptions {
         // Vercel often stores pasted PEMs with literal `\n` instead of newlines.
         ca: env.DATABASE_CA_CERT.replace(/\\n/g, "\n"),
       }
-    : { rejectUnauthorized: true };
+    : { rejectUnauthorized: false };
 }
 
 /** Creates the Prisma client with a singleton pg.Pool underneath. */

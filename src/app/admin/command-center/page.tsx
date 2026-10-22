@@ -35,6 +35,8 @@ import { DisputesTable } from "./disputes-table";
 import { SellerVerificationTable } from "./seller-verification-table";
 import { WastageModerationTable } from "./wastage-moderation-table";
 
+export const dynamic = "force-dynamic";
+
 // ---------------------------------------------------------------------------
 // Safe direct-database fetchers (no "use server" RPC overhead)
 // Each one has its own try/catch so a single failure never crashes the page.

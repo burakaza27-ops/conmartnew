@@ -33,7 +33,7 @@ export interface AdminOrderRow {
   tax: number;
   grandTotal: number;
   status: OrderStatus;
-  createdAt: Date;
+  createdAt: string | Date;
   buyerName: string;
   buyerCompany: string;
   buyerPhone: string;
@@ -146,7 +146,7 @@ async function _fetchAllOrders(): Promise<AdminOrderRow[]> {
       tax: Number(order.tax ?? 0),
       grandTotal: Number(order.grandTotal ?? 0),
       status: order.status as OrderStatus,
-      createdAt: order.createdAt,
+      createdAt: order.createdAt instanceof Date ? order.createdAt.toISOString() : String(order.createdAt),
       buyerName: order.buyer?.name ?? "Buyer",
       buyerCompany: order.buyer?.companyName ?? "Commercial Buyer",
       buyerPhone: order.buyer?.phone ?? "",

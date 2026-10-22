@@ -32,6 +32,11 @@ export default function AdminErrorBoundary({
       <p className="mt-1.5 max-w-sm text-xs text-muted-foreground">
         A temporary error occurred loading administrative orders or stats. Click retry to reconnect to the database.
       </p>
+      {error?.digest && (
+        <p className="mt-2 text-[11px] font-mono text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-md">
+          Digest: {error.digest}
+        </p>
+      )}
 
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
         <Button
