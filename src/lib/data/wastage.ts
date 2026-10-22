@@ -194,22 +194,11 @@ export async function fetchAllSiteWastages(): Promise<SiteWastageItem[]> {
   try {
     const rows = await db.$queryRaw<RawWastageRow[]>`
       SELECT * FROM site_wastages
-      ORDER BY created_at DESC;
+      ORDER BY created_at DESC
+      LIMIT 100;
     `;
     return rows.map(mapRow);
   } catch (error) {
-    if (!hasEnsuredTable) {
-      await ensureSiteWastagesTable();
-      try {
-        const rows = await db.$queryRaw<RawWastageRow[]>`
-          SELECT * FROM site_wastages
-          ORDER BY created_at DESC;
-        `;
-        return rows.map(mapRow);
-      } catch {
-        return [];
-      }
-    }
     console.error("fetchAllSiteWastages error:", error);
     return [];
   }

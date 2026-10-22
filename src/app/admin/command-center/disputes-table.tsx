@@ -47,11 +47,11 @@ export interface DisputeItem {
 }
 
 interface DisputesTableProps {
-  initialDisputes: DisputeItem[];
+  initialDisputes?: DisputeItem[];
 }
 
-export function DisputesTable({ initialDisputes }: DisputesTableProps) {
-  const [disputes, setDisputes] = useState<DisputeItem[]>(initialDisputes);
+export function DisputesTable({ initialDisputes = [] }: DisputesTableProps) {
+  const [disputes, setDisputes] = useState<DisputeItem[]>(initialDisputes ?? []);
   const [filter, setFilter] = useState<"ALL" | "OPEN" | "RESOLVED">("ALL");
   const [selectedDispute, setSelectedDispute] = useState<DisputeItem | null>(null);
   const [resolutionNotes, setResolutionNotes] = useState("");
@@ -59,9 +59,11 @@ export function DisputesTable({ initialDisputes }: DisputesTableProps) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  const filtered = disputes.filter((d) => {
+  const safeDisputes = disputes ?? [];
+  const filtered = safeDisputes.filter((d) => {
+    if (!d) return false;
     if (filter === "OPEN") return d.status === "OPEN" || d.status === "MEDIATING";
-    if (filter === "RESOLVED") return d.status.startsWith("RESOLVED") || d.status === "CLOSED";
+    if (filter === "RESOLVED") return (d.status ?? "").startsWith("RESOLVED") || d.status === "CLOSED";
     return true;
   });
 
@@ -184,7 +186,7 @@ export function DisputesTable({ initialDisputes }: DisputesTableProps) {
 
                       <td className="p-3">
                         <Badge variant="outline" className="text-[10px] font-semibold uppercase">
-                          {d.claimType.replace("_", " ")}
+                          {(d.claimType ?? "GENERAL").replace(/_/g, " ")}
                         </Badge>
                       </td>
 

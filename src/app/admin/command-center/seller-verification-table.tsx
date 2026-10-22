@@ -56,16 +56,18 @@ export interface AdminSellerItem {
 }
 
 interface SellerVerificationTableProps {
-  initialSellers: AdminSellerItem[];
+  initialSellers?: AdminSellerItem[];
 }
 
-export function SellerVerificationTable({ initialSellers }: SellerVerificationTableProps) {
-  const [sellers, setSellers] = useState<AdminSellerItem[]>(initialSellers);
+export function SellerVerificationTable({ initialSellers = [] }: SellerVerificationTableProps) {
+  const [sellers, setSellers] = useState<AdminSellerItem[]>(initialSellers ?? []);
   const [filter, setFilter] = useState<"ALL" | "UNVERIFIED" | "VERIFIED" | "SUSPENDED" | "REVERIFY">("ALL");
   const [isPending, startTransition] = useTransition();
   const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  const filtered = sellers.filter((s) => {
+  const safeSellers = sellers ?? [];
+  const filtered = safeSellers.filter((s) => {
+    if (!s) return false;
     if (filter === "UNVERIFIED") return s.verificationStatus === "UNVERIFIED" || s.verificationStatus === "PENDING";
     if (filter === "VERIFIED") return s.verificationStatus === "VERIFIED";
     if (filter === "SUSPENDED") return s.verificationStatus === "SUSPENDED";

@@ -7,7 +7,6 @@
 "use client";
 
 import React, { useState, useMemo, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -64,12 +63,12 @@ const STATUS_VARIANT: Record<
 };
 
 interface OrdersTableProps {
-  orders: AdminOrderRow[];
+  orders?: AdminOrderRow[];
 }
 
-export function OrdersTable({ orders }: OrdersTableProps) {
+export function OrdersTable({ orders = [] }: OrdersTableProps) {
   const { t, locale } = useLanguage();
-  const router = useRouter();
+  const safeOrders = orders ?? [];
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
@@ -78,30 +77,31 @@ export function OrdersTable({ orders }: OrdersTableProps) {
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
 
   const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = { ALL: orders.length };
+    const counts: Record<string, number> = { ALL: safeOrders.length };
     for (const s of ORDER_STATUSES) {
-      counts[s] = orders.filter((o) => o.status === s).length;
+      counts[s] = safeOrders.filter((o) => o?.status === s).length;
     }
     return counts;
-  }, [orders]);
+  }, [safeOrders]);
 
   const filteredOrders = useMemo(() => {
-    return orders.filter((order) => {
+    return safeOrders.filter((order) => {
+      if (!order) return false;
       if (selectedStatus !== "ALL" && order.status !== selectedStatus) {
         return false;
       }
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        const matchRef = order.referenceCode.toLowerCase().includes(q);
-        const matchBuyer = order.buyerName.toLowerCase().includes(q);
-        const matchCompany = order.buyerCompany.toLowerCase().includes(q);
-        const matchPhone = order.buyerPhone.toLowerCase().includes(q);
-        const matchMaterial = order.productTitle.toLowerCase().includes(q);
-        const matchItems = order.items.some(
+        const matchRef = (order.referenceCode ?? "").toLowerCase().includes(q);
+        const matchBuyer = (order.buyerName ?? "").toLowerCase().includes(q);
+        const matchCompany = (order.buyerCompany ?? "").toLowerCase().includes(q);
+        const matchPhone = (order.buyerPhone ?? "").toLowerCase().includes(q);
+        const matchMaterial = (order.productTitle ?? "").toLowerCase().includes(q);
+        const matchItems = (order.items ?? []).some(
           (item) =>
-            item.productTitle.toLowerCase().includes(q) ||
-            item.sellerCompany.toLowerCase().includes(q) ||
-            item.sellerPhone.toLowerCase().includes(q)
+            (item?.productTitle ?? "").toLowerCase().includes(q) ||
+            (item?.sellerCompany ?? "").toLowerCase().includes(q) ||
+            (item?.sellerPhone ?? "").toLowerCase().includes(q)
         );
         return (
           matchRef ||
@@ -114,7 +114,7 @@ export function OrdersTable({ orders }: OrdersTableProps) {
       }
       return true;
     });
-  }, [orders, selectedStatus, searchQuery]);
+  }, [safeOrders, selectedStatus, searchQuery]);
 
   function toggleExpand(orderId: string) {
     setExpandedIds((prev) => {
@@ -142,7 +142,9 @@ export function OrdersTable({ orders }: OrdersTableProps) {
       }
 
       setPendingOrderId(null);
-      router.refresh();
+      if (typeof window !== "undefined") {
+        window.location.reload();
+      }
     });
   }
 

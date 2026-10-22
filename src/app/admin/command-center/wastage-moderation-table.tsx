@@ -29,13 +29,13 @@ import type { SiteWastageItem } from "@/lib/data/wastage";
 import { formatETB } from "@/lib/types";
 
 interface WastageModerationTableProps {
-  initialItems: SiteWastageItem[];
+  initialItems?: SiteWastageItem[];
 }
 
 export function WastageModerationTable({
-  initialItems,
+  initialItems = [],
 }: WastageModerationTableProps) {
-  const [items, setItems] = useState<SiteWastageItem[]>(initialItems);
+  const [items, setItems] = useState<SiteWastageItem[]>(initialItems ?? []);
   const [filterStatus, setFilterStatus] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("PENDING");
   const [activePhotoModal, setActivePhotoModal] = useState<{
     images: string[];
@@ -45,7 +45,9 @@ export function WastageModerationTable({
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const filtered = items.filter((item) => {
+  const safeItems = items ?? [];
+  const filtered = safeItems.filter((item) => {
+    if (!item) return false;
     if (filterStatus === "ALL") return true;
     return item.status === filterStatus;
   });
@@ -151,13 +153,19 @@ export function WastageModerationTable({
                     }
                     className="relative size-16 sm:size-20 rounded-xl overflow-hidden border border-border/80 bg-muted shrink-0 cursor-pointer group shadow-2xs"
                   >
-                    <Image
-                      src={item.imageUrl}
-                      alt={item.title}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform"
-                      sizes="80px"
-                    />
+                    {item.imageUrl ? (
+                      <Image
+                        src={item.imageUrl}
+                        alt={item.title}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform"
+                        sizes="80px"
+                      />
+                    ) : (
+                      <div className="size-full flex items-center justify-center bg-muted text-muted-foreground">
+                        <Recycle className="size-6 opacity-40" />
+                      </div>
+                    )}
                     {item.images && item.images.length > 1 && (
                       <span className="absolute bottom-1 right-1 rounded bg-black/80 px-1 py-0.5 text-[9px] font-bold text-white font-mono z-10">
                         +{item.images.length - 1}

@@ -29,7 +29,8 @@ export const COUNTRY_CODE = "+251" as const;
  * @returns Formatted currency string
  */
 export function formatETB(amount: number, useSymbolOrLocale: boolean | string = false): string {
-  const formatted = amount.toLocaleString("en-US", {
+  const num = typeof amount === "number" && !Number.isNaN(amount) ? amount : 0;
+  const formatted = num.toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });

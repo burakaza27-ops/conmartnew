@@ -103,6 +103,7 @@ async function _fetchAllOrders(): Promise<AdminOrderRow[]> {
       },
     },
     orderBy: { createdAt: "desc" },
+    take: 100,
   });
 
   return orders.map((order) => {
