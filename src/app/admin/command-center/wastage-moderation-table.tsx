@@ -221,7 +221,7 @@ export function WastageModerationTable({
                         <Phone className="size-3" />
                         {item.contactPhone}
                       </a>
-                      <span className="text-[10px]">
+                      <span className="text-[10px]" suppressHydrationWarning>
                         Submitted {new Date(item.createdAt).toLocaleDateString()}
                       </span>
                     </div>

@@ -461,7 +461,7 @@ export function OrdersTable({ orders }: OrdersTableProps) {
                           {getLocalizedStatus(order.status, locale)}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
+                      <TableCell className="text-xs text-muted-foreground" suppressHydrationWarning>
                         {new Date(order.createdAt).toLocaleDateString(
                           locale === "am" ? "am-ET" : "en-US",
                           {

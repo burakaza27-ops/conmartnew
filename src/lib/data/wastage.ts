@@ -132,7 +132,6 @@ export async function ensureSiteWastagesTable(): Promise<void> {
  */
 export async function fetchApprovedSiteWastages(): Promise<SiteWastageItem[]> {
   try {
-    await ensureSiteWastagesTable();
     const rows = await db.$queryRaw<RawWastageRow[]>`
       SELECT * FROM site_wastages
       WHERE status = 'APPROVED'
@@ -140,6 +139,19 @@ export async function fetchApprovedSiteWastages(): Promise<SiteWastageItem[]> {
     `;
     return rows.map(mapRow);
   } catch (error) {
+    if (!hasEnsuredTable) {
+      await ensureSiteWastagesTable();
+      try {
+        const rows = await db.$queryRaw<RawWastageRow[]>`
+          SELECT * FROM site_wastages
+          WHERE status = 'APPROVED'
+          ORDER BY created_at DESC;
+        `;
+        return rows.map(mapRow);
+      } catch {
+        return [];
+      }
+    }
     console.error("fetchApprovedSiteWastages error:", error);
     return [];
   }
@@ -150,7 +162,6 @@ export async function fetchApprovedSiteWastages(): Promise<SiteWastageItem[]> {
  */
 export async function fetchPendingSiteWastages(): Promise<SiteWastageItem[]> {
   try {
-    await ensureSiteWastagesTable();
     const rows = await db.$queryRaw<RawWastageRow[]>`
       SELECT * FROM site_wastages
       WHERE status = 'PENDING'
@@ -158,6 +169,19 @@ export async function fetchPendingSiteWastages(): Promise<SiteWastageItem[]> {
     `;
     return rows.map(mapRow);
   } catch (error) {
+    if (!hasEnsuredTable) {
+      await ensureSiteWastagesTable();
+      try {
+        const rows = await db.$queryRaw<RawWastageRow[]>`
+          SELECT * FROM site_wastages
+          WHERE status = 'PENDING'
+          ORDER BY created_at DESC;
+        `;
+        return rows.map(mapRow);
+      } catch {
+        return [];
+      }
+    }
     console.error("fetchPendingSiteWastages error:", error);
     return [];
   }
@@ -168,13 +192,24 @@ export async function fetchPendingSiteWastages(): Promise<SiteWastageItem[]> {
  */
 export async function fetchAllSiteWastages(): Promise<SiteWastageItem[]> {
   try {
-    await ensureSiteWastagesTable();
     const rows = await db.$queryRaw<RawWastageRow[]>`
       SELECT * FROM site_wastages
       ORDER BY created_at DESC;
     `;
     return rows.map(mapRow);
   } catch (error) {
+    if (!hasEnsuredTable) {
+      await ensureSiteWastagesTable();
+      try {
+        const rows = await db.$queryRaw<RawWastageRow[]>`
+          SELECT * FROM site_wastages
+          ORDER BY created_at DESC;
+        `;
+        return rows.map(mapRow);
+      } catch {
+        return [];
+      }
+    }
     console.error("fetchAllSiteWastages error:", error);
     return [];
   }

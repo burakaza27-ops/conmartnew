@@ -336,7 +336,7 @@ export async function getAdminDisputesAction(): Promise<
         sellerName: dispute.enquiry.seller.name,
         sellerCompany: dispute.enquiry.seller.companyName,
         sellerPhone: dispute.enquiry.seller.phone,
-        feeAmount: Number(dispute.unlockRecord.feeAmount),
+        feeAmount: Number(dispute.unlockRecord?.feeAmount ?? 0),
       })),
     };
   } catch (error) {

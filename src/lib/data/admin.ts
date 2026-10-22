@@ -110,29 +110,29 @@ async function _fetchAllOrders(): Promise<AdminOrderRow[]> {
       order.items.length > 0
         ? order.items.map((item) => ({
             id: item.id,
-            productTitle: item.listing.product.title,
-            productUnit: item.listing.product.unit,
-            qty: item.qty,
-            unitPrice: Number(item.unitPrice),
-            subtotal: Number(item.subtotal),
-            sellerName: item.seller.name,
-            sellerCompany: item.seller.companyName,
-            sellerPhone: item.seller.phone,
-            location: item.listing.location,
+            productTitle: item.listing?.product?.title ?? "Construction Material",
+            productUnit: item.listing?.product?.unit ?? "Piece",
+            qty: item.qty ?? 0,
+            unitPrice: Number(item.unitPrice ?? 0),
+            subtotal: Number(item.subtotal ?? 0),
+            sellerName: item.seller?.name ?? "Supplier",
+            sellerCompany: item.seller?.companyName ?? "Direct Depot",
+            sellerPhone: item.seller?.phone ?? "",
+            location: item.listing?.location ?? "Addis Ababa",
           }))
         : order.listing && order.seller
         ? [
             {
               id: order.id,
-              productTitle: order.listing.product.title,
-              productUnit: order.listing.product.unit,
+              productTitle: order.listing.product?.title ?? "Construction Material",
+              productUnit: order.listing.product?.unit ?? "Piece",
               qty: order.qty ?? 0,
               unitPrice: order.qty ? Number(order.baseSubtotal) / order.qty : 0,
-              subtotal: Number(order.baseSubtotal),
-              sellerName: order.seller.name,
-              sellerCompany: order.seller.companyName,
-              sellerPhone: order.seller.phone,
-              location: order.listing.location,
+              subtotal: Number(order.baseSubtotal ?? 0),
+              sellerName: order.seller.name ?? "Supplier",
+              sellerCompany: order.seller.companyName ?? "Direct Depot",
+              sellerPhone: order.seller.phone ?? "",
+              location: order.listing.location ?? "Addis Ababa",
             },
           ]
         : [];
@@ -141,23 +141,27 @@ async function _fetchAllOrders(): Promise<AdminOrderRow[]> {
       id: order.id,
       referenceCode: order.referenceCode,
       qty: order.qty ?? mappedItems.reduce((acc, i) => acc + i.qty, 0),
-      baseSubtotal: Number(order.baseSubtotal),
-      platformFee: Number(order.platformFee),
-      tax: Number(order.tax),
-      grandTotal: Number(order.grandTotal),
+      baseSubtotal: Number(order.baseSubtotal ?? 0),
+      platformFee: Number(order.platformFee ?? 0),
+      tax: Number(order.tax ?? 0),
+      grandTotal: Number(order.grandTotal ?? 0),
       status: order.status as OrderStatus,
       createdAt: order.createdAt,
-      buyerName: order.buyer.name,
-      buyerCompany: order.buyer.companyName,
-      buyerPhone: order.buyer.phone,
+      buyerName: order.buyer?.name ?? "Buyer",
+      buyerCompany: order.buyer?.companyName ?? "Commercial Buyer",
+      buyerPhone: order.buyer?.phone ?? "",
       sellerCompany:
         mappedItems.length === 1
           ? mappedItems[0].sellerCompany
-          : `${mappedItems.length} Suppliers (${Array.from(new Set(mappedItems.map((i) => i.sellerCompany))).join(", ")})`,
+          : mappedItems.length > 1
+          ? `${mappedItems.length} Suppliers (${Array.from(new Set(mappedItems.map((i) => i.sellerCompany))).join(", ")})`
+          : order.seller?.companyName ?? "Direct Depot",
       productTitle:
         mappedItems.length === 1
           ? mappedItems[0].productTitle
-          : `${mappedItems.length} Materials: ${mappedItems.map((i) => i.productTitle).join(", ")}`,
+          : mappedItems.length > 1
+          ? `${mappedItems.length} Materials: ${mappedItems.map((i) => i.productTitle).join(", ")}`
+          : order.listing?.product?.title ?? "Proforma Material",
       productUnit: mappedItems.length === 1 ? mappedItems[0].productUnit : "Items",
       location:
         Array.from(new Set(mappedItems.map((i) => i.location))).join(", ") ||

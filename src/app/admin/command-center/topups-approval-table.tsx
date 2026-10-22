@@ -127,7 +127,7 @@ export function TopUpsApprovalTable({ initialTopUps }: TopUpsApprovalTableProps)
               <tbody className="divide-y divide-border/60">
                 {topUps.map((t) => (
                   <tr key={t.id} className="hover:bg-muted/40 transition-colors">
-                    <td className="py-3 px-4 text-xs text-muted-foreground whitespace-nowrap">
+                    <td className="py-3 px-4 text-xs text-muted-foreground whitespace-nowrap" suppressHydrationWarning>
                       {new Date(t.createdAt).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",

@@ -82,11 +82,11 @@ function createPrismaClient(): PrismaClient {
     new pg.Pool({
       connectionString,
       ssl: buildSslConfig(),
-      max: 5,
+      max: 10,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 10000,
-      statement_timeout: 10000,
-      query_timeout: 10000,
+      connectionTimeoutMillis: 15000,
+      statement_timeout: 15000,
+      query_timeout: 15000,
     });
 
   // Attach error handler to prevent unhandled node-pg crash on idle connection drops

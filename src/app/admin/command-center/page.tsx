@@ -24,18 +24,217 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { fetchAllOrders } from "@/lib/data/admin";
 import { requireRole } from "@/lib/auth/session";
-import { getPendingSubscriptionPaymentsAction } from "@/app/actions/subscription";
-import { getGuidedLeadsAction } from "@/app/actions/leads";
-import { getAdminDisputesAction } from "@/app/actions/enquiries";
-import { getAdminSellersAction } from "@/app/actions/sellers";
-import { getAdminAgentApplicationsAction } from "@/app/actions/agents";
+import { db } from "@/lib/db";
+import { WalletTxStatus } from "@prisma/client";
+import { resolveSubscription } from "@/lib/marketplace/subscription";
 import { fetchAllSiteWastages } from "@/lib/data/wastage";
+import { fetchAllOrders } from "@/lib/data/admin";
 import { OrdersTable } from "./orders-table";
 import { DisputesTable } from "./disputes-table";
 import { SellerVerificationTable } from "./seller-verification-table";
 import { WastageModerationTable } from "./wastage-moderation-table";
+
+// ---------------------------------------------------------------------------
+// Safe direct-database fetchers (no "use server" RPC overhead)
+// Each one has its own try/catch so a single failure never crashes the page.
+// ---------------------------------------------------------------------------
+
+async function fetchSubscriptionPayments() {
+  try {
+    const payments = await db.subscriptionPayment.findMany({
+      where: { status: WalletTxStatus.PENDING },
+      include: {
+        seller: {
+          select: { id: true, name: true, companyName: true, phone: true },
+        },
+      },
+      orderBy: { createdAt: "asc" },
+    });
+    return payments.map((p) => ({
+      id: p.id,
+      sellerId: p.sellerId,
+      sellerName: p.seller?.name ?? "Supplier",
+      companyName: p.seller?.companyName ?? "Direct Depot",
+      sellerPhone: p.seller?.phone ?? "",
+      tier: p.tier,
+      amount: Number(p.amount ?? 0),
+      paymentMethod: p.paymentMethod,
+      referenceCode: p.referenceCode,
+      slipUrl: p.slipUrl,
+      status: p.status,
+      createdAt: p.createdAt.toISOString(),
+    }));
+  } catch (err) {
+    console.error("[command-center] fetchSubscriptionPayments failed:", err);
+    return [];
+  }
+}
+
+async function fetchGuidedLeads() {
+  try {
+    const leads = await db.guidedLead.findMany({
+      include: {
+        assignedAgent: { select: { id: true, name: true, phone: true } },
+        targetSeller: {
+          select: { id: true, name: true, companyName: true, phone: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    });
+    return leads.map((l) => ({
+      id: l.id,
+      referenceCode: l.referenceCode,
+      materialNeeded: l.materialNeeded,
+      quantity: l.quantity,
+      areaLocation: l.areaLocation,
+      buyerPhone: l.buyerPhone,
+      buyerName: l.buyerName,
+      preferredVisitTime: l.preferredVisitTime,
+      notes: l.notes,
+      status: l.status,
+      closeReason: l.closeReason,
+      targetSeller: l.targetSeller
+        ? {
+            id: l.targetSeller.id,
+            name: l.targetSeller.name,
+            companyName: l.targetSeller.companyName,
+            phone: l.targetSeller.phone,
+          }
+        : null,
+      assignedAgent: l.assignedAgent
+        ? {
+            id: l.assignedAgent.id,
+            name: l.assignedAgent.name,
+            phone: l.assignedAgent.phone,
+          }
+        : null,
+      createdAt: l.createdAt.toISOString(),
+    }));
+  } catch (err) {
+    console.error("[command-center] fetchGuidedLeads failed:", err);
+    return [];
+  }
+}
+
+async function fetchDisputes() {
+  try {
+    const disputes = await db.disputeCase.findMany({
+      include: {
+        enquiry: {
+          include: {
+            buyer: { select: { name: true, phone: true, companyName: true } },
+            seller: { select: { name: true, phone: true, companyName: true } },
+            listing: { include: { product: { select: { title: true } } } },
+          },
+        },
+        unlockRecord: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    });
+    return disputes.map((dispute) => ({
+      id: dispute.id,
+      enquiryId: dispute.enquiryId,
+      referenceCode: dispute.enquiry?.referenceCode ?? dispute.id.slice(0, 8),
+      productTitle: dispute.enquiry?.listing?.product?.title ?? "Construction Material",
+      raisedBy: dispute.raisedBy,
+      claimType: dispute.claimType,
+      description: dispute.description,
+      status: dispute.status,
+      resolutionNotes: dispute.resolutionNotes,
+      createdAt: dispute.createdAt.toISOString(),
+      resolvedAt: dispute.resolvedAt?.toISOString() ?? null,
+      buyerName: dispute.enquiry?.buyer?.name ?? "Buyer",
+      buyerPhone: dispute.enquiry?.buyer?.phone ?? "",
+      sellerName: dispute.enquiry?.seller?.name ?? "Seller",
+      sellerCompany: dispute.enquiry?.seller?.companyName ?? null,
+      sellerPhone: dispute.enquiry?.seller?.phone ?? "",
+      feeAmount: Number(dispute.unlockRecord?.feeAmount ?? 0),
+    }));
+  } catch (err) {
+    console.error("[command-center] fetchDisputes failed:", err);
+    return [];
+  }
+}
+
+async function fetchSellers() {
+  try {
+    const sellers = await db.user.findMany({
+      where: { role: "SELLER" },
+      include: {
+        sellerProfile: true,
+        wallet: { select: { cashBalance: true, creditBalance: true } },
+        _count: { select: { sellerListings: true, sellerEnquiries: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    return sellers.map((s) => ({
+      id: s.id,
+      name: s.name,
+      phone: s.phone,
+      companyName: s.companyName,
+      createdAt: s.createdAt.toISOString(),
+      profileId: s.sellerProfile?.id || null,
+      sellerType: s.sellerProfile?.sellerType || "RETAILER",
+      verificationStatus: s.sellerProfile?.verificationStatus || "UNVERIFIED",
+      licenseNumber: s.sellerProfile?.licenseNumber || null,
+      tinNumber: s.sellerProfile?.tinNumber || null,
+      vatNumber: s.sellerProfile?.vatNumber || null,
+      vatRegistered: s.sellerProfile?.vatRegistered ?? false,
+      licenseExpiry: s.sellerProfile?.licenseExpiry
+        ? s.sellerProfile.licenseExpiry.toISOString()
+        : null,
+      tinExpiry: s.sellerProfile?.tinExpiry
+        ? s.sellerProfile.tinExpiry.toISOString()
+        : null,
+      completedDealsCount: s.sellerProfile?.completedDealsCount || 0,
+      failedDealsCount: s.sellerProfile?.failedDealsCount || 0,
+      responseTimeAvgMinutes: s.sellerProfile?.responseTimeAvgMinutes || 60,
+      listingCount: s._count?.sellerListings || 0,
+      enquiryCount: s._count?.sellerEnquiries || 0,
+      cashBalance: Number(s.wallet?.cashBalance ?? 0),
+      creditBalance: Number(s.wallet?.creditBalance ?? 0),
+      subscriptionStatus: resolveSubscription(s.sellerProfile),
+      subscriptionTier: s.sellerProfile?.subscriptionTier ?? "BASIC",
+      reverificationNeeded: s.sellerProfile?.reverificationNeeded ?? false,
+      lastVerifiedAt: s.sellerProfile?.lastVerifiedAt
+        ? s.sellerProfile.lastVerifiedAt.toISOString()
+        : null,
+      storedSubscriptionStatus:
+        s.sellerProfile?.subscriptionStatus ?? "FREE",
+      subscriptionExpiresAt: s.sellerProfile?.subscriptionExpiresAt
+        ? s.sellerProfile.subscriptionExpiresAt.toISOString()
+        : null,
+    }));
+  } catch (err) {
+    console.error("[command-center] fetchSellers failed:", err);
+    return [];
+  }
+}
+
+async function fetchAgentApplications() {
+  try {
+    const apps = await db.agentProfile.findMany({
+      select: {
+        id: true,
+        approvalStatus: true,
+      },
+    });
+    return apps.map((a) => ({
+      id: a.id,
+      approvalStatus: a.approvalStatus,
+    }));
+  } catch (err) {
+    console.error("[command-center] fetchAgentApplications failed:", err);
+    return [];
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Page Component
+// ---------------------------------------------------------------------------
 
 export default async function CommandCenterPage() {
   await requireRole(["ADMIN"], "/admin/command-center");
@@ -43,31 +242,48 @@ export default async function CommandCenterPage() {
   // ---------------------------------------------------------------------------
   // Resilient data fetching: Promise.allSettled prevents a single query timeout
   // or cold-start failure from crashing the entire admin operations page.
+  // Direct database calls avoid "use server" RPC serialization overhead.
   // ---------------------------------------------------------------------------
   const results = await Promise.allSettled([
     fetchAllOrders(),
-    getPendingSubscriptionPaymentsAction(),
-    getGuidedLeadsAction(),
-    getAdminDisputesAction(),
-    getAdminSellersAction(),
-    getAdminAgentApplicationsAction(),
+    fetchSubscriptionPayments(),
+    fetchGuidedLeads(),
+    fetchDisputes(),
+    fetchSellers(),
+    fetchAgentApplications(),
     fetchAllSiteWastages(),
   ]);
 
   // Safe extraction with typed defaults — a rejected promise yields []
-  const orders = results[0].status === "fulfilled" && Array.isArray(results[0].value) ? results[0].value : [];
-  const subscriptionsRes = results[1].status === "fulfilled" && results[1].value ? results[1].value : { success: false, data: [] };
-  const guidedLeadsRes = results[2].status === "fulfilled" && results[2].value ? results[2].value : { success: false, data: [] };
-  const disputesRes = results[3].status === "fulfilled" && results[3].value ? results[3].value : { success: false, data: [] };
-  const sellersRes = results[4].status === "fulfilled" && results[4].value ? results[4].value : { success: false, data: [] };
-  const agentsRes = results[5].status === "fulfilled" && results[5].value ? results[5].value : { success: false, data: [] };
-  const wastages = results[6].status === "fulfilled" && Array.isArray(results[6].value) ? results[6].value : [];
+  const orders =
+    results[0].status === "fulfilled" && Array.isArray(results[0].value)
+      ? results[0].value
+      : [];
+  const pendingPayments =
+    results[1].status === "fulfilled" && Array.isArray(results[1].value)
+      ? results[1].value
+      : [];
+  const guidedLeads =
+    results[2].status === "fulfilled" && Array.isArray(results[2].value)
+      ? results[2].value
+      : [];
+  const disputes =
+    results[3].status === "fulfilled" && Array.isArray(results[3].value)
+      ? results[3].value
+      : [];
+  const sellers =
+    results[4].status === "fulfilled" && Array.isArray(results[4].value)
+      ? results[4].value
+      : [];
+  const agentApps =
+    results[5].status === "fulfilled" && Array.isArray(results[5].value)
+      ? results[5].value
+      : [];
+  const wastages =
+    results[6].status === "fulfilled" && Array.isArray(results[6].value)
+      ? results[6].value
+      : [];
 
-  const pendingPayments = subscriptionsRes?.success && Array.isArray(subscriptionsRes?.data) ? subscriptionsRes.data : [];
-  const guidedLeads = guidedLeadsRes?.success && Array.isArray(guidedLeadsRes?.data) ? guidedLeadsRes.data : [];
-  const disputes = disputesRes?.success && Array.isArray(disputesRes?.data) ? disputesRes.data : [];
-  const sellers = sellersRes?.success && Array.isArray(sellersRes?.data) ? sellersRes.data : [];
-  const agentApps = agentsRes?.success && Array.isArray(agentsRes?.data) ? agentsRes.data : [];
   const pendingAgents = agentApps.filter(
     (a: { approvalStatus?: string }) =>
       a?.approvalStatus === "UNDER_REVIEW" || a?.approvalStatus === "SUBMITTED"
@@ -90,7 +306,7 @@ export default async function CommandCenterPage() {
           Platform Operations
         </h1>
         <p className="text-sm leading-relaxed text-muted-foreground max-w-2xl">
-          Subscription approvals, field dispatch inspection tickets, proforma clearing, and commercial dispute mediation for Ethiopia’s national construction trade network.
+          Subscription approvals, field dispatch inspection tickets, proforma clearing, and commercial dispute mediation for Ethiopia&apos;s national construction trade network.
         </p>
       </div>
 

@@ -192,7 +192,7 @@ export function DisputesTable({ initialDisputes }: DisputesTableProps) {
                         <span className="font-semibold text-foreground">
                           {d.raisedBy}
                         </span>
-                        <span className="block text-[10px] text-muted-foreground">
+                        <span className="block text-[10px] text-muted-foreground" suppressHydrationWarning>
                           {new Date(d.createdAt).toLocaleDateString()}
                         </span>
                       </td>
