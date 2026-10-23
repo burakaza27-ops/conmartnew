@@ -281,25 +281,31 @@ async function OrdersSection() {
 }
 
 async function OperationalOverviewSection() {
-  // All individual fetchers already return [] on DB failure — no top-level try/catch
-  // needed (and ESLint react-hooks/error-boundaries forbids JSX inside try/catch).
-  const [
-    pendingPayments,
-    guidedLeads,
-    sellers,
-    disputes,
-    agentApps,
-    orders,
-    wastages,
-  ] = await Promise.all([
-    fetchSubscriptionPayments(),
-    fetchGuidedLeads(),
-    fetchSellers(),
-    fetchDisputes(),
-    db.agentProfile.findMany({ select: { id: true, approvalStatus: true } }).catch(() => []),
-    fetchAllOrders(),
-    fetchAllSiteWastages(),
-  ]);
+  // All individual fetchers already return [] on DB failure.
+  // The outer try/catch defends against pool-level failures (DNS, TLS, OOM)
+  // that would crash even the individual catch blocks.
+  let pendingPayments: Awaited<ReturnType<typeof fetchSubscriptionPayments>> = [];
+  let guidedLeads: Awaited<ReturnType<typeof fetchGuidedLeads>> = [];
+  let sellers: Awaited<ReturnType<typeof fetchSellers>> = [];
+  let disputes: Awaited<ReturnType<typeof fetchDisputes>> = [];
+  let agentApps: { id: string; approvalStatus?: string }[] = [];
+  let orders: Awaited<ReturnType<typeof fetchAllOrders>> = [];
+  let wastages: Awaited<ReturnType<typeof fetchAllSiteWastages>> = [];
+
+  try {
+    [pendingPayments, guidedLeads, sellers, disputes, agentApps, orders, wastages] =
+      await Promise.all([
+        fetchSubscriptionPayments(),
+        fetchGuidedLeads(),
+        fetchSellers(),
+        fetchDisputes(),
+        db.agentProfile.findMany({ select: { id: true, approvalStatus: true } }).catch(() => []),
+        fetchAllOrders(),
+        fetchAllSiteWastages(),
+      ]);
+  } catch (err) {
+    console.error("[command-center] OperationalOverviewSection Promise.all failed:", err);
+  }
 
   const pendingAgents = agentApps.filter(
     (a: { approvalStatus?: string }) =>

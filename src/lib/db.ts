@@ -82,11 +82,15 @@ function createPrismaClient(): PrismaClient {
     new pg.Pool({
       connectionString,
       ssl: buildSslConfig(),
-      max: 6,
+      // The admin command-center fires up to 7 parallel queries; pool must
+      // be large enough so none blocks waiting for a free connection.
+      max: 8,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000,
-      statement_timeout: 6000,
-      query_timeout: 6000,
+      // Vercel cold-starts take 2-5s to establish TLS connections to Supabase.
+      // With only 5-6s total budget the query itself barely gets time to run.
+      connectionTimeoutMillis: 10000,
+      statement_timeout: 15000,
+      query_timeout: 15000,
     });
 
   // Attach error handler to prevent unhandled node-pg crash on idle connection drops
