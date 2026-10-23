@@ -163,13 +163,12 @@ export async function updateSellerVerificationAction({
       });
     }
 
-    // Safe revalidation: caught so failure to revalidate never bubbles an exception
+    // Safe revalidation: only revalidate the routes we actually changed.
+    // Do NOT revalidate heavy buyer routes here — they use static generation
+    // and revalidating them during an admin action causes Vercel Function timeouts.
     try {
       revalidatePath("/admin/command-center");
       revalidatePath("/seller/dashboard");
-      revalidatePath("/buyer", "layout");
-      revalidatePath("/buyer/catalog");
-      revalidatePath("/buyer/category/all");
     } catch (revalErr) {
       console.warn("[updateSellerVerificationAction] revalidatePath warning:", revalErr);
     }

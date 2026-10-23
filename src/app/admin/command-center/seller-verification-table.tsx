@@ -177,7 +177,7 @@ export function SellerVerificationTable({ initialSellers = [] }: SellerVerificat
               key={tab}
               size="sm"
               variant={filter === tab ? "default" : "outline"}
-              onClick={() => setFilter(tab)}
+              onClick={() => startTransition(() => setFilter(tab))}
               className="h-8 text-xs font-semibold"
             >
               {tab === "ALL" && `All (${sellers.length})`}
