@@ -49,12 +49,12 @@ export function AppShell({
   children,
   contentClassName,
 }: AppShellProps) {
-  const initials = userName
+  const initials = (userName || "Admin")
     .split(" ")
     .filter(Boolean)
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
+    .join("") || "A";
 
   return (
     <div className="flex min-h-dvh flex-col md:flex-row">

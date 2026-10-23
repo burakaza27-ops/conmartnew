@@ -5,6 +5,7 @@
 // =============================================================================
 
 import "server-only";
+import { cache } from "react";
 
 import { db } from "@/lib/db";
 import type { OrderStatus } from "@/lib/types";
@@ -62,14 +63,14 @@ export interface AdminStats {
  * Fetches all orders for the admin command center.
  * Returns orders sorted by creation date (newest first).
  */
-export async function fetchAllOrders(): Promise<AdminOrderRow[]> {
+export const fetchAllOrders = cache(async function fetchAllOrders(): Promise<AdminOrderRow[]> {
   try {
     return await _fetchAllOrders();
   } catch (err) {
     console.error("[admin] fetchAllOrders failed:", err);
     return [];
   }
-}
+});
 
 async function _fetchAllOrders(): Promise<AdminOrderRow[]> {
   const orders = await db.order.findMany({

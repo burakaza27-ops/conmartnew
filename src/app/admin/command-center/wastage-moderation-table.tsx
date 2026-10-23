@@ -9,7 +9,6 @@
 // =============================================================================
 
 import React, { useState } from "react";
-import Image from "next/image";
 import {
   Recycle,
   CheckCircle2,
@@ -154,12 +153,14 @@ export function WastageModerationTable({
                     className="relative size-16 sm:size-20 rounded-xl overflow-hidden border border-border/80 bg-muted shrink-0 cursor-pointer group shadow-2xs"
                   >
                     {item.imageUrl ? (
-                      <Image
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
                         src={item.imageUrl}
                         alt={item.title}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform"
-                        sizes="80px"
+                        className="size-full object-cover group-hover:scale-105 transition-transform"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
                       />
                     ) : (
                       <div className="size-full flex items-center justify-center bg-muted text-muted-foreground">
@@ -320,11 +321,11 @@ export function WastageModerationTable({
             </div>
 
             <div className="relative w-full h-[60vh] bg-black/90 flex items-center justify-center">
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={activePhotoModal.images[activePhotoModal.index] || activePhotoModal.images[0]}
                 alt="Site Wastage Photo"
-                fill
-                className="object-contain"
+                className="max-h-full max-w-full object-contain"
               />
 
               {activePhotoModal.images.length > 1 && (

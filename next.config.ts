@@ -5,6 +5,19 @@ const nextConfig: NextConfig = {
   // bundle rather than being traced into it.
   serverExternalPackages: ["@prisma/client", "pg", "@react-pdf/renderer"],
 
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**",
+      },
+      {
+        protocol: "http",
+        hostname: "**",
+      },
+    ],
+  },
+
   turbopack: {
     // Turbopack infers the root by walking up for a lockfile, which finds a
     // stray package-lock.json in the home directory and then ignores it for

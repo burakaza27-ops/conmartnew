@@ -7,6 +7,7 @@
 // display on the buyer's Site Wastages catalog.
 // =============================================================================
 
+import { cache } from "react";
 import { db } from "@/lib/db";
 
 export type WastageStatus = "PENDING" | "APPROVED" | "REJECTED";
@@ -66,6 +67,12 @@ function parseImages(imageUrlStr: string): { primary: string; all: string[] } {
   return { primary: split[0] || imageUrlStr, all: split.length > 0 ? split : [imageUrlStr] };
 }
 
+function safeDateToIso(dateVal: unknown): string {
+  if (!dateVal) return new Date().toISOString();
+  const d = dateVal instanceof Date ? dateVal : new Date(String(dateVal));
+  return Number.isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+}
+
 function mapRow(row: RawWastageRow): SiteWastageItem {
   const { primary, all } = parseImages(row.image_url);
   return {
@@ -74,18 +81,18 @@ function mapRow(row: RawWastageRow): SiteWastageItem {
     description: row.description,
     imageUrl: primary,
     images: all,
-    quantity: Number(row.quantity),
-    unit: row.unit,
-    askingPrice: Number(row.asking_price),
+    quantity: Number(row.quantity || 0),
+    unit: row.unit || "Unit",
+    askingPrice: Number(row.asking_price || 0),
     isNegotiable: Boolean(row.is_negotiable),
-    location: row.location,
-    contactName: row.contact_name,
-    contactPhone: row.contact_phone,
-    status: row.status as WastageStatus,
+    location: row.location || "Addis Ababa",
+    contactName: row.contact_name || "Depot Manager",
+    contactPhone: row.contact_phone || "",
+    status: (row.status as WastageStatus) || "PENDING",
     moderatedBy: row.moderated_by,
     moderationNotes: row.moderation_notes,
-    createdAt: new Date(row.created_at).toISOString(),
-    updatedAt: new Date(row.updated_at).toISOString(),
+    createdAt: safeDateToIso(row.created_at),
+    updatedAt: safeDateToIso(row.updated_at),
   };
 }
 
@@ -190,7 +197,7 @@ export async function fetchPendingSiteWastages(): Promise<SiteWastageItem[]> {
 /**
  * Fetches all site wastages (admin view).
  */
-export async function fetchAllSiteWastages(): Promise<SiteWastageItem[]> {
+export const fetchAllSiteWastages = cache(async function fetchAllSiteWastages(): Promise<SiteWastageItem[]> {
   try {
     const rows = await db.$queryRaw<RawWastageRow[]>`
       SELECT * FROM site_wastages
@@ -199,7 +206,20 @@ export async function fetchAllSiteWastages(): Promise<SiteWastageItem[]> {
     `;
     return rows.map(mapRow);
   } catch (error) {
+    if (!hasEnsuredTable) {
+      await ensureSiteWastagesTable();
+      try {
+        const rows = await db.$queryRaw<RawWastageRow[]>`
+          SELECT * FROM site_wastages
+          ORDER BY created_at DESC
+          LIMIT 100;
+        `;
+        return rows.map(mapRow);
+      } catch {
+        return [];
+      }
+    }
     console.error("fetchAllSiteWastages error:", error);
     return [];
   }
-}
+});

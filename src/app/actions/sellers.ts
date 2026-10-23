@@ -113,23 +113,44 @@ export async function updateSellerVerificationAction({
     }
 
     if (!profile) {
-      // Check if sellerProfileId is a valid User ID with SELLER role, then create seller profile
-      const user = await db.user.findUnique({
+      // Find user by id or authId
+      let user = await db.user.findUnique({
         where: { id: sellerProfileId },
         select: { id: true, role: true },
       });
 
-      if (user && user.role === "SELLER") {
-        profile = await db.sellerProfile.create({
-          data: {
+      if (!user) {
+        user = await db.user.findUnique({
+          where: { authId: sellerProfileId },
+          select: { id: true, role: true },
+        });
+      }
+
+      if (user) {
+        // Ensure user has SELLER role if admin is verifying them as a supplier
+        if (user.role !== "SELLER" && user.role !== "ADMIN") {
+          await db.user.update({
+            where: { id: user.id },
+            data: { role: "SELLER" },
+          });
+        }
+
+        profile = await db.sellerProfile.upsert({
+          where: { userId: user.id },
+          create: {
             userId: user.id,
             verificationStatus: status,
             sellerType: sellerType || "RETAILER",
             ...(status === "VERIFIED" ? { lastVerifiedAt: new Date(), reverificationNeeded: false } : {}),
           },
+          update: {
+            verificationStatus: status,
+            ...(sellerType ? { sellerType } : {}),
+            ...(status === "VERIFIED" ? { lastVerifiedAt: new Date(), reverificationNeeded: false } : {}),
+          },
         });
       } else {
-        return { success: false, error: "Supplier profile not found in database." };
+        return { success: false, error: "Supplier account not found in database." };
       }
     } else {
       await db.sellerProfile.update({
@@ -181,6 +202,31 @@ export async function toggleSellerReverificationAction(sellerProfileId: string, 
     }
 
     if (!profile) {
+      let user = await db.user.findUnique({
+        where: { id: sellerProfileId },
+        select: { id: true },
+      });
+      if (!user) {
+        user = await db.user.findUnique({
+          where: { authId: sellerProfileId },
+          select: { id: true },
+        });
+      }
+      if (user) {
+        profile = await db.sellerProfile.upsert({
+          where: { userId: user.id },
+          create: {
+            userId: user.id,
+            reverificationNeeded: needed,
+            ...(!needed ? { lastVerifiedAt: new Date() } : {}),
+          },
+          update: {
+            reverificationNeeded: needed,
+            ...(!needed ? { lastVerifiedAt: new Date() } : {}),
+          },
+        });
+        return { success: true };
+      }
       return { success: false, error: "Supplier profile not found." };
     }
 

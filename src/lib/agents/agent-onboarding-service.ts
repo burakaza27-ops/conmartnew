@@ -442,16 +442,30 @@ export async function adminReviewAgentApplication(
       break;
   }
 
-  const existing = await db.agentProfile.findUnique({
+  let profile = await db.agentProfile.findUnique({
     where: { id: input.agentProfileId },
-    select: { introductoryEndsAt: true },
+    select: { id: true, introductoryEndsAt: true },
   });
+
+  if (!profile) {
+    profile = await db.agentProfile.findUnique({
+      where: { userId: input.agentProfileId },
+      select: { id: true, introductoryEndsAt: true },
+    });
+  }
+
+  if (!profile) {
+    throw new Error("Agent application profile not found");
+  }
+
+  const resolvedProfileId = profile.id;
+  const existing = profile;
 
   const sixMonthsAhead = new Date();
   sixMonthsAhead.setMonth(sixMonthsAhead.getMonth() + 6);
 
   return db.agentProfile.update({
-    where: { id: input.agentProfileId },
+    where: { id: resolvedProfileId },
     data: {
       approvalStatus: targetStatus,
       isActive,

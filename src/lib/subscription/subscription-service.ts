@@ -248,14 +248,31 @@ export async function reviewSubscriptionPayment(params: {
       const baseDate = currentExpiry && currentExpiry > now ? currentExpiry : now;
       const newExpiry = new Date(baseDate.getTime() + durationDays * 24 * 60 * 60 * 1000);
 
-      await tx.sellerProfile.update({
-        where: { userId: payment.sellerId },
-        data: {
-          subscriptionStatus: SubscriptionStatus.ACTIVE,
-          subscriptionTier: payment.tier,
-          subscriptionExpiresAt: newExpiry,
-        },
-      });
+      if (typeof tx.sellerProfile?.upsert === "function") {
+        await tx.sellerProfile.upsert({
+          where: { userId: payment.sellerId },
+          create: {
+            userId: payment.sellerId,
+            subscriptionStatus: SubscriptionStatus.ACTIVE,
+            subscriptionTier: payment.tier,
+            subscriptionExpiresAt: newExpiry,
+          },
+          update: {
+            subscriptionStatus: SubscriptionStatus.ACTIVE,
+            subscriptionTier: payment.tier,
+            subscriptionExpiresAt: newExpiry,
+          },
+        });
+      } else {
+        await tx.sellerProfile.update({
+          where: { userId: payment.sellerId },
+          data: {
+            subscriptionStatus: SubscriptionStatus.ACTIVE,
+            subscriptionTier: payment.tier,
+            subscriptionExpiresAt: newExpiry,
+          },
+        });
+      }
     }
 
     return tx.subscriptionPayment.findUniqueOrThrow({

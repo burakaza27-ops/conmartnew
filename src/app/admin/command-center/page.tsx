@@ -9,7 +9,7 @@
 // 5. Bank Proforma Invoices & Fulfillment
 // =============================================================================
 
-import React, { Suspense } from "react";
+import React, { Suspense, cache } from "react";
 import Link from "next/link";
 import {
   ShieldAlert,
@@ -42,7 +42,7 @@ export const dynamic = "force-dynamic";
 // Safe direct-database fetchers (each has try/catch fallback to [])
 // ---------------------------------------------------------------------------
 
-async function fetchSubscriptionPayments() {
+const fetchSubscriptionPayments = cache(async function fetchSubscriptionPayments() {
   try {
     const payments = await db.subscriptionPayment.findMany({
       where: { status: WalletTxStatus.PENDING },
@@ -66,15 +66,15 @@ async function fetchSubscriptionPayments() {
       referenceCode: p.referenceCode,
       slipUrl: p.slipUrl,
       status: p.status,
-      createdAt: p.createdAt.toISOString(),
+      createdAt: p.createdAt instanceof Date ? p.createdAt.toISOString() : new Date(p.createdAt || Date.now()).toISOString(),
     }));
   } catch (err) {
     console.error("[command-center] fetchSubscriptionPayments failed:", err);
     return [];
   }
-}
+});
 
-async function fetchGuidedLeads() {
+const fetchGuidedLeads = cache(async function fetchGuidedLeads() {
   try {
     const leads = await db.guidedLead.findMany({
       include: {
@@ -113,15 +113,15 @@ async function fetchGuidedLeads() {
             phone: l.assignedAgent.phone,
           }
         : null,
-      createdAt: l.createdAt.toISOString(),
+      createdAt: l.createdAt instanceof Date ? l.createdAt.toISOString() : new Date(l.createdAt || Date.now()).toISOString(),
     }));
   } catch (err) {
     console.error("[command-center] fetchGuidedLeads failed:", err);
     return [];
   }
-}
+});
 
-async function fetchDisputes() {
+const fetchDisputes = cache(async function fetchDisputes() {
   try {
     const disputes = await db.disputeCase.findMany({
       include: {
@@ -147,8 +147,8 @@ async function fetchDisputes() {
       description: dispute.description,
       status: dispute.status,
       resolutionNotes: dispute.resolutionNotes,
-      createdAt: dispute.createdAt.toISOString(),
-      resolvedAt: dispute.resolvedAt?.toISOString() ?? null,
+      createdAt: dispute.createdAt instanceof Date ? dispute.createdAt.toISOString() : new Date(dispute.createdAt || Date.now()).toISOString(),
+      resolvedAt: dispute.resolvedAt instanceof Date ? dispute.resolvedAt.toISOString() : null,
       buyerName: dispute.enquiry?.buyer?.name ?? "Buyer",
       buyerPhone: dispute.enquiry?.buyer?.phone ?? "",
       sellerName: dispute.enquiry?.seller?.name ?? "Seller",
@@ -160,9 +160,9 @@ async function fetchDisputes() {
     console.error("[command-center] fetchDisputes failed:", err);
     return [];
   }
-}
+});
 
-async function fetchSellers() {
+const fetchSellers = cache(async function fetchSellers() {
   try {
     const sellers = await db.user.findMany({
       where: { role: "SELLER" },
@@ -176,10 +176,10 @@ async function fetchSellers() {
     });
     return sellers.map((s) => ({
       id: s.id,
-      name: s.name,
-      phone: s.phone,
-      companyName: s.companyName,
-      createdAt: s.createdAt.toISOString(),
+      name: s.name || "Supplier",
+      phone: s.phone || "",
+      companyName: s.companyName || "Direct Depot",
+      createdAt: s.createdAt instanceof Date ? s.createdAt.toISOString() : new Date(s.createdAt || Date.now()).toISOString(),
       profileId: s.sellerProfile?.id || null,
       sellerType: s.sellerProfile?.sellerType || "RETAILER",
       verificationStatus: s.sellerProfile?.verificationStatus || "UNVERIFIED",
@@ -187,10 +187,10 @@ async function fetchSellers() {
       tinNumber: s.sellerProfile?.tinNumber || null,
       vatNumber: s.sellerProfile?.vatNumber || null,
       vatRegistered: s.sellerProfile?.vatRegistered ?? false,
-      licenseExpiry: s.sellerProfile?.licenseExpiry
+      licenseExpiry: s.sellerProfile?.licenseExpiry instanceof Date
         ? s.sellerProfile.licenseExpiry.toISOString()
         : null,
-      tinExpiry: s.sellerProfile?.tinExpiry
+      tinExpiry: s.sellerProfile?.tinExpiry instanceof Date
         ? s.sellerProfile.tinExpiry.toISOString()
         : null,
       completedDealsCount: s.sellerProfile?.completedDealsCount || 0,
@@ -203,12 +203,12 @@ async function fetchSellers() {
       subscriptionStatus: resolveSubscription(s.sellerProfile),
       subscriptionTier: s.sellerProfile?.subscriptionTier ?? "BASIC",
       reverificationNeeded: s.sellerProfile?.reverificationNeeded ?? false,
-      lastVerifiedAt: s.sellerProfile?.lastVerifiedAt
+      lastVerifiedAt: s.sellerProfile?.lastVerifiedAt instanceof Date
         ? s.sellerProfile.lastVerifiedAt.toISOString()
         : null,
       storedSubscriptionStatus:
         s.sellerProfile?.subscriptionStatus ?? "FREE",
-      subscriptionExpiresAt: s.sellerProfile?.subscriptionExpiresAt
+      subscriptionExpiresAt: s.sellerProfile?.subscriptionExpiresAt instanceof Date
         ? s.sellerProfile.subscriptionExpiresAt.toISOString()
         : null,
     }));
@@ -216,7 +216,7 @@ async function fetchSellers() {
     console.error("[command-center] fetchSellers failed:", err);
     return [];
   }
-}
+});
 
 // ---------------------------------------------------------------------------
 // Skeleton Loaders for Smooth Streaming
@@ -244,22 +244,42 @@ function TableSkeleton({ title, description }: { title: string; description: str
 // ---------------------------------------------------------------------------
 
 async function SellerVerificationSection() {
-  const sellers = await fetchSellers();
+  let sellers: Awaited<ReturnType<typeof fetchSellers>> = [];
+  try {
+    sellers = await fetchSellers();
+  } catch (err) {
+    console.error("[command-center] SellerVerificationSection failed:", err);
+  }
   return <SellerVerificationTable initialSellers={sellers} />;
 }
 
 async function WastageModerationSection() {
-  const wastages = await fetchAllSiteWastages();
+  let wastages: Awaited<ReturnType<typeof fetchAllSiteWastages>> = [];
+  try {
+    wastages = await fetchAllSiteWastages();
+  } catch (err) {
+    console.error("[command-center] WastageModerationSection failed:", err);
+  }
   return <WastageModerationTable initialItems={wastages} />;
 }
 
 async function DisputesSection() {
-  const disputes = await fetchDisputes();
+  let disputes: Awaited<ReturnType<typeof fetchDisputes>> = [];
+  try {
+    disputes = await fetchDisputes();
+  } catch (err) {
+    console.error("[command-center] DisputesSection failed:", err);
+  }
   return <DisputesTable initialDisputes={disputes} />;
 }
 
 async function OrdersSection() {
-  const orders = await fetchAllOrders();
+  let orders: Awaited<ReturnType<typeof fetchAllOrders>> = [];
+  try {
+    orders = await fetchAllOrders();
+  } catch (err) {
+    console.error("[command-center] OrdersSection failed:", err);
+  }
   return (
     <div className="space-y-3 pt-4 border-t border-border/40">
       <div className="flex items-center justify-between">

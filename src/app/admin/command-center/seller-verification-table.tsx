@@ -62,6 +62,7 @@ interface SellerVerificationTableProps {
 export function SellerVerificationTable({ initialSellers = [] }: SellerVerificationTableProps) {
   const [sellers, setSellers] = useState<AdminSellerItem[]>(initialSellers ?? []);
   const [filter, setFilter] = useState<"ALL" | "UNVERIFIED" | "VERIFIED" | "SUSPENDED" | "REVERIFY">("ALL");
+  const [loadingId, setLoadingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -77,56 +78,76 @@ export function SellerVerificationTable({ initialSellers = [] }: SellerVerificat
 
   const handleUpdateStatus = (profileId: string, newStatus: SellerVerificationStatus) => {
     setStatusMsg(null);
+    setLoadingId(profileId);
     startTransition(async () => {
-      const res = await updateSellerVerificationAction({
-        sellerProfileId: profileId,
-        status: newStatus,
-      });
-
-      if (res.success) {
-        setSellers((prev) =>
-          prev.map((s) =>
-            s.profileId === profileId || s.id === profileId
-              ? { ...s, verificationStatus: newStatus }
-              : s
-          )
-        );
-        setStatusMsg({
-          type: "success",
-          text: `Supplier compliance status updated to ${newStatus}.`,
+      try {
+        const res = await updateSellerVerificationAction({
+          sellerProfileId: profileId,
+          status: newStatus,
         });
-      } else {
+
+        if (res.success) {
+          setSellers((prev) =>
+            prev.map((s) =>
+              s.profileId === profileId || s.id === profileId
+                ? { ...s, verificationStatus: newStatus }
+                : s
+            )
+          );
+          setStatusMsg({
+            type: "success",
+            text: `Supplier compliance status updated to ${newStatus}.`,
+          });
+        } else {
+          setStatusMsg({
+            type: "error",
+            text: res.error || "Failed to update verification status.",
+          });
+        }
+      } catch (err) {
         setStatusMsg({
           type: "error",
-          text: res.error || "Failed to update verification status.",
+          text: err instanceof Error ? err.message : "Network error updating verification.",
         });
+      } finally {
+        setLoadingId(null);
       }
     });
   };
 
   const handleToggleReverification = (profileId: string, needed: boolean) => {
     setStatusMsg(null);
+    setLoadingId(profileId);
     startTransition(async () => {
-      const res = await toggleSellerReverificationAction(profileId, needed);
-      if (res.success) {
-        setSellers((prev) =>
-          prev.map((s) =>
-            s.profileId === profileId || s.id === profileId
-              ? { ...s, reverificationNeeded: needed }
-              : s
-          )
-        );
-        setStatusMsg({
-          type: "success",
-          text: needed
-            ? "Supplier flagged for yard & license re-verification."
-            : "Re-verification flag cleared. Verification timestamp updated.",
-        });
-      } else {
+      try {
+        const res = await toggleSellerReverificationAction(profileId, needed);
+        if (res.success) {
+          setSellers((prev) =>
+            prev.map((s) =>
+              s.profileId === profileId || s.id === profileId
+                ? { ...s, reverificationNeeded: needed }
+                : s
+            )
+          );
+          setStatusMsg({
+            type: "success",
+            text: needed
+              ? "Supplier flagged for yard & license re-verification."
+              : "Re-verification flag cleared. Verification timestamp updated.",
+          });
+        } else {
+          setStatusMsg({
+            type: "error",
+            text: res.error || "Failed to toggle re-verification status.",
+          });
+        }
+      } catch (err) {
         setStatusMsg({
           type: "error",
-          text: res.error || "Failed to toggle re-verification status.",
+          text: err instanceof Error ? err.message : "Network error toggling re-verification.",
         });
+      } finally {
+        setLoadingId(null);
       }
     });
   };
@@ -315,17 +336,18 @@ export function SellerVerificationTable({ initialSellers = [] }: SellerVerificat
                         {(() => {
                           const targetId = s.profileId || s.id;
                           if (!targetId) return null;
+                          const isCurrentLoading = loadingId === targetId;
                           return (
                             <div className="inline-flex items-center gap-1.5">
                               {s.verificationStatus !== "VERIFIED" && (
                                 <Button
                                   size="sm"
                                   variant="default"
-                                  disabled={isPending}
+                                  disabled={isCurrentLoading}
                                   onClick={() => handleUpdateStatus(targetId, "VERIFIED")}
                                   className="h-7 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
                                 >
-                                  {isPending && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
+                                  {isCurrentLoading && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
                                   Verify
                                 </Button>
                               )}
@@ -334,7 +356,7 @@ export function SellerVerificationTable({ initialSellers = [] }: SellerVerificat
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  disabled={isPending}
+                                  disabled={isCurrentLoading}
                                   onClick={() => handleUpdateStatus(targetId, "SUSPENDED")}
                                   className="h-7 text-xs font-semibold text-destructive hover:bg-destructive/10"
                                 >
@@ -344,7 +366,7 @@ export function SellerVerificationTable({ initialSellers = [] }: SellerVerificat
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  disabled={isPending}
+                                  disabled={isCurrentLoading}
                                   onClick={() => handleUpdateStatus(targetId, "UNVERIFIED")}
                                   className="h-7 text-xs font-semibold"
                                 >
@@ -354,7 +376,7 @@ export function SellerVerificationTable({ initialSellers = [] }: SellerVerificat
                               <Button
                                 size="sm"
                                 variant="outline"
-                                disabled={isPending}
+                                disabled={isCurrentLoading}
                                 onClick={() =>
                                   handleToggleReverification(targetId, !s.reverificationNeeded)
                                 }
