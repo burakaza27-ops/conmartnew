@@ -20,11 +20,22 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  updateSellerVerificationAction,
-  toggleSellerReverificationAction,
-} from "@/app/actions/sellers";
-import { SellerVerificationStatus } from "@prisma/client";
+
+type SellerVerificationStatus = "VERIFIED" | "UNVERIFIED" | "PENDING" | "SUSPENDED";
+
+/** Call the dedicated API route — avoids server-action cold-start timeouts */
+async function callVerifyApi(body: Record<string, unknown>): Promise<{ success: boolean; error?: string }> {
+  const res = await fetch("/api/admin/sellers/verify", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    return { success: false, error: (json as { error?: string }).error ?? `Server error ${res.status}` };
+  }
+  return res.json() as Promise<{ success: boolean; error?: string }>;
+}
 
 export interface AdminSellerItem {
   id: string;
@@ -81,11 +92,7 @@ export function SellerVerificationTable({ initialSellers = [] }: SellerVerificat
     setLoadingId(profileId);
     startTransition(async () => {
       try {
-        const res = await updateSellerVerificationAction({
-          sellerProfileId: profileId,
-          status: newStatus,
-        });
-
+        const res = await callVerifyApi({ sellerProfileId: profileId, status: newStatus });
         if (res.success) {
           setSellers((prev) =>
             prev.map((s) =>
@@ -94,20 +101,14 @@ export function SellerVerificationTable({ initialSellers = [] }: SellerVerificat
                 : s
             )
           );
-          setStatusMsg({
-            type: "success",
-            text: `Supplier compliance status updated to ${newStatus}.`,
-          });
+          setStatusMsg({ type: "success", text: `Supplier status updated to ${newStatus}.` });
         } else {
-          setStatusMsg({
-            type: "error",
-            text: res.error || "Failed to update verification status.",
-          });
+          setStatusMsg({ type: "error", text: res.error ?? "Failed to update verification status." });
         }
       } catch (err) {
         setStatusMsg({
           type: "error",
-          text: err instanceof Error ? err.message : "Network error updating verification.",
+          text: err instanceof Error ? err.message : "Network error. Please try again.",
         });
       } finally {
         setLoadingId(null);
@@ -120,7 +121,7 @@ export function SellerVerificationTable({ initialSellers = [] }: SellerVerificat
     setLoadingId(profileId);
     startTransition(async () => {
       try {
-        const res = await toggleSellerReverificationAction(profileId, needed);
+        const res = await callVerifyApi({ sellerProfileId: profileId, action: "reverify-toggle", reverificationNeeded: needed });
         if (res.success) {
           setSellers((prev) =>
             prev.map((s) =>
@@ -133,18 +134,15 @@ export function SellerVerificationTable({ initialSellers = [] }: SellerVerificat
             type: "success",
             text: needed
               ? "Supplier flagged for yard & license re-verification."
-              : "Re-verification flag cleared. Verification timestamp updated.",
+              : "Re-verification flag cleared.",
           });
         } else {
-          setStatusMsg({
-            type: "error",
-            text: res.error || "Failed to toggle re-verification status.",
-          });
+          setStatusMsg({ type: "error", text: res.error ?? "Failed to toggle re-verification status." });
         }
       } catch (err) {
         setStatusMsg({
           type: "error",
-          text: err instanceof Error ? err.message : "Network error toggling re-verification.",
+          text: err instanceof Error ? err.message : "Network error. Please try again.",
         });
       } finally {
         setLoadingId(null);
