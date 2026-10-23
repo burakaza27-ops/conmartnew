@@ -1,13 +1,35 @@
 // =============================================================================
-// ECON — Admin Command Center Error Boundary (Client Component)
+// ECON — Admin Error Boundary (Client Component)
+// =============================================================================
+// Catches rendering errors in the /admin route group.
+//
+// Auto-recovers from stale deployment errors: after a new Vercel deployment,
+// browsers with cached JS try to call server action IDs that no longer exist.
+// Rather than showing the user an error screen, we automatically reload the
+// page (once) so the fresh JS loads.
 // =============================================================================
 
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { AlertTriangle, RotateCcw, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+/** Error names / messages that indicate a stale deployment cache. */
+function isStaleDeploymentError(error: Error): boolean {
+  const msg = `${error.name} ${error.message}`.toLowerCase();
+  return (
+    msg.includes("unrecognizedactionerror") ||
+    msg.includes("server action") ||
+    msg.includes("was not found on the server") ||
+    msg.includes("chunkloaderror") ||
+    msg.includes("loading chunk") ||
+    msg.includes("failed to fetch dynamically imported module")
+  );
+}
+
+const AUTO_RELOAD_KEY = "econ_admin_auto_reload_ts";
 
 export default function AdminErrorBoundary({
   error,
@@ -16,8 +38,24 @@ export default function AdminErrorBoundary({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const hasAutoReloaded = useRef(false);
+
   useEffect(() => {
-    console.error("Admin Command Center error caught:", error);
+    console.error("Admin error caught:", error);
+
+    // Auto-reload ONCE for stale deployment errors.
+    // We store a timestamp in sessionStorage so we don't reload in a loop.
+    if (isStaleDeploymentError(error) && typeof window !== "undefined" && !hasAutoReloaded.current) {
+      hasAutoReloaded.current = true;
+      const lastReload = sessionStorage.getItem(AUTO_RELOAD_KEY);
+      const now = Date.now();
+      // Only auto-reload if we haven't done so in the last 30 seconds
+      if (!lastReload || now - Number(lastReload) > 30_000) {
+        sessionStorage.setItem(AUTO_RELOAD_KEY, String(now));
+        window.location.reload();
+        return;
+      }
+    }
   }, [error]);
 
   return (
@@ -30,7 +68,8 @@ export default function AdminErrorBoundary({
         Command Center Interruption
       </h3>
       <p className="mt-1.5 max-w-sm text-xs text-muted-foreground">
-        A temporary error occurred loading administrative orders or stats. Click retry to reconnect to the database.
+        A temporary error occurred loading the admin dashboard. This usually
+        resolves with a page refresh after a new deployment.
       </p>
       {error?.digest && (
         <p className="mt-2 text-[11px] font-mono text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-md">
@@ -42,7 +81,9 @@ export default function AdminErrorBoundary({
         <Button
           size="sm"
           onClick={() => {
+            // Clear the auto-reload guard so a manual click always refreshes
             if (typeof window !== "undefined") {
+              sessionStorage.removeItem(AUTO_RELOAD_KEY);
               window.location.reload();
             } else {
               reset();
