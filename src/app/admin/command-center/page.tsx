@@ -281,168 +281,165 @@ async function OrdersSection() {
 }
 
 async function OperationalOverviewSection() {
-  try {
-    const [
-      pendingPayments,
-      guidedLeads,
-      sellers,
-      disputes,
-      agentApps,
-      orders,
-      wastages,
-    ] = await Promise.all([
-      fetchSubscriptionPayments(),
-      fetchGuidedLeads(),
-      fetchSellers(),
-      fetchDisputes(),
-      db.agentProfile.findMany({ select: { id: true, approvalStatus: true } }).catch(() => []),
-      fetchAllOrders(),
-      fetchAllSiteWastages(),
-    ]);
+  // All individual fetchers already return [] on DB failure — no top-level try/catch
+  // needed (and ESLint react-hooks/error-boundaries forbids JSX inside try/catch).
+  const [
+    pendingPayments,
+    guidedLeads,
+    sellers,
+    disputes,
+    agentApps,
+    orders,
+    wastages,
+  ] = await Promise.all([
+    fetchSubscriptionPayments(),
+    fetchGuidedLeads(),
+    fetchSellers(),
+    fetchDisputes(),
+    db.agentProfile.findMany({ select: { id: true, approvalStatus: true } }).catch(() => []),
+    fetchAllOrders(),
+    fetchAllSiteWastages(),
+  ]);
 
-    const pendingAgents = agentApps.filter(
-      (a: { approvalStatus?: string }) =>
-        a?.approvalStatus === "UNDER_REVIEW" || a?.approvalStatus === "SUBMITTED"
-    );
-    const pendingWastages = wastages.filter(
-      (w: { status?: string }) => w?.status === "PENDING"
-    );
+  const pendingAgents = agentApps.filter(
+    (a: { approvalStatus?: string }) =>
+      a?.approvalStatus === "UNDER_REVIEW" || a?.approvalStatus === "SUBMITTED"
+  );
+  const pendingWastages = wastages.filter(
+    (w: { status?: string }) => w?.status === "PENDING"
+  );
 
-    return (
-      <div className="space-y-6">
-        {/* Operational KPI grid */}
-        <div className="grid gap-2.5 grid-cols-2 sm:grid-cols-4 lg:grid-cols-8">
-          <StatCard
-            icon={<CreditCard className="h-4 w-4 text-emerald-500" />}
-            label="Subscriptions"
-            value={pendingPayments.length.toString()}
-            href="/admin/subscriptions"
-            badge={pendingPayments.length > 0 ? "Action Req" : undefined}
-          />
-          <StatCard
-            icon={<Users className="h-4 w-4 text-amber-500" />}
-            label="Agent Vetting"
-            value={pendingAgents.length.toString()}
-            href="/admin/agents"
-            badge={pendingAgents.length > 0 ? `${pendingAgents.length} Pending` : undefined}
-          />
-          <StatCard
-            icon={<UserCheck className="h-4 w-4 text-primary" />}
-            label="Buyer Leads"
-            value={guidedLeads.length.toString()}
-            href="/agent/leads"
-          />
-          <StatCard
-            icon={<ShieldCheck className="h-4 w-4 text-emerald-500" />}
-            label="Verified Yds"
-            value={sellers.filter((s) => s?.verificationStatus === "VERIFIED").length.toString()}
-          />
-          <StatCard
-            icon={<Building2 className="h-4 w-4 text-blue-500" />}
-            label="Audit Due"
-            value={sellers.filter((s) => s?.reverificationNeeded).length.toString()}
-          />
-          <StatCard
-            icon={<ShieldAlert className="h-4 w-4 text-rose-500" />}
-            label="Disputes"
-            value={disputes.filter((d) => d?.status === "OPEN" || d?.status === "MEDIATING").length.toString()}
-            badge={disputes.filter((d) => d?.status === "OPEN").length > 0 ? "Open" : undefined}
-          />
-          <StatCard
-            icon={<Inbox className="h-4 w-4 text-indigo-500" />}
-            label="Proformas"
-            value={orders.length.toString()}
-          />
-          <StatCard
-            icon={<Recycle className="h-4 w-4 text-emerald-500" />}
-            label="Surplus Lots"
-            value={pendingWastages.length.toString()}
-          />
-        </div>
-
-        {/* Quick Action Navigation Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="border-border/60 bg-gradient-to-br from-card to-card/50 shadow-xs">
-            <CardContent className="p-5 flex items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 text-emerald-600" />
-                  <h3 className="font-bold text-sm text-foreground">Supplier Subscriptions Queue</h3>
-                  {pendingPayments.length > 0 && (
-                    <Badge className="bg-amber-600 text-white text-[10px]">
-                      {pendingPayments.length} Pending
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Review Telebirr, CBE Bank, and Awash Bank transaction slips to activate supplier directory listings.
-                </p>
-              </div>
-              <Link href="/admin/subscriptions">
-                <Button size="sm" className="gap-1.5 font-bold shadow-xs shrink-0">
-                  <span>Review Plans</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/60 bg-gradient-to-br from-card to-card/50 shadow-xs">
-            <CardContent className="p-5 flex items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-amber-500" />
-                  <h3 className="font-bold text-sm text-foreground">01B Agent Vetting Queue</h3>
-                  {pendingAgents.length > 0 && (
-                    <Badge className="bg-amber-600 text-white text-[10px]">
-                      {pendingAgents.length} Pending
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  5-point verification: Kebele ID, Driver&apos;s License, Vehicle Libre, marketplace hub, and service area.
-                </p>
-              </div>
-              <Link href="/admin/agents">
-                <Button size="sm" className="gap-1.5 font-bold shadow-xs shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground">
-                  <span>Review Agents</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/60 bg-gradient-to-br from-card to-card/50 shadow-xs">
-            <CardContent className="p-5 flex items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <UserCheck className="h-5 w-5 text-primary" />
-                  <h3 className="font-bold text-sm text-foreground">Buyer Guided Leads Inbox</h3>
-                  {guidedLeads.filter((l) => l.status === "NEW").length > 0 && (
-                    <Badge className="bg-primary text-primary-foreground text-[10px]">
-                      {guidedLeads.filter((l) => l.status === "NEW").length} New
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Assign contractor material requests to field commission agents and track delivery stages.
-                </p>
-              </div>
-              <Link href="/agent/leads">
-                <Button size="sm" variant="outline" className="gap-1.5 font-bold shrink-0">
-                  <span>Open Leads</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
+  return (
+    <div className="space-y-6">
+      {/* Operational KPI grid */}
+      <div className="grid gap-2.5 grid-cols-2 sm:grid-cols-4 lg:grid-cols-8">
+        <StatCard
+          icon={<CreditCard className="h-4 w-4 text-emerald-500" />}
+          label="Subscriptions"
+          value={pendingPayments.length.toString()}
+          href="/admin/subscriptions"
+          badge={pendingPayments.length > 0 ? "Action Req" : undefined}
+        />
+        <StatCard
+          icon={<Users className="h-4 w-4 text-amber-500" />}
+          label="Agent Vetting"
+          value={pendingAgents.length.toString()}
+          href="/admin/agents"
+          badge={pendingAgents.length > 0 ? `${pendingAgents.length} Pending` : undefined}
+        />
+        <StatCard
+          icon={<UserCheck className="h-4 w-4 text-primary" />}
+          label="Buyer Leads"
+          value={guidedLeads.length.toString()}
+          href="/agent/leads"
+        />
+        <StatCard
+          icon={<ShieldCheck className="h-4 w-4 text-emerald-500" />}
+          label="Verified Yds"
+          value={sellers.filter((s) => s?.verificationStatus === "VERIFIED").length.toString()}
+        />
+        <StatCard
+          icon={<Building2 className="h-4 w-4 text-blue-500" />}
+          label="Audit Due"
+          value={sellers.filter((s) => s?.reverificationNeeded).length.toString()}
+        />
+        <StatCard
+          icon={<ShieldAlert className="h-4 w-4 text-rose-500" />}
+          label="Disputes"
+          value={disputes.filter((d) => d?.status === "OPEN" || d?.status === "MEDIATING").length.toString()}
+          badge={disputes.filter((d) => d?.status === "OPEN").length > 0 ? "Open" : undefined}
+        />
+        <StatCard
+          icon={<Inbox className="h-4 w-4 text-indigo-500" />}
+          label="Proformas"
+          value={orders.length.toString()}
+        />
+        <StatCard
+          icon={<Recycle className="h-4 w-4 text-emerald-500" />}
+          label="Surplus Lots"
+          value={pendingWastages.length.toString()}
+        />
       </div>
-    );
-  } catch (err) {
-    console.error("[command-center] OperationalOverviewSection error:", err);
-    return null;
-  }
+
+      {/* Quick Action Navigation Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="border-border/60 bg-gradient-to-br from-card to-card/50 shadow-xs">
+          <CardContent className="p-5 flex items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-emerald-600" />
+                <h3 className="font-bold text-sm text-foreground">Supplier Subscriptions Queue</h3>
+                {pendingPayments.length > 0 && (
+                  <Badge className="bg-amber-600 text-white text-[10px]">
+                    {pendingPayments.length} Pending
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Review Telebirr, CBE Bank, and Awash Bank transaction slips to activate supplier directory listings.
+              </p>
+            </div>
+            <Link href="/admin/subscriptions">
+              <Button size="sm" className="gap-1.5 font-bold shadow-xs shrink-0">
+                <span>Review Plans</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60 bg-gradient-to-br from-card to-card/50 shadow-xs">
+          <CardContent className="p-5 flex items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-amber-500" />
+                <h3 className="font-bold text-sm text-foreground">01B Agent Vetting Queue</h3>
+                {pendingAgents.length > 0 && (
+                  <Badge className="bg-amber-600 text-white text-[10px]">
+                    {pendingAgents.length} Pending
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                5-point verification: Kebele ID, Driver&apos;s License, Vehicle Libre, marketplace hub, and service area.
+              </p>
+            </div>
+            <Link href="/admin/agents">
+              <Button size="sm" className="gap-1.5 font-bold shadow-xs shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground">
+                <span>Review Agents</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60 bg-gradient-to-br from-card to-card/50 shadow-xs">
+          <CardContent className="p-5 flex items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <UserCheck className="h-5 w-5 text-primary" />
+                <h3 className="font-bold text-sm text-foreground">Buyer Guided Leads Inbox</h3>
+                {guidedLeads.filter((l) => l.status === "NEW").length > 0 && (
+                  <Badge className="bg-primary text-primary-foreground text-[10px]">
+                    {guidedLeads.filter((l) => l.status === "NEW").length} New
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Assign contractor material requests to field commission agents and track delivery stages.
+              </p>
+            </div>
+            <Link href="/agent/leads">
+              <Button size="sm" variant="outline" className="gap-1.5 font-bold shrink-0">
+                <span>Open Leads</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------------------

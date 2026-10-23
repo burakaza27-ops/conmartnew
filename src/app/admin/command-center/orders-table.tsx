@@ -68,7 +68,7 @@ interface OrdersTableProps {
 
 export function OrdersTable({ orders = [] }: OrdersTableProps) {
   const { t, locale } = useLanguage();
-  const safeOrders = orders ?? [];
+  const safeOrders = useMemo(() => orders ?? [], [orders]);
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();

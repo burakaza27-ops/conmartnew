@@ -1,8 +1,7 @@
 "use client";
 
-import { BarChart3, CreditCard, LogOut, Settings, UserCheck, Users } from "lucide-react";
+import { BarChart3, CreditCard, Settings, UserCheck, Users } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { MobileTabLink, SidebarNavLink } from "@/components/layout/nav-link";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { useLanguage } from "@/lib/i18n/language-context";
