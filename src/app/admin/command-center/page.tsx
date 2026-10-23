@@ -9,7 +9,7 @@
 // 5. Bank Proforma Invoices & Fulfillment
 // =============================================================================
 
-import { Suspense } from "react";
+import React, { Suspense } from "react";
 import Link from "next/link";
 import {
   ShieldAlert,
